@@ -1,0 +1,21 @@
+# Paralleli (‖) tra Samuele-Re e Cronache, nei due sensi.
+# Literary parallels (‖) between Samuel-Kings and Chronicles, both directions.
+PREFIX bj: <https://massimo-nocentini.github.io/bibbia-gerusalemme/ontologia#>
+PREFIX verso: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/verso/>
+PREFIX libro: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/libro/>
+PREFIX testamento: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/testamento/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX oa: <http://www.w3.org/ns/oa#>
+
+SELECT ?da ?come_stampato ?a WHERE {
+  { VALUES ?lv { libro:1Sam libro:2Sam libro:1Kgs libro:2Kgs } VALUES ?lp { libro:1Chr libro:2Chr } }
+  UNION
+  { VALUES ?lv { libro:1Chr libro:2Chr } VALUES ?lp { libro:1Sam libro:2Sam libro:1Kgs libro:2Kgs } }
+  ?v bj:inLibro ?lv ; rdfs:label ?da ; bj:ordine ?o .
+  ?r bj:daVersetto ?v ; bj:relazione bj:parallelo ; bj:testo ?come_stampato ; bj:aPassaggio ?p .
+  ?p bj:inizio/bj:inLibro ?lp ; rdfs:label ?a .
+}
+ORDER BY ?o ?a

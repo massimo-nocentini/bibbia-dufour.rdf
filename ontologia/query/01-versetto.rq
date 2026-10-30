@@ -1,0 +1,34 @@
+# Un versetto con le sue note e i suoi rimandi a margine (Gv 3,16).
+# A verse with its notes (called from it, or commenting on it) and its margin references.
+PREFIX bj: <https://massimo-nocentini.github.io/bibbia-gerusalemme/ontologia#>
+PREFIX verso: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/verso/>
+PREFIX libro: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/libro/>
+PREFIX testamento: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/testamento/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX oa: <http://www.w3.org/ns/oa#>
+
+SELECT ?tipo ?etichetta ?relazione ?testo WHERE {
+  {
+    verso:John.3.16 bj:haNota ?n .
+    ?n bj:etichetta ?etichetta ; oa:hasBody ?b .
+    ?b rdf:value ?testo .
+    BIND ("nota richiamata" AS ?tipo)
+  } UNION {
+    ?n bj:commenta verso:John.3.16 .
+    FILTER NOT EXISTS { verso:John.3.16 bj:haNota ?n }
+    ?n bj:etichetta ?etichetta ; oa:hasBody ?b .
+    ?b rdf:value ?testo .
+    BIND ("nota che lo commenta" AS ?tipo)
+  } UNION {
+    ?r bj:daVersetto verso:John.3.16 ;
+       bj:testo ?etichetta ; bj:relazione ?rel ; bj:posizione ?pos ; bj:nelMargine ?m .
+    ?rel skos:prefLabel ?relazione . FILTER (lang(?relazione) = "it")
+    ?m bj:posizione ?mpos .
+    OPTIONAL { ?r bj:aPassaggio ?p . ?p rdfs:label ?testo }
+    BIND ("rimando" AS ?tipo)
+  }
+}
+ORDER BY ?tipo ?mpos ?pos

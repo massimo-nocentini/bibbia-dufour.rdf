@@ -1,0 +1,26 @@
+# Le note (e le introduzioni) che citano un versetto (Gen 15,6).
+# Notes (and introductions) whose text cites a verse.
+PREFIX bj: <https://massimo-nocentini.github.io/bibbia-gerusalemme/ontologia#>
+PREFIX verso: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/verso/>
+PREFIX libro: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/libro/>
+PREFIX testamento: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/testamento/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX oa: <http://www.w3.org/ns/oa#>
+
+SELECT ?chi ?richiamata_da ?citazioni ?testo WHERE {
+  {
+    SELECT ?chi ?richiamata_da ?o ?testo (GROUP_CONCAT(DISTINCT ?raw; separator=" | ") AS ?citazioni) WHERE {
+      ?x bj:citaVersetto verso:Gen.15.6 ; rdfs:label ?chi .
+      { ?c bj:daNota ?x } UNION { ?c bj:daParagrafo ?pa . ?pa dcterms:isPartOf ?x }
+      ?c bj:aPassaggio ?p ; bj:testo ?raw .
+      ?p bj:comprende verso:Gen.15.6 .
+      OPTIONAL { ?x bj:richiamataDa ?a . ?a rdfs:label ?richiamata_da ; bj:ordine ?o }
+      OPTIONAL { ?x oa:hasBody ?b . ?b rdf:value ?testo }
+    }
+    GROUP BY ?chi ?richiamata_da ?o ?testo
+  }
+}
+ORDER BY ?o ?chi

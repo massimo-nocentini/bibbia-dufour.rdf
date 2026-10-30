@@ -1,0 +1,22 @@
+# Riferimenti non risolti (refusi, altre numerazioni, libri non canonici), con il motivo.
+# Unresolved references (misprints, other numberings, non-canonical books), with the reason.
+PREFIX bj: <https://massimo-nocentini.github.io/bibbia-gerusalemme/ontologia#>
+PREFIX verso: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/verso/>
+PREFIX libro: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/libro/>
+PREFIX testamento: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/testamento/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX oa: <http://www.w3.org/ns/oa#>
+
+SELECT ?dove ?tipo ?come_stampato ?motivo WHERE {
+  ?x bj:stato bj:irrisolto ; bj:testo ?come_stampato ; bj:motivo ?motivo ; a ?c .
+  ?c rdfs:label ?tipo . FILTER (lang(?tipo) = "it")
+  OPTIONAL { ?x bj:daVersetto ?v1 . ?v1 rdfs:label ?l1 ; bj:ordine ?o1 }
+  OPTIONAL { ?x bj:daNota ?n . ?n rdfs:label ?l2 ; bj:richiamataDa ?v2 . ?v2 bj:ordine ?o2 }
+  OPTIONAL { ?x bj:daParagrafo ?pa . ?pa rdfs:label ?l3 }
+  BIND (COALESCE(?l1, ?l2, ?l3) AS ?dove)
+  BIND (COALESCE(?o1, ?o2, 99999) AS ?o)
+}
+ORDER BY ?o ?dove

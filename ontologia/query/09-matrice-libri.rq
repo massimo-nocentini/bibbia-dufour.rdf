@@ -1,0 +1,26 @@
+# Matrice dei rimandi a margine tra libri: dal libro del versetto al libro del passaggio.
+# Per-book cross-reference matrix: from the book of the verse to the book of the passage.
+PREFIX bj: <https://massimo-nocentini.github.io/bibbia-gerusalemme/ontologia#>
+PREFIX verso: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/verso/>
+PREFIX libro: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/libro/>
+PREFIX testamento: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/testamento/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX oa: <http://www.w3.org/ns/oa#>
+
+SELECT ?da ?a ?rimandi WHERE {
+  {
+    SELECT ?da ?a ?od ?oa (COUNT(DISTINCT ?r) AS ?rimandi) WHERE {
+      ?r a bj:Rimando ; bj:daVersetto ?v ; bj:aPassaggio ?p .
+      ?v bj:inLibro ?ld .
+      ?p bj:inizio ?pi .
+      ?pi bj:inLibro ?la .
+      ?ld bj:codiceOsis ?da ; bj:ordine ?od .
+      ?la bj:codiceOsis ?a ; bj:ordine ?oa .
+    }
+    GROUP BY ?da ?a ?od ?oa
+  }
+}
+ORDER BY ?od ?oa

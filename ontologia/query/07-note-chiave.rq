@@ -1,0 +1,21 @@
+# Note chiave: le note a cui mandano più rimandi con «+».
+# Key-note hubs: the notes most often sent to by a reference with "+".
+PREFIX bj: <https://massimo-nocentini.github.io/bibbia-gerusalemme/ontologia#>
+PREFIX verso: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/verso/>
+PREFIX libro: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/libro/>
+PREFIX testamento: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/testamento/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX oa: <http://www.w3.org/ns/oa#>
+
+SELECT ?nota ?richiamata_da (COUNT(DISTINCT ?r) AS ?rinvii) (COUNT(DISTINCT ?l) AS ?da_libri) WHERE {
+  ?r bj:mandaANota ?n ; bj:daVersetto ?v .
+  ?v bj:inLibro ?l .
+  ?n rdfs:label ?nota ; bj:richiamataDa ?a .
+  ?a rdfs:label ?richiamata_da .
+}
+GROUP BY ?nota ?richiamata_da
+ORDER BY DESC(?rinvii) ?nota
+LIMIT 25

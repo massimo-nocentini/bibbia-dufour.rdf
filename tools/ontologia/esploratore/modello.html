@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Esploratore dei versetti</title>
+<link rel="icon" href="data:,">
+<style>
+/*@@CSS@@*/
+</style>
+</head>
+<body>
+<header class="barra">
+  <a class="marchio" href="#" title="Indice dei libri"><span class="m1">Bibbia di Gerusalemme</span><span class="m2">esploratore dei versetti</span></a>
+  <form class="omni" id="omni" role="search" autocomplete="off">
+    <input id="q" type="search" placeholder="Vai a Gv 3,16 o cerca una parola…" aria-label="Riferimento o ricerca" spellcheck="false">
+    <kbd class="tasto">/</kbd>
+  </form>
+  <nav class="schede" aria-label="Viste">
+    <a href="#" data-vista="indice">Libri</a>
+    <a href="#cerca" data-vista="cerca">Cerca</a>
+    <a href="#grafo" data-vista="grafo">Grafo</a>
+    <a href="#panoramica" data-vista="panoramica">Panoramica</a>
+  </nav>
+  <div class="comandi">
+    <button id="calore" class="icona" type="button" aria-pressed="false" title="Evidenzia i versetti più rimandati">
+      <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2c1 3.5 5 5.2 5 9.5A5 5 0 0 1 5 11.5c0-2 .9-3.4 2.2-4.6.2 1.6.9 2.6 2 3 0-3 .3-5.6.8-7.9z"/></svg>
+    </button>
+    <button id="tema" class="icona" type="button" title="Tema scuro" aria-pressed="false">
+      <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3a7 7 0 1 0 0 14V3z"/><circle cx="10" cy="10" r="7" fill="none"/></svg>
+    </button>
+    <button id="aiuto" class="icona" type="button" title="Tasti (?)">?</button>
+  </div>
+</header>
+<div class="corpo">
+  <main id="vista" tabindex="-1"><div class="attesa" id="attesa">Caricamento del testo e dei collegamenti…</div></main>
+  <aside id="pannello" class="pannello" aria-label="Versetto selezionato" hidden></aside>
+</div>
+<div id="anteprima" class="anteprima" role="tooltip" hidden></div>
+<div id="guida" class="guida" hidden></div>
+<div id="annuncio" class="solo-lettori" aria-live="polite"></div>
+<script id="dati" type="application/octet-stream">@@DATI@@</script>
+<script>
+/*@@JS@@*/
+</script>
+</body>
+</html>

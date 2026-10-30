@@ -1,0 +1,24 @@
+# I versetti di una pericope (quella che contiene Lc 15,11), con le note richiamate.
+# The verses of a pericope (the one holding Luke 15,11), with their notes.
+PREFIX bj: <https://massimo-nocentini.github.io/bibbia-gerusalemme/ontologia#>
+PREFIX verso: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/verso/>
+PREFIX libro: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/libro/>
+PREFIX testamento: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/testamento/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX oa: <http://www.w3.org/ns/oa#>
+
+SELECT ?pericope ?versetto ?testo ?note WHERE {
+  {
+    SELECT ?pericope ?versetto ?testo ?o (COUNT(?n) AS ?note) WHERE {
+      verso:Luke.15.11 bj:inPericope ?p .
+      ?p dcterms:title ?pericope .
+      ?v bj:inPericope ?p ; rdfs:label ?versetto ; bj:testo ?testo ; bj:ordine ?o .
+      OPTIONAL { ?v bj:haNota ?n }
+    }
+    GROUP BY ?pericope ?versetto ?testo ?o
+  }
+}
+ORDER BY ?o

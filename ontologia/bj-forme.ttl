@@ -1,0 +1,199 @@
+# SHACL shapes for the data of the verse ontology (ontologia/bj-dati.ttl.gz).
+# Checked by tools/ontologia/verifica_rdf.py with pyshacl, on the whole graph.
+
+@prefix bj:      <https://massimo-nocentini.github.io/bibbia-gerusalemme/ontologia#> .
+@prefix bjf:     <https://massimo-nocentini.github.io/bibbia-gerusalemme/forme#> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix dc:      <http://purl.org/dc/elements/1.1/> .
+@prefix oa:      <http://www.w3.org/ns/oa#> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+
+bjf:Bibbia a sh:NodeShape ;
+    sh:targetClass bj:Bibbia ;
+    sh:property [ sh:path dcterms:title ; sh:minCount 1 ; sh:datatype rdf:langString ] .
+
+bjf:Testamento a sh:NodeShape ;
+    sh:targetClass bj:Testamento ;
+    sh:property [ sh:path dcterms:isPartOf ; sh:minCount 1 ; sh:maxCount 1 ; sh:class bj:Bibbia ] ,
+                [ sh:path bj:ordine ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ] .
+
+bjf:Libro a sh:NodeShape ;
+    sh:targetClass bj:Libro ;
+    sh:property [ sh:path dcterms:isPartOf ; sh:minCount 1 ; sh:maxCount 1 ; sh:class bj:Testamento ] ,
+                [ sh:path bj:codiceOsis ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ;
+                  sh:pattern "^[1-3]?[A-Z][A-Za-z]+$" ] ,
+                [ sh:path bj:sigla ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ] ,
+                [ sh:path bj:ordine ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ;
+                  sh:minInclusive 1 ; sh:maxInclusive 74 ] ,
+                [ sh:path dcterms:title ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype rdf:langString ] ,
+                [ sh:path bj:volume ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ] .
+
+bjf:Capitolo a sh:NodeShape ;
+    sh:targetClass bj:Capitolo ;
+    sh:property [ sh:path dcterms:isPartOf ; sh:minCount 1 ; sh:maxCount 1 ; sh:class bj:Libro ] ,
+                [ sh:path bj:inLibro ; sh:minCount 1 ; sh:maxCount 1 ; sh:class bj:Libro ] ,
+                [ sh:path bj:numero ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ; sh:minInclusive 0 ] ,
+                [ sh:path bj:etichetta ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ] .
+
+bjf:Divisione a sh:NodeShape ;
+    sh:targetClass bj:Divisione ;
+    sh:property [ sh:path dcterms:title ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype rdf:langString ] ,
+                [ sh:path bj:livello ; sh:minCount 1 ; sh:maxCount 1 ; sh:in ( 1 2 3 ) ] ,
+                [ sh:path bj:inLibro ; sh:minCount 1 ; sh:maxCount 1 ; sh:class bj:Libro ] ,
+                [ sh:path bj:inDivisione ; sh:maxCount 1 ; sh:class bj:Divisione ] ,
+                [ sh:path bj:inizio ; sh:minCount 1 ; sh:maxCount 1 ; sh:class bj:Versetto ] ,
+                [ sh:path bj:fine ; sh:minCount 1 ; sh:maxCount 1 ; sh:class bj:Versetto ] ,
+                [ sh:path bj:pagina ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ] .
+
+bjf:Pericope a sh:NodeShape ;
+    sh:targetClass bj:Pericope ;
+    sh:property [ sh:path dcterms:title ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype rdf:langString ] ,
+                [ sh:path bj:titoloBreve ; sh:maxCount 1 ; sh:datatype rdf:langString ] ,
+                [ sh:path bj:inLibro ; sh:minCount 1 ; sh:maxCount 1 ; sh:class bj:Libro ] ,
+                [ sh:path bj:inDivisione ; sh:maxCount 1 ; sh:class bj:Divisione ] ,
+                [ sh:path bj:inizio ; sh:minCount 1 ; sh:maxCount 1 ; sh:class bj:Versetto ] ,
+                [ sh:path bj:fine ; sh:minCount 1 ; sh:maxCount 1 ; sh:class bj:Versetto ] ,
+                [ sh:path bj:dentroVersetto ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:boolean ] ,
+                [ sh:path bj:apreCapitolo ; sh:maxCount 1 ; sh:datatype xsd:integer ] ,
+                [ sh:path bj:pagina ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ] .
+
+bjf:Versetto a sh:NodeShape ;
+    sh:targetClass bj:Versetto ;
+    sh:property [ sh:path bj:testo ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype rdf:langString ;
+                  sh:languageIn ( "it" ) ] ,
+                [ sh:path bj:testoHtml ; sh:maxCount 1 ; sh:datatype xsd:string ] ,
+                [ sh:path rdfs:label ; sh:minCount 1 ; sh:maxCount 1 ] ,
+                [ sh:path dcterms:identifier ; sh:minCount 1 ; sh:maxCount 1 ;
+                  sh:pattern "^[1-3]?[A-Z][A-Za-z]+\\.([0-9]+|Prol)\\.[0-9]+[a-z]?$" ] ,
+                [ sh:path bj:etichetta ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ;
+                  sh:pattern "^([0-9]+,)?[0-9]+[a-z]?$" ] ,      # "25,19": Nm 25,19 printed in Nm 26
+                [ sh:path bj:numero ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ; sh:minInclusive 1 ] ,
+                [ sh:path bj:suffisso ; sh:maxCount 1 ; sh:pattern "^[a-z]$" ] ,
+                [ sh:path bj:numeroCapitolo ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ; sh:minInclusive 0 ] ,
+                [ sh:path bj:ordine ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ; sh:minInclusive 1 ] ,
+                [ sh:path bj:pagina ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ] ,
+                [ sh:path prov:wasDerivedFrom ; sh:minCount 1 ; sh:maxCount 1 ; sh:class bj:Pagina ] ,
+                [ sh:path bj:poesia ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:boolean ] ,
+                [ sh:path dcterms:isPartOf ; sh:minCount 1 ; sh:maxCount 1 ; sh:class bj:Capitolo ] ,
+                [ sh:path bj:inLibro ; sh:minCount 1 ; sh:maxCount 1 ; sh:class bj:Libro ] ,
+                [ sh:path bj:inPericope ; sh:maxCount 1 ; sh:class bj:Pericope ] ,
+                [ sh:path bj:precede ; sh:maxCount 1 ; sh:class bj:Versetto ] ,
+                [ sh:path bj:segue ; sh:maxCount 1 ; sh:class bj:Versetto ] ,
+                [ sh:path bj:omesso ; sh:maxCount 1 ; sh:datatype xsd:boolean ] ,
+                [ sh:path bj:traParentesi ; sh:maxCount 1 ; sh:datatype xsd:boolean ] ,
+                [ sh:path bj:stampatoNelCapitolo ; sh:maxCount 1 ; sh:datatype xsd:integer ] ,
+                [ sh:path bj:titoloSalmo ; sh:maxCount 1 ; sh:datatype rdf:langString ] ,
+                [ sh:path bj:acrostico ; sh:maxCount 2 ; sh:datatype xsd:string ] ,
+                [ sh:path bj:haNota ; sh:class bj:Nota ] ,
+                [ sh:path bj:rimandaA ; sh:class bj:Versetto ] ,
+                [ sh:path bj:paralleloA ; sh:class bj:Versetto ] ,
+                [ sh:path bj:doppioneDi ; sh:class bj:Versetto ] ,
+                [ sh:path bj:citatoIn ; sh:class bj:Versetto ] ,
+                [ sh:path bj:rinviaANotaChiave ; sh:class bj:Versetto ] .
+
+bjf:Pagina a sh:NodeShape ;
+    sh:targetClass bj:Pagina ;
+    sh:property [ sh:path bj:numero ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ] ,
+                [ sh:path bj:paginaPdf ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ] .
+
+bjf:Introduzione a sh:NodeShape ;
+    sh:targetClass bj:Introduzione ;
+    sh:property [ sh:path dcterms:title ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype rdf:langString ] ,
+                [ sh:path bj:introduce ; sh:minCount 1 ; sh:class bj:Libro ] ,
+                [ sh:path bj:citaVersetto ; sh:class bj:Versetto ] .
+
+bjf:Paragrafo a sh:NodeShape ;
+    sh:targetClass bj:Paragrafo ;
+    sh:property [ sh:path dcterms:isPartOf ; sh:minCount 1 ; sh:maxCount 1 ; sh:class bj:Introduzione ] ,
+                [ sh:path bj:testo ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype rdf:langString ] ,
+                [ sh:path bj:numero ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ] ,
+                [ sh:path bj:pagina ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ] .
+
+# A note: a Web Annotation with exactly one textual body, one anchor verse, a scope and
+# at least one target; its target is a passage, a chapter or a book.
+bjf:Nota a sh:NodeShape ;
+    sh:targetClass bj:Nota ;
+    sh:property [ sh:path oa:hasBody ; sh:minCount 1 ; sh:maxCount 1 ; sh:node bjf:Corpo ] ,
+                [ sh:path oa:motivatedBy ; sh:minCount 1 ; sh:maxCount 1 ; sh:hasValue oa:commenting ] ,
+                [ sh:path bj:richiamataDa ; sh:minCount 1 ; sh:maxCount 1 ; sh:class bj:Versetto ] ,
+                [ sh:path bj:ambito ; sh:minCount 1 ; sh:maxCount 1 ;
+                  sh:in ( bj:ambitoVersetti bj:ambitoCapitolo bj:ambitoLibro ) ] ,
+                [ sh:path oa:hasTarget ; sh:minCount 1 ;
+                  sh:or ( [ sh:class bj:Passaggio ] [ sh:class bj:Capitolo ] [ sh:class bj:Libro ] ) ] ,
+                [ sh:path bj:commenta ; sh:class bj:Versetto ] ,
+                [ sh:path bj:citaVersetto ; sh:class bj:Versetto ] ,
+                [ sh:path bj:etichetta ; sh:maxCount 1 ; sh:datatype xsd:string ] ,
+                [ sh:path bj:posizioneTesto ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ; sh:minInclusive 0 ] ,
+                [ sh:path bj:posizioneHtml ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ; sh:minInclusive 0 ] ,
+                [ sh:path bj:pagina ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ] ,
+                [ sh:path prov:wasDerivedFrom ; sh:minCount 1 ; sh:maxCount 1 ; sh:class bj:Pagina ] .
+
+bjf:Corpo a sh:NodeShape ;
+    sh:class oa:TextualBody ;
+    sh:property [ sh:path rdf:value ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:minLength 1 ] ,
+                [ sh:path dc:format ; sh:minCount 1 ; sh:maxCount 1 ; sh:in ( "text/plain" ) ] ,
+                [ sh:path dc:language ; sh:minCount 1 ; sh:maxCount 1 ; sh:in ( "it" ) ] .
+
+bjf:Margine a sh:NodeShape ;
+    sh:targetClass bj:Margine ;
+    sh:property [ sh:path bj:accantoA ; sh:minCount 1 ; sh:maxCount 1 ; sh:class bj:Versetto ] ,
+                [ sh:path bj:testo ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:minLength 1 ] ,
+                [ sh:path bj:posizione ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ; sh:minInclusive 1 ] ,
+                [ sh:path bj:posizioneTesto ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ] ,
+                [ sh:path bj:posizioneHtml ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ] ,
+                [ sh:path bj:pagina ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ] ,
+                [ sh:path bj:stampatoNelVersetto ; sh:maxCount 1 ; sh:class bj:Versetto ] .
+
+# What a margin reference and a citation share: printed text, status, booleans; a
+# resolved (or partial) one names at least one passage or a whole book, an unresolved
+# one says why.
+bjf:Riferimento a sh:NodeShape ;
+    sh:targetClass bj:Rimando , bj:Citazione ;
+    sh:property [ sh:path bj:testo ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:minLength 1 ] ,
+                [ sh:path bj:stato ; sh:minCount 1 ; sh:maxCount 1 ;
+                  sh:in ( bj:risolto bj:parziale bj:irrisolto bj:nonRiferimento ) ] ,
+                [ sh:path bj:aPassaggio ; sh:class bj:Passaggio ] ,
+                [ sh:path bj:notaChiave ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:boolean ] ,
+                [ sh:path bj:conParalleli ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:boolean ] ,
+                [ sh:path bj:estensione ; sh:maxCount 1 ; sh:in ( "s" "ss" ) ] ,
+                [ sh:path bj:qualificatore ; sh:maxCount 1 ; sh:datatype xsd:string ] ,
+                [ sh:path bj:mandaANota ; sh:class bj:Nota ] ,
+                [ sh:path bj:mandaAMargine ; sh:class bj:Margine ] ,
+                [ sh:path bj:interpretazione ; sh:maxCount 1 ; sh:datatype xsd:string ] ;
+    sh:or ( [ sh:path bj:stato ; sh:in ( bj:irrisolto bj:nonRiferimento ) ]
+            [ sh:path bj:aPassaggio ; sh:minCount 1 ]
+            [ sh:path bj:libroCitato ; sh:minCount 1 ] ) ;
+    sh:or ( [ sh:path bj:stato ; sh:in ( bj:risolto bj:nonRiferimento ) ]
+            [ sh:path bj:motivo ; sh:minCount 1 ] ) .
+
+bjf:Rimando a sh:NodeShape ;
+    sh:targetClass bj:Rimando ;
+    sh:property [ sh:path bj:daVersetto ; sh:minCount 1 ; sh:maxCount 1 ; sh:class bj:Versetto ] ,
+                [ sh:path bj:nelMargine ; sh:minCount 1 ; sh:maxCount 1 ; sh:class bj:Margine ] ,
+                [ sh:path bj:relazione ; sh:minCount 1 ; sh:maxCount 1 ;
+                  sh:in ( bj:correlato bj:parallelo bj:doppione bj:citatoDopo bj:numerazione bj:commento ) ] ,
+                [ sh:path bj:posizione ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ; sh:minInclusive 1 ] ,
+                [ sh:path bj:segno ; sh:maxCount 1 ; sh:in ( "‖" "=" "/" ) ] ,
+                [ sh:path bj:doppioneDelRimando ; sh:maxCount 1 ; sh:class bj:Rimando ] .
+
+# A citation stands in exactly one note or one introduction paragraph.
+bjf:Citazione a sh:NodeShape ;
+    sh:targetClass bj:Citazione ;
+    sh:xone ( [ sh:path bj:daNota ; sh:minCount 1 ; sh:maxCount 1 ; sh:class bj:Nota ]
+              [ sh:path bj:daParagrafo ; sh:minCount 1 ; sh:maxCount 1 ; sh:class bj:Paragrafo ] ) ;
+    sh:property [ sh:path bj:posizioneTesto ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ; sh:minInclusive 0 ] ,
+                [ sh:path bj:lunghezza ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ; sh:minInclusive 1 ] ,
+                [ sh:path bj:posizioneHtml ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ] ,
+                [ sh:path bj:fineHtml ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ] ,
+                [ sh:path bj:conCf ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:boolean ] .
+
+bjf:Passaggio a sh:NodeShape ;
+    sh:targetClass bj:Passaggio ;
+    sh:property [ sh:path bj:inizio ; sh:minCount 1 ; sh:maxCount 1 ; sh:class bj:Versetto ] ,
+                [ sh:path bj:fine ; sh:minCount 1 ; sh:maxCount 1 ; sh:class bj:Versetto ] ,
+                [ sh:path bj:comprende ; sh:minCount 1 ; sh:class bj:Versetto ] ,
+                [ sh:path oa:hasSource ; sh:minCount 1 ; sh:maxCount 1 ; sh:class bj:Libro ] .

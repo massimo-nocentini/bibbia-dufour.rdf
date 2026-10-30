@@ -1,0 +1,750 @@
+# Ontologia dei versetti della Bibbia di Gerusalemme (testo CEI 2008, note e rimandi
+# a margine della Bible de Jérusalem). Vocabolario OWL 2 scritto a mano: i dati sono
+# generati da tools/ontologia/rdf.py in ontologia/bj-dati.ttl.gz.
+#
+# The verse (bj:Versetto) is the hub: notes (bj:Nota, W3C Web Annotations), margin
+# references (bj:Rimando, reified, grouped in bj:Margine) and citations inside notes and
+# introductions (bj:Citazione) all point from or to verses, through bj:Passaggio
+# (a stretch of verses). Shortcut properties (bj:rimandaA, bj:haNota, bj:citaVersetto, ...)
+# are materialised in the data for direct graph queries.
+
+@prefix bj:      <https://massimo-nocentini.github.io/bibbia-gerusalemme/ontologia#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix oa:      <http://www.w3.org/ns/oa#> .
+@prefix cito:    <http://purl.org/spar/cito/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+
+<https://massimo-nocentini.github.io/bibbia-gerusalemme/ontologia>
+    a owl:Ontology ;
+    owl:versionInfo "1.0" ;
+    dcterms:title "Ontologia dei versetti della Bibbia di Gerusalemme"@it ,
+                  "Verse ontology of the Jerusalem Bible"@en ;
+    rdfs:label "Ontologia dei versetti BJ"@it , "BJ verse ontology"@en ;
+    rdfs:comment "Vocabolario centrato sul versetto per «La Bibbia di Gerusalemme» (EDB: testo CEI 2008, note e rimandi a margine della Bible de Jérusalem). Ogni versetto è collegato alle note che vi sono richiamate, alle note che lo commentano, ai rimandi stampati a margine e alle citazioni nelle note e nelle introduzioni."@it ,
+                 "Verse-centred vocabulary for «La Bibbia di Gerusalemme» (EDB: CEI 2008 text, notes and marginal cross-references of the Bible de Jérusalem). Each verse is linked to the notes called from it, the notes commenting on it, the references printed in its margin and the citations inside notes and introductions."@en ;
+    dcterms:creator "Massimo Nocentini" ;
+    dcterms:source "progetti/<volume>/*.tex (14 volumi corretti / 14 proofread volumes)" ;
+    vann:preferredNamespacePrefix "bj" ;
+    vann:preferredNamespaceUri "https://massimo-nocentini.github.io/bibbia-gerusalemme/ontologia#" ;
+    rdfs:seeAlso <https://www.w3.org/TR/annotation-vocab/> , <http://purl.org/spar/cito> .
+
+# ------------------------------------------------------------------ external terms used
+
+dcterms:isPartOf a owl:ObjectProperty .
+oa:hasTarget a owl:ObjectProperty .
+oa:hasBody a owl:ObjectProperty .
+oa:hasSource a owl:ObjectProperty .
+oa:motivatedBy a owl:ObjectProperty .
+cito:cites a owl:ObjectProperty .
+cito:hasCitingEntity a owl:ObjectProperty .
+cito:hasCitedEntity a owl:ObjectProperty .
+prov:wasDerivedFrom a owl:ObjectProperty .
+oa:Annotation a owl:Class .
+oa:SpecificResource a owl:Class .
+oa:TextualBody a owl:Class .
+cito:Citation a owl:Class .
+skos:Concept a owl:Class .
+
+# ------------------------------------------------------------------ classes
+
+bj:Bibbia a owl:Class ;
+    rdfs:label "Bibbia"@it , "Bible"@en ;
+    rdfs:comment "L'intero volume della Bibbia di Gerusalemme."@it ,
+                 "The whole volume of the Jerusalem Bible."@en .
+
+bj:Testamento a owl:Class ;
+    rdfs:label "Testamento"@it , "Testament"@en ;
+    rdfs:comment "Antico o Nuovo Testamento; parte della Bibbia."@it ,
+                 "Old or New Testament; part of the Bible."@en .
+
+bj:Libro a owl:Class ;
+    rdfs:label "Libro"@it , "Book"@en ;
+    rdfs:comment "Un libro biblico come sezione del volume (74 sezioni: Ester compare due volte, testo greco e testo ebraico); identificato dal codice OSIS."@it ,
+                 "A biblical book as a section of the volume (74 sections: Esther is printed twice, Greek and Hebrew text); identified by its OSIS code."@en .
+
+bj:Capitolo a owl:Class ;
+    rdfs:label "Capitolo"@it , "Chapter"@en ;
+    rdfs:comment "Un capitolo di un libro; il prologo del Siracide è il capitolo 0 (etichetta «Prol»)."@it ,
+                 "A chapter of a book; Sirach's prologue is chapter 0 (label «Prol»)."@en .
+
+bj:Divisione a owl:Class ;
+    rdfs:label "Divisione"@it , "Division"@en ;
+    rdfs:comment "Una grande partizione di un libro (titolo \\parte: I., 1., A.), con il suo livello."@it ,
+                 "A major division of a book (\\parte heading: I., 1., A.), with its level."@en .
+
+bj:Pericope a owl:Class ;
+    rdfs:label "Pericope"@it , "Pericope"@en ;
+    rdfs:comment "Un brano con il suo titoletto (\\sezione), dal primo all'ultimo versetto."@it ,
+                 "A passage with its heading (\\sezione), from its first to its last verse."@en .
+
+bj:Versetto a owl:Class ;
+    rdfs:label "Versetto"@it , "Verse"@en ;
+    rdfs:comment "Il nodo centrale dell'ontologia: un versetto del testo CEI, con il suo testo, l'etichetta stampata, l'ordine canonico e la pagina."@it ,
+                 "The central node of the ontology: a verse of the CEI text, with its text, printed label, canonical order and page."@en .
+
+bj:Pagina a owl:Class ;
+    rdfs:label "Pagina"@it , "Page"@en ;
+    rdfs:comment "Una pagina stampata del volume (pagina del PDF = pagina + 33): la fonte da cui un versetto, una nota o un rimando è stato trascritto."@it ,
+                 "A printed page of the volume (PDF page = page + 33): the source a verse, note or reference was transcribed from."@en .
+
+bj:Introduzione a owl:Class ;
+    rdfs:label "Introduzione"@it , "Introduction"@en ;
+    rdfs:comment "Un'introduzione della BJ a un gruppo di libri o a un libro (prosa, senza versetti)."@it ,
+                 "A BJ introduction to a group of books or to one book (prose, no verses)."@en .
+
+bj:Paragrafo a owl:Class ;
+    rdfs:label "Paragrafo"@it , "Paragraph"@en ;
+    rdfs:comment "Un paragrafo di un'introduzione, eventualmente con un titoletto."@it ,
+                 "A paragraph of an introduction, possibly with a run-in heading."@en .
+
+bj:Nota a owl:Class ;
+    rdfs:subClassOf oa:Annotation ;
+    rdfs:label "Nota"@it , "Note"@en ;
+    rdfs:comment "Una nota della BJ a piè di pagina: un'annotazione Web (oa:Annotation) il cui corpo è il testo della nota e il cui bersaglio sono i versetti (o il capitolo, o il libro) indicati dalla sua etichetta; è richiamata da un versetto (bj:richiamataDa)."@it ,
+                 "A BJ footnote: a Web Annotation (oa:Annotation) whose body is the note text and whose target is the verses (or chapter, or book) named by its label; it is called from one verse (bj:richiamataDa)."@en .
+
+bj:Margine a owl:Class ;
+    rdfs:label "Margine"@it , "Margin entry"@en ;
+    rdfs:comment "Un gruppo di rimandi stampato a margine accanto a una riga (un \\mref); contiene uno o più bj:Rimando separati da «;». È anche il «gruppo di rimandi» a cui può mandare un «+»."@it ,
+                 "A group of references printed in the margin beside a line (one \\mref); it holds one or more bj:Rimando separated by «;». It is also the «group of references» a «+» may send to."@en .
+
+bj:Rimando a owl:Class ;
+    rdfs:subClassOf cito:Citation ;
+    rdfs:label "Rimando"@it , "Cross-reference"@en ;
+    rdfs:comment "Un singolo rimando a margine, reificato: dal versetto accanto a cui è stampato (bj:daVersetto) a un passaggio (bj:aPassaggio), con il testo stampato, la relazione (segno a margine), la nota chiave «+», i paralleli «p», il qualificatore e lo stato di risoluzione."@it ,
+                 "One marginal cross-reference, reified: from the verse it is printed beside (bj:daVersetto) to a passage (bj:aPassaggio), with the printed text, the relation (margin sign), the key-note «+», the parallels «p», the qualifier and the resolution status."@en .
+
+bj:Citazione a owl:Class ;
+    rdfs:subClassOf cito:Citation ;
+    rdfs:label "Citazione"@it , "Citation"@en ;
+    rdfs:comment "Un riferimento biblico citato nel testo di una nota o di un paragrafo di introduzione, con la sua posizione nel testo."@it ,
+                 "A biblical reference cited in the text of a note or of an introduction paragraph, with its position in the text."@en .
+
+bj:Passaggio a owl:Class ;
+    rdfs:subClassOf oa:SpecificResource ;
+    rdfs:label "Passaggio"@it , "Passage"@en ;
+    rdfs:comment "Un tratto di versetti consecutivi di un libro (in ordine numerico), dal versetto bj:inizio al versetto bj:fine; bj:comprende elenca ogni versetto. È una oa:SpecificResource il cui oa:hasSource è il libro. Un passaggio è identificato dai suoi estremi ed è condiviso da tutti i rimandi e le note che lo indicano."@it ,
+                 "A stretch of consecutive verses of a book (in numeric order), from verse bj:inizio to verse bj:fine; bj:comprende lists every verse. It is an oa:SpecificResource whose oa:hasSource is the book. A passage is identified by its ends and shared by every reference and note naming it."@en .
+
+bj:Relazione a owl:Class ;
+    rdfs:subClassOf skos:Concept ;
+    rdfs:label "Relazione"@it , "Relation"@en ;
+    rdfs:comment "Il tipo di un rimando a margine, dato dal segno stampato (nessun segno, ‖, =, ↗)."@it ,
+                 "The kind of a marginal reference, given by its printed sign (no sign, ‖, =, ↗)."@en .
+
+bj:Stato a owl:Class ;
+    rdfs:subClassOf skos:Concept ;
+    rdfs:label "Stato"@it , "Status"@en ;
+    rdfs:comment "L'esito della risoluzione di un riferimento verso i versetti."@it ,
+                 "The outcome of resolving a reference to verses."@en .
+
+bj:Ambito a owl:Class ;
+    rdfs:subClassOf skos:Concept ;
+    rdfs:label "Ambito"@it , "Scope"@en ;
+    rdfs:comment "Che cosa commenta una nota: versetti, capitoli interi o il libro."@it ,
+                 "What a note comments on: verses, whole chapters or the book."@en .
+
+[] a owl:AllDisjointClasses ;
+    owl:members ( bj:Bibbia bj:Testamento bj:Libro bj:Capitolo bj:Divisione bj:Pericope
+                  bj:Versetto bj:Pagina bj:Introduzione bj:Paragrafo bj:Nota bj:Margine
+                  bj:Rimando bj:Citazione bj:Passaggio ) .
+
+# ------------------------------------------------------------------ structure
+
+bj:inLibro a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:Versetto bj:Capitolo bj:Pericope bj:Divisione ) ] ;
+    rdfs:range bj:Libro ;
+    rdfs:label "nel libro"@it , "in book"@en ;
+    rdfs:comment "Scorciatoia: il libro a cui appartiene un versetto, capitolo, pericope o divisione."@it ,
+                 "Shortcut: the book a verse, chapter, pericope or division belongs to."@en .
+
+bj:inPericope a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:subPropertyOf dcterms:isPartOf ;
+    rdfs:domain bj:Versetto ; rdfs:range bj:Pericope ;
+    rdfs:label "nella pericope"@it , "in pericope"@en ;
+    rdfs:comment "La pericope (brano con titolo) a cui appartiene il versetto; manca per i versetti stampati prima del primo titoletto."@it ,
+                 "The pericope (headed passage) the verse belongs to; absent for verses printed before the first heading."@en .
+
+bj:inDivisione a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:subPropertyOf dcterms:isPartOf ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:Pericope bj:Divisione ) ] ;
+    rdfs:range bj:Divisione ;
+    rdfs:label "nella divisione"@it , "in division"@en ;
+    rdfs:comment "La divisione più interna che contiene una pericope, o la divisione madre di una divisione."@it ,
+                 "The innermost division containing a pericope, or the parent division of a division."@en .
+
+bj:precede a owl:ObjectProperty , owl:FunctionalProperty , owl:InverseFunctionalProperty ;
+    owl:inverseOf bj:segue ;
+    rdfs:domain bj:Versetto ; rdfs:range bj:Versetto ;
+    rdfs:label "precede"@it , "precedes"@en ;
+    rdfs:comment "Il versetto immediatamente successivo nell'ordine canonico del volume (anche attraverso capitoli e libri)."@it ,
+                 "The next verse in the canonical order of the volume (also across chapters and books)."@en .
+
+bj:segue a owl:ObjectProperty , owl:FunctionalProperty , owl:InverseFunctionalProperty ;
+    rdfs:domain bj:Versetto ; rdfs:range bj:Versetto ;
+    rdfs:label "segue"@it , "follows"@en ;
+    rdfs:comment "Il versetto immediatamente precedente nell'ordine canonico (inversa di bj:precede)."@it ,
+                 "The previous verse in canonical order (inverse of bj:precede)."@en .
+
+bj:inizio a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:Passaggio bj:Pericope bj:Divisione ) ] ;
+    rdfs:range bj:Versetto ;
+    rdfs:label "inizio"@it , "start"@en ;
+    rdfs:comment "Il primo versetto di un passaggio, di una pericope o di una divisione."@it ,
+                 "The first verse of a passage, pericope or division."@en .
+
+bj:fine a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:Passaggio bj:Pericope bj:Divisione ) ] ;
+    rdfs:range bj:Versetto ;
+    rdfs:label "fine"@it , "end"@en ;
+    rdfs:comment "L'ultimo versetto di un passaggio, di una pericope o di una divisione."@it ,
+                 "The last verse of a passage, pericope or division."@en .
+
+bj:comprende a owl:ObjectProperty ;
+    rdfs:domain bj:Passaggio ; rdfs:range bj:Versetto ;
+    rdfs:label "comprende"@it , "includes"@en ;
+    rdfs:comment "Ogni versetto di un passaggio, dall'inizio alla fine in ordine numerico."@it ,
+                 "Every verse of a passage, from start to end in numeric order."@en .
+
+bj:introduce a owl:ObjectProperty ;
+    rdfs:domain bj:Introduzione ; rdfs:range bj:Libro ;
+    rdfs:label "introduce"@it , "introduces"@en ;
+    rdfs:comment "Un libro presentato dall'introduzione."@it ,
+                 "A book the introduction presents."@en .
+
+# ------------------------------------------------------------------ notes
+
+bj:richiamataDa a owl:ObjectProperty , owl:FunctionalProperty ;
+    owl:inverseOf bj:haNota ;
+    rdfs:domain bj:Nota ; rdfs:range bj:Versetto ;
+    rdfs:label "richiamata da"@it , "called from"@en ;
+    rdfs:comment "Il versetto nel cui testo è stampato il richiamo della nota (dopo la prima parola della riga); per le note di capitolo, il primo versetto del capitolo."@it ,
+                 "The verse whose text carries the note's call (after the first word of the line); for chapter notes, the first verse of the chapter."@en .
+
+bj:haNota a owl:ObjectProperty , owl:InverseFunctionalProperty ;
+    rdfs:domain bj:Versetto ; rdfs:range bj:Nota ;
+    rdfs:label "ha nota"@it , "has note"@en ;
+    rdfs:comment "Scorciatoia: una nota richiamata da questo versetto (inversa di bj:richiamataDa)."@it ,
+                 "Shortcut: a note called from this verse (inverse of bj:richiamataDa)."@en .
+
+bj:commenta a owl:ObjectProperty ;
+    rdfs:subPropertyOf oa:hasTarget ;
+    rdfs:domain bj:Nota ; rdfs:range bj:Versetto ;
+    rdfs:label "commenta"@it , "comments on"@en ;
+    rdfs:comment "Scorciatoia: ogni versetto indicato dall'etichetta della nota (passaggi e capitoli espansi). Il bersaglio vero e proprio della annotazione (oa:hasTarget) è il passaggio, il capitolo o il libro."@it ,
+                 "Shortcut: every verse named by the note's label (passages and chapters expanded). The annotation's own target (oa:hasTarget) is the passage, chapter or book."@en .
+
+bj:ambito a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Nota ; rdfs:range bj:Ambito ;
+    rdfs:label "ambito"@it , "scope"@en ;
+    rdfs:comment "Se la nota commenta versetti, capitoli interi o tutto il libro."@it ,
+                 "Whether the note comments on verses, whole chapters or the whole book."@en .
+
+# ------------------------------------------------------------------ margins and citations
+
+bj:accantoA a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Margine ; rdfs:range bj:Versetto ;
+    rdfs:label "accanto a"@it , "beside"@en ;
+    rdfs:comment "Il versetto nel cui testo cade la prima parola della riga accanto a cui il margine è stampato; se quella riga comincia con le ultime parole (al più due) di un versetto e prosegue col successivo, il successivo (vedi bj:stampatoNelVersetto)."@it ,
+                 "The verse whose text holds the first word of the line the margin entry is printed beside; when that line opens with the last words (two at most) of a verse and goes on with the next one, the next one (see bj:stampatoNelVersetto)."@en .
+
+bj:stampatoNelVersetto a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Margine ; rdfs:range bj:Versetto ;
+    rdfs:label "stampato nel versetto"@it , "printed within verse"@en ;
+    rdfs:comment "Solo quando differisce da bj:accantoA: il versetto nel cui testo cade il richiamo del margine (dopo le sue ultime parole), mentre il margine è attribuito al versetto che comincia sulla stessa riga."@it ,
+                 "Only when it differs from bj:accantoA: the verse whose text holds the margin call (after its last words), while the margin entry is assigned to the verse that begins on the same line."@en .
+
+bj:nelMargine a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:subPropertyOf dcterms:isPartOf ;
+    rdfs:domain bj:Rimando ; rdfs:range bj:Margine ;
+    rdfs:label "nel margine"@it , "in margin entry"@en ;
+    rdfs:comment "Il gruppo di rimandi a margine di cui il rimando fa parte."@it ,
+                 "The margin entry the reference is one item of."@en .
+
+bj:daVersetto a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:subPropertyOf cito:hasCitingEntity ;
+    rdfs:domain bj:Rimando ; rdfs:range bj:Versetto ;
+    rdfs:label "dal versetto"@it , "from verse"@en ;
+    rdfs:comment "Il versetto accanto a cui il rimando è stampato (l'entità che cita)."@it ,
+                 "The verse the reference is printed beside (the citing entity)."@en .
+
+bj:daNota a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:subPropertyOf cito:hasCitingEntity ;
+    rdfs:domain bj:Citazione ; rdfs:range bj:Nota ;
+    rdfs:label "dalla nota"@it , "from note"@en ;
+    rdfs:comment "La nota nel cui testo compare la citazione."@it ,
+                 "The note whose text contains the citation."@en .
+
+bj:daParagrafo a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:subPropertyOf cito:hasCitingEntity ;
+    rdfs:domain bj:Citazione ; rdfs:range bj:Paragrafo ;
+    rdfs:label "dal paragrafo"@it , "from paragraph"@en ;
+    rdfs:comment "Il paragrafo di introduzione nel cui testo compare la citazione."@it ,
+                 "The introduction paragraph whose text contains the citation."@en .
+
+bj:aPassaggio a owl:ObjectProperty ;
+    rdfs:subPropertyOf cito:hasCitedEntity ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:Rimando bj:Citazione ) ] ;
+    rdfs:range bj:Passaggio ;
+    rdfs:label "al passaggio"@it , "to passage"@en ;
+    rdfs:comment "Un passaggio indicato dal rimando o dalla citazione (più d'uno quando il riferimento unisce versetti con «.», es. Dt 7,9.12)."@it ,
+                 "A passage the reference or citation names (several when it joins verses with «.», e.g. Dt 7,9.12)."@en .
+
+bj:libroCitato a owl:ObjectProperty ;
+    rdfs:subPropertyOf cito:hasCitedEntity ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:Rimando bj:Citazione ) ] ;
+    rdfs:range bj:Libro ;
+    rdfs:label "libro citato"@it , "cited book"@en ;
+    rdfs:comment "Un libro citato nel suo insieme, es. «Gs (passim)»."@it ,
+                 "A book cited as a whole, e.g. «Gs (passim)»."@en .
+
+bj:relazione a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Rimando ; rdfs:range bj:Relazione ;
+    rdfs:label "relazione"@it , "relation"@en ;
+    rdfs:comment "Il tipo del rimando secondo il segno a margine (concetto SKOS dello schema bj:relazioni)."@it ,
+                 "The kind of reference given by the margin sign (SKOS concept of the bj:relazioni scheme)."@en .
+
+bj:stato a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:Rimando bj:Citazione ) ] ;
+    rdfs:range bj:Stato ;
+    rdfs:label "stato"@it , "status"@en ;
+    rdfs:comment "L'esito della risoluzione del riferimento (concetto dello schema bj:stati)."@it ,
+                 "The outcome of resolving the reference (concept of the bj:stati scheme)."@en .
+
+bj:mandaANota a owl:ObjectProperty ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:Rimando bj:Citazione ) ] ;
+    rdfs:range bj:Nota ;
+    rdfs:label "manda alla nota"@it , "sends to note"@en ;
+    rdfs:comment "Per un riferimento con «+»: la nota chiave a cui manda (la più stretta che comincia in quel versetto, o vi è richiamata, o lo commenta)."@it ,
+                 "For a reference with «+»: the key note it sends to (the narrowest starting at that verse, or called from it, or commenting on it)."@en .
+
+bj:doppioneDelRimando a owl:ObjectProperty ;
+    rdfs:domain bj:Rimando ; rdfs:range bj:Rimando ;
+    rdfs:label "doppione del rimando"@it , "doublet of reference"@en ;
+    rdfs:comment "Segno «=» legato al riferimento precedente dello stesso margine («‖2Cr 1,14=9,25», «‖Lc 8,16; =11,33»): questo passaggio è il doppione di quello del rimando precedente; il versetto a margine vi è collegato con la relazione del rimando precedente."@it ,
+                 "Sign «=» tied to the previous reference of the same margin entry («‖2Cr 1,14=9,25», «‖Lc 8,16; =11,33»): this passage is the doublet of the previous reference's one; the verse in the margin relates to it with the previous reference's relation."@en .
+
+bj:interpretazione a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:Rimando bj:Citazione ) ] ;
+    rdfs:range xsd:string ;
+    rdfs:label "interpretazione"@it , "reading"@en ;
+    rdfs:comment "Per un riferimento senza sigla che non esiste nel libro ereditato: la lettura con cui è stato risolto (il libro corrente, l'ultimo libro nominato nel testo, versetti del capitolo precedente)."@it ,
+                 "For a reference without siglum that does not exist in the book it inherits: the reading that resolved it (the current book, the last book named in the text, verses of the previous chapter)."@en .
+
+bj:mandaAMargine a owl:ObjectProperty ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:Rimando bj:Citazione ) ] ;
+    rdfs:range bj:Margine ;
+    rdfs:label "manda al margine"@it , "sends to margin entry"@en ;
+    rdfs:comment "Per un riferimento con «+» senza nota in quel versetto: il gruppo di rimandi stampato accanto a esso."@it ,
+                 "For a reference with «+» and no note at that verse: the group of references printed beside it."@en .
+
+# ------------------------------------------------------------------ shortcuts between verses
+
+bj:rimandaA a owl:ObjectProperty ;
+    rdfs:domain bj:Versetto ; rdfs:range bj:Versetto ;
+    rdfs:label "rimanda a"@it , "refers to"@en ;
+    rdfs:comment "Scorciatoia materializzata: il versetto ha a margine un rimando a un passaggio che comprende l'altro versetto (qualunque segno). Contiene anche le sue sottoproprietà e il verso inverso dei paralleli e dei doppioni, che sono simmetrici."@it ,
+                 "Materialised shortcut: the verse has a margin reference to a passage including the other verse (any sign). It also holds its subproperties and the reverse direction of parallels and doublets, which are symmetric."@en .
+
+bj:paralleloA a owl:ObjectProperty , owl:SymmetricProperty ;
+    rdfs:subPropertyOf bj:rimandaA ;
+    rdfs:domain bj:Versetto ; rdfs:range bj:Versetto ;
+    rdfs:label "parallelo a"@it , "parallel to"@en ;
+    rdfs:comment "Segno «‖»: parallelo letterario in un altro libro (es. Samuele-Re e Cronache, vangeli sinottici)."@it ,
+                 "Sign «‖»: literary parallel in another book (e.g. Samuel-Kings and Chronicles, the synoptic gospels)."@en .
+
+bj:doppioneDi a owl:ObjectProperty , owl:SymmetricProperty ;
+    rdfs:subPropertyOf bj:rimandaA ;
+    rdfs:domain bj:Versetto ; rdfs:range bj:Versetto ;
+    rdfs:label "doppione di"@it , "doublet of"@en ;
+    rdfs:comment "Segno «=»: doppione nello stesso libro (o nello stesso testo)."@it ,
+                 "Sign «=»: doublet in the same book (or the same text)."@en .
+
+bj:citatoIn a owl:ObjectProperty ;
+    rdfs:subPropertyOf bj:rimandaA ;
+    rdfs:domain bj:Versetto ; rdfs:range bj:Versetto ;
+    rdfs:label "citato in"@it , "quoted in"@en ;
+    rdfs:comment "Segno «↗» (stampato «/» nei sorgenti): questo versetto è citato o ripreso in un libro posteriore (per lo più nel NT)."@it ,
+                 "Sign «↗» (typed «/» in the sources): this verse is quoted or used in a later book (mostly the NT)."@en .
+
+bj:rinviaANotaChiave a owl:ObjectProperty ;
+    rdfs:subPropertyOf bj:rimandaA ;
+    rdfs:domain bj:Versetto ; rdfs:range bj:Versetto ;
+    rdfs:label "rinvia a nota chiave"@it , "refers to key note at"@en ;
+    rdfs:comment "Segno «+» dopo il riferimento: nel versetto indicato si trova una nota chiave o un gruppo di rimandi (vedi bj:mandaANota, bj:mandaAMargine)."@it ,
+                 "Sign «+» after the reference: the verse named holds a key note or a group of references (see bj:mandaANota, bj:mandaAMargine)."@en .
+
+bj:citaVersetto a owl:ObjectProperty ;
+    rdfs:subPropertyOf cito:cites ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:Nota bj:Introduzione ) ] ;
+    rdfs:range bj:Versetto ;
+    rdfs:label "cita il versetto"@it , "cites verse"@en ;
+    rdfs:comment "Scorciatoia: la nota o l'introduzione cita nel suo testo un passaggio che comprende il versetto (riassume le bj:Citazione risolte)."@it ,
+                 "Shortcut: the note or introduction cites in its text a passage including the verse (sums up the resolved bj:Citazione)."@en .
+
+bj:proprietaDiretta a owl:AnnotationProperty ;
+    rdfs:label "proprietà diretta"@it , "direct property"@en ;
+    rdfs:comment "Collega un concetto di relazione alla scorciatoia tra versetti che lo materializza."@it ,
+                 "Links a relation concept to the verse-to-verse shortcut that materialises it."@en .
+
+# ------------------------------------------------------------------ data properties
+
+bj:testo a owl:DatatypeProperty ;
+    rdfs:label "testo"@it , "text"@en ;
+    rdfs:comment "Il testo semplice (senza marcatura): di un versetto o paragrafo (in italiano, «a capo» \\n a fine riga poetica), o di un riferimento come stampato."@it ,
+                 "The plain text (no markup): of a verse or paragraph (Italian, \\n at poetry line ends), or of a reference as printed."@en .
+
+bj:testoHtml a owl:DatatypeProperty ;
+    rdfs:range xsd:string ;
+    rdfs:label "testo HTML"@it , "HTML text"@en ;
+    rdfs:comment "Il testo con la marcatura minima in HTML (<em>, <br>, <strong>)."@it ,
+                 "The text with minimal HTML markup (<em>, <br>, <strong>)."@en .
+
+bj:etichetta a owl:DatatypeProperty ;
+    rdfs:range xsd:string ;
+    rdfs:label "etichetta"@it , "label as printed"@en ;
+    rdfs:comment "L'etichetta come stampata: numero del versetto (es. «8a»; «25,19» per Nm 25,19, stampato in Nm 26), del capitolo, o etichetta della nota (es. «1,1–2,4a», «c 4»)."@it ,
+                 "The label as printed: verse number (e.g. «8a»; «25,19» for Nm 25,19, printed in Nm 26), chapter number, or note label (e.g. «1,1–2,4a», «c 4»)."@en .
+
+bj:numero a owl:DatatypeProperty ;
+    rdfs:range xsd:integer ;
+    rdfs:label "numero"@it , "number"@en ;
+    rdfs:comment "Il numero (senza lettere) di un versetto, capitolo, pagina o paragrafo."@it ,
+                 "The number (without letters) of a verse, chapter, page or paragraph."@en .
+
+bj:suffisso a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Versetto ; rdfs:range xsd:string ;
+    rdfs:label "suffisso"@it , "suffix"@en ;
+    rdfs:comment "La lettera di un versetto stampato in parti (Ester greco 1,1a; Is 7,8a)."@it ,
+                 "The letter of a verse printed in parts (Greek Esther 1,1a; Isa 7,8a)."@en .
+
+bj:numeroCapitolo a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Versetto ; rdfs:range xsd:integer ;
+    rdfs:label "numero del capitolo"@it , "chapter number"@en ;
+    rdfs:comment "Scorciatoia: il numero del capitolo del versetto (0 = prologo del Siracide)."@it ,
+                 "Shortcut: the verse's chapter number (0 = Sirach's prologue)."@en .
+
+bj:ordine a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:range xsd:integer ;
+    rdfs:label "ordine"@it , "order"@en ;
+    rdfs:comment "La posizione nell'ordine canonico (stampato) del volume, da 1."@it ,
+                 "The position in the canonical (printed) order of the volume, from 1."@en .
+
+bj:pagina a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:range xsd:integer ;
+    rdfs:label "pagina"@it , "page"@en ;
+    rdfs:comment "Il numero della pagina stampata (pagina del PDF = pagina + 33); la pagina stessa è prov:wasDerivedFrom."@it ,
+                 "The printed page number (PDF page = page + 33); the page itself is prov:wasDerivedFrom."@en .
+
+bj:paginaPdf a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Pagina ; rdfs:range xsd:integer ;
+    rdfs:label "pagina del PDF"@it , "PDF page"@en ;
+    rdfs:comment "Il numero di pagina nel PDF della scansione (pagina stampata + 33)."@it ,
+                 "The page number in the scanned PDF (printed page + 33)."@en .
+
+bj:poesia a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Versetto ; rdfs:range xsd:boolean ;
+    rdfs:label "poesia"@it , "poetry"@en ;
+    rdfs:comment "Vero se il versetto è stampato in versi (ambiente poesia)."@it ,
+                 "True if the verse is printed as poetry."@en .
+
+bj:omesso a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Versetto ; rdfs:range xsd:boolean ;
+    rdfs:label "omesso"@it , "omitted"@en ;
+    rdfs:comment "Vero se il numero del versetto è stampato ma la CEI ne omette il testo (es. Mt 17,21)."@it ,
+                 "True if the verse number is printed but the CEI omits its text (e.g. Mt 17,21)."@en .
+
+bj:traParentesi a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Versetto ; rdfs:range xsd:boolean ;
+    rdfs:label "tra parentesi"@it , "bracketed"@en ;
+    rdfs:comment "Vero se il versetto è stampato tra parentesi quadre (Ester greco 4,6; 9,5)."@it ,
+                 "True if the verse is printed in square brackets (Greek Esther 4,6; 9,5)."@en .
+
+bj:stampatoNelCapitolo a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Versetto ; rdfs:range xsd:integer ;
+    rdfs:label "stampato nel capitolo"@it , "printed in chapter"@en ;
+    rdfs:comment "Il capitolo in cui un versetto fuori posto è stampato (Nm 25,19, stampato all'inizio di Nm 26)."@it ,
+                 "The chapter a displaced verse is printed in (Nm 25,19, printed at the top of Nm 26)."@en .
+
+bj:titoloSalmo a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Versetto ; rdfs:range rdf:langString ;
+    rdfs:label "titolo del salmo"@it , "psalm title"@en ;
+    rdfs:comment "Il titolo (soprascritta) di un salmo, tolto dal testo del versetto che lo contiene."@it ,
+                 "A psalm's title (superscription), taken out of the text of the verse holding it."@en .
+
+bj:acrostico a owl:DatatypeProperty ;
+    rdfs:domain bj:Versetto ; rdfs:range xsd:string ;
+    rdfs:label "lettera acrostica"@it , "acrostic letter"@en ;
+    rdfs:comment "Una lettera ebraica dell'acrostico che apre il versetto (Salmi, Pr 31); due quando il versetto ne apre due strofe."@it ,
+                 "A Hebrew acrostic letter heading the verse (Psalms, Pr 31); two when the verse opens two stanzas."@en .
+
+bj:sigla a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Libro ; rdfs:range xsd:string ;
+    rdfs:label "sigla"@it , "siglum"@en ;
+    rdfs:comment "La sigla CEI del libro, usata nei rimandi e nelle note (Gen, Es, Sal, Mt, ...); «Est» vale per entrambi i testi di Ester."@it ,
+                 "The CEI siglum of the book, used in the references and notes (Gen, Es, Sal, Mt, ...); «Est» stands for both Esther texts."@en .
+
+bj:codiceOsis a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Libro ; rdfs:range xsd:string ;
+    rdfs:label "codice OSIS"@it , "OSIS code"@en ;
+    rdfs:comment "Il codice OSIS del libro (Gen, Exod, Ps, John, ...); EsthGr per il testo greco di Ester (non standard)."@it ,
+                 "The OSIS code of the book (Gen, Exod, Ps, John, ...); EsthGr for the Greek text of Esther (not standard)."@en .
+
+bj:volume a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:range xsd:string ;
+    rdfs:label "volume"@it , "volume"@en ;
+    rdfs:comment "Il progetto LaTeX (volume corretto) da cui il libro o l'introduzione è stato estratto (es. pentateuco)."@it ,
+                 "The LaTeX project (proofread volume) the book or introduction was extracted from (e.g. pentateuco)."@en .
+
+bj:titoloBreve a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:range rdf:langString ;
+    rdfs:label "titolo breve"@it , "short title"@en ;
+    rdfs:comment "Il titolo breve usato nelle testatine, quando è diverso dal titolo."@it ,
+                 "The short title used in running heads, when different from the title."@en .
+
+bj:livello a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Divisione ; rdfs:range xsd:integer ;
+    rdfs:label "livello"@it , "level"@en ;
+    rdfs:comment "Il livello di una divisione: 1 = I., 2 = 1., 3 = A."@it ,
+                 "The level of a division: 1 = I., 2 = 1., 3 = A."@en .
+
+bj:apreCapitolo a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Pericope ; rdfs:range xsd:integer ;
+    rdfs:label "apre il capitolo"@it , "opens chapter"@en ;
+    rdfs:comment "Il capitolo che il titoletto della pericope apre, se ne apre uno."@it ,
+                 "The chapter the pericope heading opens, if any."@en .
+
+bj:dentroVersetto a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Pericope ; rdfs:range xsd:boolean ;
+    rdfs:label "dentro un versetto"@it , "inside a verse"@en ;
+    rdfs:comment "Vero se il titoletto è stampato in mezzo a un versetto (es. Gen 2,4b)."@it ,
+                 "True if the heading is printed inside a verse (e.g. Gen 2,4b)."@en .
+
+bj:segno a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:range xsd:string ;
+    rdfs:label "segno"@it , "sign"@en ;
+    rdfs:comment "Il segno stampato: «‖», «=», «/» (↗) davanti a un rimando; «•» davanti all'etichetta di alcune note di Ester."@it ,
+                 "The printed sign: «‖», «=», «/» (↗) before a reference; «•» before the label of some Esther notes."@en .
+
+bj:posizione a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:range xsd:integer ;
+    rdfs:label "posizione"@it , "position"@en ;
+    rdfs:comment "La posizione (da 1) di un margine tra quelli dello stesso versetto, o di un rimando nel suo margine."@it ,
+                 "The position (from 1) of a margin entry among those of its verse, or of a reference inside its margin entry."@en .
+
+bj:posizioneTesto a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:range xsd:integer ;
+    rdfs:label "posizione nel testo"@it , "text offset"@en ;
+    rdfs:comment "Posizione (in caratteri, da 0) nel testo semplice: del richiamo di una nota o margine nel testo del versetto, o di una citazione nel testo della nota o del paragrafo."@it ,
+                 "Character offset (from 0) in the plain text: of a note or margin call in the verse text, or of a citation in the note or paragraph text."@en .
+
+bj:posizioneHtml a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:range xsd:integer ;
+    rdfs:label "posizione nell'HTML"@it , "HTML offset"@en ;
+    rdfs:comment "Come bj:posizioneTesto, ma nel testo HTML (mai dentro un tag)."@it ,
+                 "As bj:posizioneTesto, but in the HTML text (never inside a tag)."@en .
+
+bj:fineHtml a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Citazione ; rdfs:range xsd:integer ;
+    rdfs:label "fine nell'HTML"@it , "HTML end"@en ;
+    rdfs:comment "Dove finisce la citazione nel testo HTML (posizione esclusa)."@it ,
+                 "Where the citation ends in the HTML text (exclusive offset)."@en .
+
+bj:lunghezza a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Citazione ; rdfs:range xsd:integer ;
+    rdfs:label "lunghezza"@it , "length"@en ;
+    rdfs:comment "La lunghezza in caratteri della citazione nel testo semplice."@it ,
+                 "The length in characters of the citation in the plain text."@en .
+
+bj:parolaPrecedente a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:range xsd:string ;
+    rdfs:label "parola precedente"@it , "preceding word"@en ;
+    rdfs:comment "La parola dopo cui è stampato il richiamo di una nota o di un margine."@it ,
+                 "The word the call of a note or margin entry is printed after."@en .
+
+bj:conCf a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Citazione ; rdfs:range xsd:boolean ;
+    rdfs:label "con cf."@it , "with cf."@en ;
+    rdfs:comment "Vero se la citazione è preceduta da «cf.»."@it ,
+                 "True if the citation is preceded by «cf.»."@en .
+
+bj:notaChiave a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:Rimando bj:Citazione ) ] ;
+    rdfs:range xsd:boolean ;
+    rdfs:label "nota chiave"@it , "key note"@en ;
+    rdfs:comment "Vero se il riferimento porta «+»: là si trova una nota chiave o un gruppo di rimandi."@it ,
+                 "True if the reference carries «+»: a key note or a group of references is found there."@en .
+
+bj:conParalleli a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:Rimando bj:Citazione ) ] ;
+    rdfs:range xsd:boolean ;
+    rdfs:label "con i paralleli"@it , "with parallels"@en ;
+    rdfs:comment "Vero se il riferimento porta «p»: il passaggio e i suoi paralleli (sinottici)."@it ,
+                 "True if the reference carries «p»: the passage and its (synoptic) parallels."@en .
+
+bj:estensione a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:Rimando bj:Citazione ) ] ;
+    rdfs:range xsd:string ;
+    rdfs:label "estensione"@it , "extension"@en ;
+    rdfs:comment "«s» (e il versetto seguente) o «ss» (e seguenti, fino alla fine della pericope); già espansa nel passaggio."@it ,
+                 "«s» (and the next verse) or «ss» (and following, to the end of the pericope); already expanded in the passage."@en .
+
+bj:qualificatore a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:Rimando bj:Citazione ) ] ;
+    rdfs:range xsd:string ;
+    rdfs:label "qualificatore"@it , "qualifier"@en ;
+    rdfs:comment "La tradizione testuale o di numerazione indicata: LXX, volg., TM, TM var., Tg."@it ,
+                 "The text or numbering tradition named: LXX, volg., TM, TM var., Tg."@en .
+
+bj:numeroAlternativo a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:Rimando bj:Citazione ) ] ;
+    rdfs:range xsd:string ;
+    rdfs:label "numero alternativo"@it , "alternative number"@en ;
+    rdfs:comment "Un'altra numerazione stampata con il riferimento (es. «3,96(29)»), o il numero di un rimando di numerazione."@it ,
+                 "Another numbering printed with the reference (e.g. «3,96(29)»), or the number of a numbering entry."@en .
+
+bj:motivo a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:Rimando bj:Citazione ) ] ;
+    rdfs:range xsd:string ;
+    rdfs:label "motivo"@it , "reason"@en ;
+    rdfs:comment "Perché il riferimento non è (del tutto) risolto (es. «no verse 2Mac 12,46»); i refusi restano come stampati."@it ,
+                 "Why the reference is not (fully) resolved (e.g. «no verse 2Mac 12,46»); misprints are kept as printed."@en .
+
+bj:titoletto a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Paragrafo ; rdfs:range rdf:langString ;
+    rdfs:label "titoletto"@it , "run-in heading"@en ;
+    rdfs:comment "Il titoletto in grassetto che apre il paragrafo."@it ,
+                 "The bold run-in heading opening the paragraph."@en .
+
+bj:intestazione a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Introduzione ; rdfs:range xsd:string ;
+    rdfs:label "intestazione"@it , "heading"@en ;
+    rdfs:comment "L'intestazione dell'introduzione come stampata (maiuscolo)."@it ,
+                 "The introduction heading as printed (upper case)."@en .
+
+# ------------------------------------------------------------------ SKOS: relations of the margins
+
+bj:relazioni a skos:ConceptScheme ;
+    rdfs:label "Relazioni dei rimandi a margine"@it , "Relations of the marginal references"@en ;
+    rdfs:comment "I segni dei rimandi a margine, come li definisce la presentazione della BJ."@it ,
+                 "The signs of the marginal references, as the BJ front matter defines them."@en ;
+    skos:hasTopConcept bj:correlato , bj:parallelo , bj:doppione , bj:citatoDopo , bj:numerazione , bj:commento .
+
+bj:correlato a skos:Concept , bj:Relazione ;
+    skos:inScheme bj:relazioni ; skos:topConceptOf bj:relazioni ;
+    skos:prefLabel "da confrontare"@it , "related"@en ;
+    rdfs:label "da confrontare"@it , "related"@en ;
+    rdfs:comment "Nessun segno: un passo che è utile confrontare."@it ,
+                 "No sign: a passage usefully compared."@en ;
+    bj:proprietaDiretta bj:rimandaA .
+
+bj:parallelo a skos:Concept , bj:Relazione ;
+    skos:inScheme bj:relazioni ; skos:topConceptOf bj:relazioni ;
+    skos:notation "‖" ;
+    skos:prefLabel "parallelo"@it , "parallel"@en ;
+    rdfs:label "parallelo"@it , "parallel"@en ;
+    rdfs:comment "«‖»: parallelo letterario in un altro libro."@it ,
+                 "«‖»: literary parallel in another book."@en ;
+    bj:proprietaDiretta bj:paralleloA .
+
+bj:doppione a skos:Concept , bj:Relazione ;
+    skos:inScheme bj:relazioni ; skos:topConceptOf bj:relazioni ;
+    skos:notation "=" ;
+    skos:prefLabel "doppione"@it , "doublet"@en ;
+    rdfs:label "doppione"@it , "doublet"@en ;
+    rdfs:comment "«=»: doppione nello stesso libro."@it ,
+                 "«=»: doublet in the same book."@en ;
+    bj:proprietaDiretta bj:doppioneDi .
+
+bj:citatoDopo a skos:Concept , bj:Relazione ;
+    skos:inScheme bj:relazioni ; skos:topConceptOf bj:relazioni ;
+    skos:notation "↗" , "/" ;
+    skos:prefLabel "citato in un libro posteriore"@it , "quoted later"@en ;
+    rdfs:label "citato in un libro posteriore"@it , "quoted later"@en ;
+    rdfs:comment "«↗» (scritto «/» nei sorgenti): il passo è citato o ripreso in un libro posteriore, per lo più nel NT."@it ,
+                 "«↗» (typed «/» in the sources): the passage is quoted or used in a later book, mostly the NT."@en ;
+    bj:proprietaDiretta bj:citatoIn .
+
+bj:numerazione a skos:Concept , bj:Relazione ;
+    skos:inScheme bj:relazioni ; skos:topConceptOf bj:relazioni ;
+    skos:prefLabel "altra numerazione"@it , "numbering"@en ;
+    rdfs:label "altra numerazione"@it , "numbering"@en ;
+    rdfs:comment "Non è un rimando: il margine stampa il numero di questo versetto o capitolo in un'altra tradizione (Volgata, LXX, TM)."@it ,
+                 "Not a reference: the margin prints this verse's or chapter's number in another tradition (Vulgate, LXX, TM)."@en .
+
+bj:commento a skos:Concept , bj:Relazione ;
+    skos:inScheme bj:relazioni ; skos:topConceptOf bj:relazioni ;
+    skos:prefLabel "osservazione"@it , "comment"@en ;
+    rdfs:label "osservazione"@it , "comment"@en ;
+    rdfs:comment "Non è un rimando: un'osservazione a margine, es. «(aramaico)»."@it ,
+                 "Not a reference: a remark in the margin, e.g. «(aramaico)»."@en .
+
+# ------------------------------------------------------------------ SKOS: resolution status
+
+bj:stati a skos:ConceptScheme ;
+    rdfs:label "Stati di risoluzione"@it , "Resolution statuses"@en ;
+    rdfs:comment "L'esito della risoluzione di un riferimento stampato verso i versetti."@it ,
+                 "The outcome of resolving a printed reference to verses."@en ;
+    skos:hasTopConcept bj:risolto , bj:parziale , bj:irrisolto , bj:nonRiferimento .
+
+bj:risolto a skos:Concept , bj:Stato ;
+    skos:inScheme bj:stati ; skos:topConceptOf bj:stati ;
+    skos:prefLabel "risolto"@it , "resolved"@en ;
+    rdfs:label "risolto"@it , "resolved"@en ;
+    rdfs:comment "Ogni versetto indicato esiste."@it , "Every verse named exists."@en .
+
+bj:parziale a skos:Concept , bj:Stato ;
+    skos:inScheme bj:stati ; skos:topConceptOf bj:stati ;
+    skos:prefLabel "parziale"@it , "partial"@en ;
+    rdfs:label "parziale"@it , "partial"@en ;
+    rdfs:comment "Solo una parte dei versetti indicati esiste (es. un intervallo che supera la fine del capitolo)."@it ,
+                 "Only part of the verses named exists (e.g. a range past the end of the chapter)."@en .
+
+bj:irrisolto a skos:Concept , bj:Stato ;
+    skos:inScheme bj:stati ; skos:topConceptOf bj:stati ;
+    skos:prefLabel "irrisolto"@it , "unresolved"@en ;
+    rdfs:label "irrisolto"@it , "unresolved"@en ;
+    rdfs:comment "Il riferimento non porta ad alcun versetto: refuso, altra numerazione, libro non canonico; bj:motivo dice perché."@it ,
+                 "The reference leads to no verse: misprint, other numbering, non-canonical book; bj:motivo says why."@en .
+
+bj:nonRiferimento a skos:Concept , bj:Stato ;
+    skos:inScheme bj:stati ; skos:topConceptOf bj:stati ;
+    skos:prefLabel "non è un riferimento"@it , "not a reference"@en ;
+    rdfs:label "non è un riferimento"@it , "not a reference"@en ;
+    rdfs:comment "Un numero di un'altra tradizione o un'osservazione: non c'è nulla da risolvere."@it ,
+                 "A number of another tradition or a remark: nothing to resolve."@en .
+
+# ------------------------------------------------------------------ SKOS: scope of a note
+
+bj:ambiti a skos:ConceptScheme ;
+    rdfs:label "Ambiti delle note"@it , "Note scopes"@en ;
+    rdfs:comment "Che cosa commenta una nota, secondo la sua etichetta."@it ,
+                 "What a note comments on, according to its label."@en ;
+    skos:hasTopConcept bj:ambitoVersetti , bj:ambitoCapitolo , bj:ambitoLibro .
+
+bj:ambitoVersetti a skos:Concept , bj:Ambito ;
+    skos:inScheme bj:ambiti ; skos:topConceptOf bj:ambiti ;
+    skos:prefLabel "versetti"@it , "verses"@en ;
+    rdfs:label "versetti"@it , "verses"@en ;
+    rdfs:comment "Etichetta «1,2», «1,2–5», «1,1–2,4a», «v 6», ecc.: il bersaglio è uno o più passaggi."@it ,
+                 "Label «1,2», «1,2–5», «1,1–2,4a», «v 6», etc.: the target is one or more passages."@en .
+
+bj:ambitoCapitolo a skos:Concept , bj:Ambito ;
+    skos:inScheme bj:ambiti ; skos:topConceptOf bj:ambiti ;
+    skos:prefLabel "capitoli"@it , "chapters"@en ;
+    rdfs:label "capitoli"@it , "chapters"@en ;
+    rdfs:comment "Etichetta «c 2», «cc 8–10», o il numero di un salmo: il bersaglio sono capitoli interi."@it ,
+                 "Label «c 2», «cc 8–10», or a psalm number: the target is whole chapters."@en .
+
+bj:ambitoLibro a skos:Concept , bj:Ambito ;
+    skos:inScheme bj:ambiti ; skos:topConceptOf bj:ambiti ;
+    skos:prefLabel "libro"@it , "book"@en ;
+    rdfs:label "libro"@it , "book"@en ;
+    rdfs:comment "«Nota introduttiva»: il bersaglio è il libro intero."@it ,
+                 "«Nota introduttiva»: the target is the whole book."@en .

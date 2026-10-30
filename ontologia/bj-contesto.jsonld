@@ -1,0 +1,342 @@
+{
+ "@context": {
+  "@version": 1.1,
+  "id": "@id",
+  "tipo": "@type",
+  "bj": "https://massimo-nocentini.github.io/bibbia-gerusalemme/ontologia#",
+  "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+  "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+  "xsd": "http://www.w3.org/2001/XMLSchema#",
+  "owl": "http://www.w3.org/2002/07/owl#",
+  "dcterms": "http://purl.org/dc/terms/",
+  "dc": "http://purl.org/dc/elements/1.1/",
+  "skos": "http://www.w3.org/2004/02/skos/core#",
+  "oa": "http://www.w3.org/ns/oa#",
+  "cito": "http://purl.org/spar/cito/",
+  "prov": "http://www.w3.org/ns/prov#",
+  "testamento": "https://massimo-nocentini.github.io/bibbia-gerusalemme/id/testamento/",
+  "libro": "https://massimo-nocentini.github.io/bibbia-gerusalemme/id/libro/",
+  "capitolo": "https://massimo-nocentini.github.io/bibbia-gerusalemme/id/capitolo/",
+  "divisione": "https://massimo-nocentini.github.io/bibbia-gerusalemme/id/divisione/",
+  "pericope": "https://massimo-nocentini.github.io/bibbia-gerusalemme/id/pericope/",
+  "verso": "https://massimo-nocentini.github.io/bibbia-gerusalemme/id/verso/",
+  "pag": "https://massimo-nocentini.github.io/bibbia-gerusalemme/id/pagina/",
+  "introduzione": "https://massimo-nocentini.github.io/bibbia-gerusalemme/id/introduzione/",
+  "paragrafo": "https://massimo-nocentini.github.io/bibbia-gerusalemme/id/paragrafo/",
+  "nota": "https://massimo-nocentini.github.io/bibbia-gerusalemme/id/nota/",
+  "corpo": "https://massimo-nocentini.github.io/bibbia-gerusalemme/id/corpo/",
+  "margine": "https://massimo-nocentini.github.io/bibbia-gerusalemme/id/margine/",
+  "rimando": "https://massimo-nocentini.github.io/bibbia-gerusalemme/id/rimando/",
+  "citazione": "https://massimo-nocentini.github.io/bibbia-gerusalemme/id/citazione/",
+  "passaggio": "https://massimo-nocentini.github.io/bibbia-gerusalemme/id/passaggio/",
+  "Ambito": "bj:Ambito",
+  "Bibbia": "bj:Bibbia",
+  "Capitolo": "bj:Capitolo",
+  "Citazione": "bj:Citazione",
+  "Divisione": "bj:Divisione",
+  "Introduzione": "bj:Introduzione",
+  "Libro": "bj:Libro",
+  "Margine": "bj:Margine",
+  "Nota": "bj:Nota",
+  "Pagina": "bj:Pagina",
+  "Paragrafo": "bj:Paragrafo",
+  "Passaggio": "bj:Passaggio",
+  "Pericope": "bj:Pericope",
+  "Relazione": "bj:Relazione",
+  "Rimando": "bj:Rimando",
+  "Stato": "bj:Stato",
+  "Testamento": "bj:Testamento",
+  "Versetto": "bj:Versetto",
+  "aPassaggio": {
+   "@id": "bj:aPassaggio",
+   "@type": "@id"
+  },
+  "accantoA": {
+   "@id": "bj:accantoA",
+   "@type": "@id"
+  },
+  "acrostico": "bj:acrostico",
+  "ambiti": "bj:ambiti",
+  "ambito": {
+   "@id": "bj:ambito",
+   "@type": "@id"
+  },
+  "ambitoCapitolo": "bj:ambitoCapitolo",
+  "ambitoLibro": "bj:ambitoLibro",
+  "ambitoVersetti": "bj:ambitoVersetti",
+  "apreCapitolo": {
+   "@id": "bj:apreCapitolo",
+   "@type": "xsd:integer"
+  },
+  "citaVersetto": {
+   "@id": "bj:citaVersetto",
+   "@type": "@id"
+  },
+  "citatoDopo": "bj:citatoDopo",
+  "citatoIn": {
+   "@id": "bj:citatoIn",
+   "@type": "@id"
+  },
+  "codiceOsis": "bj:codiceOsis",
+  "commenta": {
+   "@id": "bj:commenta",
+   "@type": "@id"
+  },
+  "commento": "bj:commento",
+  "comprende": {
+   "@id": "bj:comprende",
+   "@type": "@id"
+  },
+  "conCf": {
+   "@id": "bj:conCf",
+   "@type": "xsd:boolean"
+  },
+  "conParalleli": {
+   "@id": "bj:conParalleli",
+   "@type": "xsd:boolean"
+  },
+  "correlato": "bj:correlato",
+  "daNota": {
+   "@id": "bj:daNota",
+   "@type": "@id"
+  },
+  "daParagrafo": {
+   "@id": "bj:daParagrafo",
+   "@type": "@id"
+  },
+  "daVersetto": {
+   "@id": "bj:daVersetto",
+   "@type": "@id"
+  },
+  "dentroVersetto": {
+   "@id": "bj:dentroVersetto",
+   "@type": "xsd:boolean"
+  },
+  "doppione": "bj:doppione",
+  "doppioneDelRimando": {
+   "@id": "bj:doppioneDelRimando",
+   "@type": "@id"
+  },
+  "doppioneDi": {
+   "@id": "bj:doppioneDi",
+   "@type": "@id"
+  },
+  "estensione": "bj:estensione",
+  "etichetta": "bj:etichetta",
+  "fine": {
+   "@id": "bj:fine",
+   "@type": "@id"
+  },
+  "fineHtml": {
+   "@id": "bj:fineHtml",
+   "@type": "xsd:integer"
+  },
+  "haNota": {
+   "@id": "bj:haNota",
+   "@type": "@id"
+  },
+  "inDivisione": {
+   "@id": "bj:inDivisione",
+   "@type": "@id"
+  },
+  "inLibro": {
+   "@id": "bj:inLibro",
+   "@type": "@id"
+  },
+  "inPericope": {
+   "@id": "bj:inPericope",
+   "@type": "@id"
+  },
+  "inizio": {
+   "@id": "bj:inizio",
+   "@type": "@id"
+  },
+  "interpretazione": "bj:interpretazione",
+  "intestazione": "bj:intestazione",
+  "introduce": {
+   "@id": "bj:introduce",
+   "@type": "@id"
+  },
+  "irrisolto": "bj:irrisolto",
+  "libroCitato": {
+   "@id": "bj:libroCitato",
+   "@type": "@id"
+  },
+  "livello": {
+   "@id": "bj:livello",
+   "@type": "xsd:integer"
+  },
+  "lunghezza": {
+   "@id": "bj:lunghezza",
+   "@type": "xsd:integer"
+  },
+  "mandaAMargine": {
+   "@id": "bj:mandaAMargine",
+   "@type": "@id"
+  },
+  "mandaANota": {
+   "@id": "bj:mandaANota",
+   "@type": "@id"
+  },
+  "motivo": "bj:motivo",
+  "nelMargine": {
+   "@id": "bj:nelMargine",
+   "@type": "@id"
+  },
+  "nonRiferimento": "bj:nonRiferimento",
+  "notaChiave": {
+   "@id": "bj:notaChiave",
+   "@type": "xsd:boolean"
+  },
+  "numerazione": "bj:numerazione",
+  "numero": {
+   "@id": "bj:numero",
+   "@type": "xsd:integer"
+  },
+  "numeroAlternativo": "bj:numeroAlternativo",
+  "numeroCapitolo": {
+   "@id": "bj:numeroCapitolo",
+   "@type": "xsd:integer"
+  },
+  "omesso": {
+   "@id": "bj:omesso",
+   "@type": "xsd:boolean"
+  },
+  "ordine": {
+   "@id": "bj:ordine",
+   "@type": "xsd:integer"
+  },
+  "pagina": {
+   "@id": "bj:pagina",
+   "@type": "xsd:integer"
+  },
+  "paginaPdf": {
+   "@id": "bj:paginaPdf",
+   "@type": "xsd:integer"
+  },
+  "parallelo": "bj:parallelo",
+  "paralleloA": {
+   "@id": "bj:paralleloA",
+   "@type": "@id"
+  },
+  "parolaPrecedente": "bj:parolaPrecedente",
+  "parziale": "bj:parziale",
+  "poesia": {
+   "@id": "bj:poesia",
+   "@type": "xsd:boolean"
+  },
+  "posizione": {
+   "@id": "bj:posizione",
+   "@type": "xsd:integer"
+  },
+  "posizioneHtml": {
+   "@id": "bj:posizioneHtml",
+   "@type": "xsd:integer"
+  },
+  "posizioneTesto": {
+   "@id": "bj:posizioneTesto",
+   "@type": "xsd:integer"
+  },
+  "precede": {
+   "@id": "bj:precede",
+   "@type": "@id"
+  },
+  "proprietaDiretta": "bj:proprietaDiretta",
+  "qualificatore": "bj:qualificatore",
+  "relazione": {
+   "@id": "bj:relazione",
+   "@type": "@id"
+  },
+  "relazioni": "bj:relazioni",
+  "richiamataDa": {
+   "@id": "bj:richiamataDa",
+   "@type": "@id"
+  },
+  "rimandaA": {
+   "@id": "bj:rimandaA",
+   "@type": "@id"
+  },
+  "rinviaANotaChiave": {
+   "@id": "bj:rinviaANotaChiave",
+   "@type": "@id"
+  },
+  "risolto": "bj:risolto",
+  "segno": "bj:segno",
+  "segue": {
+   "@id": "bj:segue",
+   "@type": "@id"
+  },
+  "sigla": "bj:sigla",
+  "stampatoNelCapitolo": {
+   "@id": "bj:stampatoNelCapitolo",
+   "@type": "xsd:integer"
+  },
+  "stampatoNelVersetto": {
+   "@id": "bj:stampatoNelVersetto",
+   "@type": "@id"
+  },
+  "stati": "bj:stati",
+  "stato": {
+   "@id": "bj:stato",
+   "@type": "@id"
+  },
+  "suffisso": "bj:suffisso",
+  "testo": "bj:testo",
+  "testoHtml": "bj:testoHtml",
+  "titoletto": {
+   "@id": "bj:titoletto",
+   "@language": "it"
+  },
+  "titoloBreve": {
+   "@id": "bj:titoloBreve",
+   "@language": "it"
+  },
+  "titoloSalmo": {
+   "@id": "bj:titoloSalmo",
+   "@language": "it"
+  },
+  "traParentesi": {
+   "@id": "bj:traParentesi",
+   "@type": "xsd:boolean"
+  },
+  "volume": "bj:volume",
+  "testoIt": {
+   "@id": "bj:testo",
+   "@language": "it"
+  },
+  "isPartOf": {
+   "@id": "dcterms:isPartOf",
+   "@type": "@id"
+  },
+  "hasTarget": {
+   "@id": "oa:hasTarget",
+   "@type": "@id"
+  },
+  "hasBody": {
+   "@id": "oa:hasBody",
+   "@type": "@id"
+  },
+  "hasSource": {
+   "@id": "oa:hasSource",
+   "@type": "@id"
+  },
+  "motivatedBy": {
+   "@id": "oa:motivatedBy",
+   "@type": "@id"
+  },
+  "wasDerivedFrom": {
+   "@id": "prov:wasDerivedFrom",
+   "@type": "@id"
+  },
+  "cites": {
+   "@id": "cito:cites",
+   "@type": "@id"
+  },
+  "label": "rdfs:label",
+  "title": "dcterms:title",
+  "identifier": "dcterms:identifier",
+  "value": "rdf:value",
+  "format": "dc:format",
+  "language": "dc:language"
+ }
+}

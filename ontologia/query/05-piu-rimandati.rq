@@ -1,0 +1,19 @@
+# I versetti più rimandati: quanti rimandi a margine indicano un passaggio che li comprende.
+# Most referenced verses: how many margin references name a passage including them.
+PREFIX bj: <https://massimo-nocentini.github.io/bibbia-gerusalemme/ontologia#>
+PREFIX verso: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/verso/>
+PREFIX libro: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/libro/>
+PREFIX testamento: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/testamento/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX oa: <http://www.w3.org/ns/oa#>
+
+SELECT ?versetto (COUNT(DISTINCT ?r) AS ?rimandi) (COUNT(DISTINCT ?da) AS ?da_versetti) ?testo WHERE {
+  ?r a bj:Rimando ; bj:daVersetto ?da ; bj:aPassaggio/bj:comprende ?v .
+  ?v rdfs:label ?versetto ; bj:testo ?testo .
+}
+GROUP BY ?versetto ?testo
+ORDER BY DESC(?rimandi) ?versetto
+LIMIT 25

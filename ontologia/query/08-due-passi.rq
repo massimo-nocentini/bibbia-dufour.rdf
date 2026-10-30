@@ -1,0 +1,24 @@
+# Cammini di due passi tra due versetti lungo i rimandi (Gen 22,2 e Rm 8,32).
+# Two-hop paths between two verses along the margin references
+# (→ the margin of the first verse names the second; ← the other way round).
+PREFIX bj: <https://massimo-nocentini.github.io/bibbia-gerusalemme/ontologia#>
+PREFIX verso: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/verso/>
+PREFIX libro: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/libro/>
+PREFIX testamento: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/testamento/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX oa: <http://www.w3.org/ns/oa#>
+
+SELECT ?primo ?intermedio ?secondo ?testo WHERE {
+  { verso:Gen.22.2 bj:rimandaA ?m BIND ("→" AS ?primo) }
+  UNION
+  { ?m bj:rimandaA verso:Gen.22.2 FILTER NOT EXISTS { verso:Gen.22.2 bj:rimandaA ?m } BIND ("←" AS ?primo) }
+  { ?m bj:rimandaA verso:Rom.8.32 BIND ("→" AS ?secondo) }
+  UNION
+  { verso:Rom.8.32 bj:rimandaA ?m FILTER NOT EXISTS { ?m bj:rimandaA verso:Rom.8.32 } BIND ("←" AS ?secondo) }
+  FILTER (?m != verso:Gen.22.2 && ?m != verso:Rom.8.32)
+  OPTIONAL { ?m rdfs:label ?intermedio ; bj:ordine ?o ; bj:testo ?testo }
+}
+ORDER BY ?o

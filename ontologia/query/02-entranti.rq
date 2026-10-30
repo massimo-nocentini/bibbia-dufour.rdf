@@ -1,0 +1,27 @@
+# Chi rimanda a un versetto (Is 7,14): rimandi a margine e citazioni nelle note.
+# Incoming references to a verse: margin references and citations in notes.
+PREFIX bj: <https://massimo-nocentini.github.io/bibbia-gerusalemme/ontologia#>
+PREFIX verso: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/verso/>
+PREFIX libro: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/libro/>
+PREFIX testamento: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/testamento/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX oa: <http://www.w3.org/ns/oa#>
+
+SELECT ?da ?tipo ?relazione ?come_stampato WHERE {
+  VALUES ?v { verso:Isa.7.14 }
+  {
+    ?r a bj:Rimando ; bj:aPassaggio/bj:comprende ?v ; bj:testo ?come_stampato ;
+       bj:daVersetto ?dv ; bj:relazione/skos:prefLabel ?relazione .
+    FILTER (lang(?relazione) = "it")
+    ?dv rdfs:label ?da ; bj:ordine ?o .
+    BIND ("rimando a margine" AS ?tipo)
+  } UNION {
+    ?c a bj:Citazione ; bj:aPassaggio/bj:comprende ?v ; bj:testo ?come_stampato ; bj:daNota ?n .
+    ?n rdfs:label ?da ; bj:richiamataDa/bj:ordine ?o .
+    BIND ("citazione in una nota" AS ?tipo)
+  }
+}
+ORDER BY ?o
