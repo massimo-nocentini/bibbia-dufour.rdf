@@ -46,8 +46,10 @@ Open `esplora.html` in a browser (from disk; it makes no network request). It re
 same two JSON files as the graph and shows the verse as the hub: the reader with note
 calls and margin signs, a panel per verse with its notes, its margin references by
 relation (‖ parallel, = doublet, ↗ quoted later, + key note, related) and everything
-that points at it, an ego-network view, a whole-word search ignoring accents, and a book × book
-matrix. The reference box reads the forms printed in the BJ (`Gen 2,4b`, `Mt 5,3ss`,
+that points at it, a tree to explore the links of a verse (cards with the verse text and
+its BJ notes in a hand-drawn contour), a whole-word search ignoring accents, and a book × book
+matrix. The text is set in Literata and the interface in Inter, both embedded (SIL Open
+Font License, `tools/ontologia/esploratore/font/`). The reference box reads the forms printed in the BJ (`Gen 2,4b`, `Mt 5,3ss`,
 `Dt 7,9.12`, `Gen 1,1; 2,4`, `Sir prologo`). Ids in its addresses are those of the graph (`#John.3.16`), so a verse found
 there is `verso:John.3.16` here. Details in `tools/ontologia/README.md`, stage 4.
 

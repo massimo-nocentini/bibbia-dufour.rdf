@@ -344,13 +344,19 @@ tag (`<em>3 Esdra</em> 2,6`) is narrowed to its part after the tag.
 
 **The page** (Italian, `app.js`, plain JavaScript, no library):
 
+Fonts: Literata for the text and Inter for the interface, the variable woff2 files of
+`@fontsource-variable` (Latin, Latin Extended, Greek for Literata), under the SIL Open
+Font License (`esploratore/font/OFL-*.txt`); `esploratore.py` embeds them through
+`esploratore/font.css` as `data:` URLs, so the page still makes no network request.
+
+
 | View | Route | What |
 |---|---|---|
 | books | `#` | the books by testament and BJ volume, totals |
 | book | `#Gen` | chapters, divisions and pericopes, introductions |
 | reader | `#Gen.1`, `#John.3.16`, `#Ps.23.1-4`, `#Deut.7.9?e=Deut.7.12` | the chapter as printed: headings, poetry lines, verse numbers, note calls (letters, buttons), margin signs (‖ ↗ = + •), page numbers; heat by in-degree (toggle); `e=` the other references of a list, highlighted and linked |
 | verse panel | (with a verse) | the notes called here and those whose label covers the verse; the margin references by relation, unresolved ones grey with the reason; incoming margin references, note and introduction citations; previews on hover (tap on touch screens) |
-| graph | `#grafo/John.3.16[?p=2&f=parallel,doublet]` | ego network, depth 1 or 2 (at most 150 nodes, the most specific links first), force layout on canvas, edges by relation (`f`: the ones shown), nodes by testament, zoom and pan, click (or the list of nodes) to recentre; the labels of the centre's own margin references first, none under the title; "nessun collegamento" when there is none |
+| graph | `#grafo/John.3.16[?p=2&f=parallel,doublet]` | a tree to explore, left to right: the verse is the root, its links hang from it grouped by relation and direction (`‖ Paralleli`, `Affini →`, `← Affini`, `§ Le sue note citano`, ...; `f`: the relations shown), the most specific first, 8 per group at the root and 4 further on (`+10 di N` shows more); every card holds the reference, the passage text and the BJ notes it calls as yellow slips (`continua` opens one whole), inside an SVG contour drawn twice with a wobbly hand (seeded by the verse, so it is stable); `▸` grows a card's own links in place (a passage already on the path from the root is left out, so there are no cycles), `Apri un livello` grows every leaf (up to about 260 cards), `p=2` opens the first level at once; the reference of a card makes it the root; drag to pan, the wheel scrolls, Ctrl + wheel or +/− zoom, ⌂ fits the whole tree; "nessun collegamento" on the root when there is none |
 | search | `#cerca?q=…&in=versetti\|note&t=AT\|NT&b=Gen` | verse texts and notes, accents and case ignored, whole words (`ira` is not in «apparirà»; `ira*` for the start of a word), all words required (or a "phrase"), grouped by book, highlighted |
 | overview | `#panoramica[/Gen/Matt]` | totals, margin references by relation (grouped as in the panel: they add up to the references), book × book matrix (click a cell: its references below, scrolled into view), the 50 most referenced verses |
 | introduction | `#intro/intro-pentateuco[.3]` | an introduction with its citations as links |
@@ -384,7 +390,7 @@ for `Gv 3,99`, `Ap 22,22`, `Sal 9,22`, `Gen 51`), Gv 3,16 → its note → a mar
 (and Gv 2,20 `Mt 12,6+.38–40+` opening Mt 12,38), a whole-chapter chip opening the whole
 chapter, `j`/`k`/`Esc`/`/`, the heat toggle, the search (accents, whole words `ira` vs
 `ira*`, `Elìa` not finding `Eliàb`, `pane & vino` typed and reloaded, `#cerca?q=100%25`),
-the testament filter, the graph (depth 1 and 2, click to recentre, the Grafo tab writing
+the testament filter, the graph (the root card with text, note slips and hand-drawn contour, groups and branches, ▸ growing a card, a slip opened whole, Apri un livello, a reference recentring, the Grafo tab writing
 the verse in the address, `#grafo/Xyz`, filters in the address, a verse with no links),
 the matrix click (the list in view at the first click; the bars adding up to the
 references), the introduction, the book page, no title cut in the index, the contrast of

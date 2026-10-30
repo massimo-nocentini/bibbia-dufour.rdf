@@ -29,8 +29,13 @@
   --seq0: #f1efe9;
   --seq1: #cde2fb;
   --seq9: #0d366b;
-  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", "Noto Serif", Georgia, "DejaVu Serif", serif;
-  --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "Helvetica Neue", Arial, sans-serif;
+  --serif: "Literata", "Iowan Old Style", "Palatino Linotype", Palatino, "Noto Serif", Georgia, serif;
+  --sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "Helvetica Neue", Arial, sans-serif;
+  /* the graph cards: paper, ink and the yellow slip of a BJ note */
+  --biglietto: #fffdf6;
+  --tratto: #4a4740;
+  --foglietto: #fff4c2;
+  --foglietto-tratto: #b9952a;
   --barra: 3.5rem;
 }
 @media (prefers-color-scheme: dark) {
@@ -63,6 +68,10 @@
     --seq0: #222220;
     --seq1: #1c3150;
     --seq9: #9ec5f4;
+    --biglietto: #22211f;
+    --tratto: #b9b5aa;
+    --foglietto: #3a3320;
+    --foglietto-tratto: #a8893a;
   }
 }
 :root[data-theme="dark"] {
@@ -94,6 +103,10 @@
   --seq0: #222220;
   --seq1: #1c3150;
   --seq9: #9ec5f4;
+  --biglietto: #22211f;
+  --tratto: #b9b5aa;
+  --foglietto: #3a3320;
+  --foglietto-tratto: #a8893a;
 }
 
 * { box-sizing: border-box; }
@@ -411,9 +424,50 @@ a.ci.x { color: var(--tenue); border-bottom: 1px dashed var(--tenue); cursor: he
 
 /* ---------------------------------------------------------------- graph */
 .grafo-vista { display: grid; grid-template-columns: minmax(0, 1fr) 16rem; height: calc(100vh - var(--barra)); }
-.grafo-tela { position: relative; overflow: hidden; background: var(--foglio); touch-action: none; }
-.grafo-tela canvas { display: block; width: 100%; height: 100%; cursor: grab; }
-.grafo-tela canvas.trascina { cursor: grabbing; }
+.grafo-tela {
+  position: relative; overflow: hidden; touch-action: none; cursor: grab;
+  background: var(--foglio) radial-gradient(color-mix(in srgb, var(--linea2) 80%, transparent) 1px, transparent 1.3px) 0 0 / 22px 22px;
+}
+.grafo-tela.trascina { cursor: grabbing; user-select: none; }
+/* the tree: cards with a hand-drawn contour, groups of one relation, curved branches */
+.mondo { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+.rami { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
+.ramo { fill: none; stroke-width: 1.7; stroke-linecap: round; opacity: .75; }
+.carta, .ramo-gruppo { position: absolute; left: 0; top: 0; }
+.carta { padding: .85rem 1rem .65rem; color: var(--inchiostro); cursor: auto; }
+.carta, .foglietto { isolation: isolate; }
+.foglietto { position: relative; }
+svg.contorno { position: absolute; left: -8px; top: -8px; z-index: -1; pointer-events: none; overflow: visible; }
+.carta > svg.contorno .fondo { fill: var(--biglietto); }
+.carta > svg.contorno .tratto { fill: none; stroke: var(--tratto); stroke-width: 1.35; stroke-linecap: round; stroke-linejoin: round; opacity: .8; }
+.carta.radice > svg.contorno .tratto { stroke-width: 1.7; opacity: .95; }
+.carta.radice > svg.contorno .fondo { fill: color-mix(in srgb, var(--sel) 30%, var(--biglietto)); }
+.carta-testa { display: flex; align-items: baseline; gap: .45rem; margin-bottom: .35rem; min-width: 0; }
+.carta-rif { font: 650 1.02rem/1.2 var(--sans); color: var(--inchiostro); letter-spacing: -.005em; white-space: nowrap; }
+.carta.radice .carta-rif { font-size: 1.3rem; }
+.carta-libro { font: .74rem var(--sans); color: var(--tenue); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.pallino { width: .55rem; height: .55rem; border-radius: 50%; flex-shrink: 0; align-self: center; }
+.pallino.at { background: var(--s-at); }
+.pallino.nt { background: var(--s-nt); }
+.carta-testo { font: .95rem/1.55 var(--serif); }
+.carta.radice .carta-testo { font-size: 1.04rem; line-height: 1.6; }
+.carta-testo sup { font: 600 .62rem var(--sans); color: var(--rubrica); margin-right: .12rem; }
+.foglietto { margin: .6rem .15rem .25rem; padding: .5rem .65rem .55rem; font: .84rem/1.5 var(--serif); color: var(--inchiostro); }
+.foglietto > svg.contorno .fondo { fill: var(--foglietto); }
+.foglietto > svg.contorno .tratto { fill: none; stroke: var(--foglietto-tratto); stroke-width: 1.05; stroke-linecap: round; opacity: .9; }
+.foglietto b { font: 650 .78rem var(--sans); color: var(--rubrica); margin-right: .35rem; }
+.foglietto .altro { border: 0; background: none; color: var(--richiamo); cursor: pointer; padding: 0; font: 500 .76rem var(--sans); }
+.foglietti-altre { font: .76rem var(--sans); color: var(--tenue); margin: .3rem .2rem 0; }
+.carta-piede { display: flex; justify-content: space-between; align-items: center; gap: .5rem; margin-top: .5rem; }
+.carta-piede .conta { font: .78rem var(--sans); color: var(--secondo); }
+.cresci { border: 1px dashed var(--linea2); background: var(--biglietto); border-radius: 6px; padding: .12rem .55rem; font: 500 .78rem var(--sans); color: var(--secondo); cursor: pointer; }
+.cresci:hover:not(:disabled) { border-color: var(--secondo); color: var(--inchiostro); }
+.cresci[aria-expanded="true"] { border-style: solid; color: var(--inchiostro); }
+.cresci:disabled { cursor: default; opacity: .6; }
+.leggi { font: 500 .78rem var(--sans); }
+.ramo-gruppo { display: flex; align-items: baseline; gap: .4rem; white-space: nowrap; padding: .2rem .5rem; border-radius: 999px; background: color-mix(in srgb, var(--foglio) 85%, transparent); font: 600 .84rem var(--sans); color: var(--c); }
+.ramo-gruppo small { font: .74rem var(--sans); color: var(--tenue); font-variant-numeric: tabular-nums; }
+.ramo-gruppo .altri { border: 0; background: none; font: 500 .74rem var(--sans); color: var(--richiamo); cursor: pointer; padding: 0 .1rem; }
 .grafo-zoom { position: absolute; right: .75rem; bottom: .75rem; display: flex; flex-direction: column; gap: .25rem; padding: .25rem; border-radius: 9px; background: color-mix(in srgb, var(--foglio) 88%, transparent); }
 .grafo-zoom button { width: 2.1rem; height: 2.1rem; border: 1px solid var(--linea2); border-radius: 7px; background: var(--foglio); cursor: pointer; font-size: 1.05rem; color: var(--secondo); }
 .grafo-titolo {

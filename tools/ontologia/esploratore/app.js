@@ -19,7 +19,7 @@ const S = {};      // derived indices and UI state
 // relations of the margin references, in display order; 'keynote' is a "+" reference
 const REL = {
   parallel: { nome: 'Paralleli', seg: '‖', col: '--r-parallel', entr: 'Paralleli', dash: [] },
-  'quoted-later': { nome: 'Citato in', seg: '↗', col: '--r-quoted', entr: 'Citano questo passo', dash: [] },
+  'quoted-later': { nome: 'Citato in', seg: '↗', col: '--r-quoted', entr: 'Cita questi passi', dash: [] },
   doublet: { nome: 'Doppioni', seg: '=', col: '--r-doublet', entr: 'Doppioni', dash: [] },
   keynote: { nome: 'Nota chiave', seg: '+', col: '--r-keynote', entr: 'Rinviano qui per la nota chiave', dash: [2, 3] },
   related: { nome: 'Affini', seg: '·', col: '--r-related', txt: '--secondo', entr: 'Affini', dash: [] },
@@ -972,43 +972,153 @@ function vicini(a, b, filtro) {
   const pri = { parallel: 0, 'quoted-later': 1, doublet: 2, keynote: 3, related: 4, cites: 5 };
   return out.filter(e => !(e.x === a && e.y === b)).sort((p, q) => pri[p.rel] - pri[q.rel] || p.w - q.w || p.x - q.x);
 }
-function costruisciEgo(i, prof, filtro) {
-  const nodi = new Map(), archi = new Map();
-  const nodo = (x, y, d) => {
-    const k = x + '-' + y;
-    if (!nodi.has(k)) nodi.set(k, { k, a: x, b: y, d, deg: 0 });
-    return nodi.get(k);
+// The graph view is a tree to explore: the chosen verse is the root, its links hang from it
+// grouped by relation and direction, and every card can grow its own links (▸) in turn.
+// A card is HTML (the verse text, its BJ notes as yellow slips) inside a hand-drawn SVG
+// contour; the branches are SVG curves under the cards.
+const ALB = { CARTA: 300, RADICE: 400, SPAZIO: 46, SPAZIO_G: 22, PASSO: 16, RADICE_N: 8, ALTRI_N: 4, PIU: 10, MAX: 260 };
+
+function rng(seed) { return () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; }; }
+function schizzo(w, h, seme) {
+  // a rectangle drawn twice by hand: wobbly sides that overshoot the corners a little,
+  // over a slightly crooked sheet
+  const r = rng(seme + 1), q = j => (r() - 0.5) * 2 * j;
+  const lato = (x1, y1, x2, y2) => {
+    const dx = x2 - x1, dy = y2 - y1, L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L;
+    const s1 = 1 + r() * 5, s2 = 1 + r() * 5, m = 0.3 + r() * 0.4, b = q(Math.min(4.5, L / 35));
+    const ax = x1 - ux * s1 + q(1.6), ay = y1 - uy * s1 + q(1.6), bx = x2 + ux * s2 + q(1.6), by = y2 + uy * s2 + q(1.6);
+    const cx = x1 + dx * m - uy * b, cy = y1 + dy * m + ux * b;
+    return `M${ax.toFixed(1)} ${ay.toFixed(1)}Q${cx.toFixed(1)} ${cy.toFixed(1)} ${bx.toFixed(1)} ${by.toFixed(1)}`;
   };
-  const arco = (p, q, rel, dir) => {
-    const [s, t] = dir > 0 ? [p, q] : [q, p];
-    const k = s.k + '>' + t.k + '>' + rel;
-    const inv = t.k + '>' + s.k + '>' + rel;
-    if (archi.has(k) || archi.has(inv)) return;
-    archi.set(k, { s, t, rel });
-    s.deg++; t.deg++;
-  };
-  const centro = nodo(i, i, 0);
-  const CAP1 = 60, CAP2 = 5, MAX = prof > 1 ? 150 : 70;
-  for (const e of vicini(i, i, filtro)) {
-    if (nodi.size >= CAP1 + 1 && !nodi.has(e.x + '-' + e.y)) continue;
-    const n = nodo(e.x, e.y, 1);
-    if (e.dir > 0 && e.rel !== 'cites') n.uscita = true;      // printed beside the centre: labelled first
-    arco(centro, n, e.rel, e.dir);
-  }
-  if (prof > 1) {
-    const primi = [...nodi.values()].filter(n => n.d === 1);
-    for (const n of primi) {
-      let presi = 0;
-      for (const e of vicini(n.a, n.b, filtro)) {
-        const k = e.x + '-' + e.y;
-        if (k === centro.k) continue;
-        if (!nodi.has(k)) { if (presi >= CAP2 || nodi.size >= MAX) continue; presi++; }
-        arco(n, nodo(e.x, e.y, 2), e.rel, e.dir);
-      }
-    }
-  }
-  return { nodi: [...nodi.values()], archi: [...archi.values()], centro };
+  let d = '';
+  for (let p = 0; p < 2; p++) d += lato(0, 0, w, 0) + lato(w, 0, w, h) + lato(w, h, 0, h) + lato(0, h, 0, 0);
+  const f = () => q(1.6).toFixed(1);
+  const fondo = `M${f()} ${f()}L${(w + +f()).toFixed(1)} ${f()}L${(w + +f()).toFixed(1)} ${(h + +f()).toFixed(1)}L${f()} ${(h + +f()).toFixed(1)}Z`;
+  return { d, fondo };
 }
+function contorno(el, seme) {
+  const w = el.offsetWidth, h = el.offsetHeight, { d, fondo } = schizzo(w, h, seme);
+  el.querySelector(':scope > svg.contorno')?.remove();
+  el.insertAdjacentHTML('afterbegin', `<svg class="contorno" width="${w + 16}" height="${h + 16}" viewBox="-8 -8 ${w + 16} ${h + 16}" aria-hidden="true"><path class="fondo" d="${fondo}"/><path class="tratto" d="${d}"/></svg>`);
+}
+
+// ---- the tree: cards (passages) and, between them, the groups of one relation and direction
+
+const nuovaCarta = (a, b, padre) => ({ tipo: 'carta', a, b, k: a + '-' + b, padre, aperta: false, figli: null });
+function antenati(n) {
+  const s = new Set();
+  for (let x = n; x; x = x.padre) if (x.tipo === 'carta') s.add(x.k);
+  return s;
+}
+function collegamenti(c) {
+  // the links of a card grouped by relation and direction, without the passages on its
+  // path from the root (a tree has no cycles); memoised per card
+  if (c.gruppi) return c.gruppi;
+  const gruppi = new Map(), visti = antenati(c);
+  for (const e of vicini(c.a, c.b, S.filtro)) {
+    const k = e.x + '-' + e.y;
+    if (visti.has(k)) continue;
+    visti.add(k);
+    const due = e.rel === 'parallel' || e.rel === 'doublet';       // printed both ways
+    const g = e.rel + (due ? '' : e.dir > 0 ? '>' : '<');
+    if (!gruppi.has(g)) gruppi.set(g, { tipo: 'gruppo', rel: e.rel, dir: due ? 0 : e.dir, padre: c, voci: [], figli: [] });
+    gruppi.get(g).voci.push(e);
+  }
+  c.gruppi = [...gruppi.values()];
+  c.nvoci = c.gruppi.reduce((s, g) => s + g.voci.length, 0);
+  return c.gruppi;
+}
+function altri(g, n) {
+  g.figli.push(...g.voci.slice(g.figli.length, g.figli.length + n).map(e => nuovaCarta(e.x, e.y, g)));
+}
+function apri(c) {
+  if (!c.figli) {
+    c.figli = collegamenti(c);
+    for (const g of c.figli) altri(g, c.padre ? ALB.ALTRI_N : ALB.RADICE_N);
+  }
+  c.aperta = true;
+}
+const figliVisibili = n => (n.tipo === 'gruppo' ? n.figli : n.aperta ? n.figli : []);
+function tutti(n, out = []) {
+  out.push(n);
+  for (const c of figliVisibili(n)) tutti(c, out);
+  return out;
+}
+function titoloGruppo(g) {
+  const R = REL[g.rel];
+  if (g.rel === 'cites') return g.dir > 0 ? '§ Le sue note citano' : '§ Citato nelle note di';
+  if (!g.dir) return `${R.seg} ${R.nome}`;
+  return g.dir > 0 ? `${R.seg} ${R.nome} →` : `← ${R.seg} ${R.entr}`;
+}
+
+// ---- what a card shows
+
+function testoCarta(a, b, max) {
+  // the passage with its verse numbers, cut at a word after max characters
+  const fine = Math.min(b, a + 8);
+  let out = '', len = 0;
+  for (let v = a; v <= fine; v++) {
+    let t = testoPiano(V.h[v]).replace(/\s+/g, ' ').trim();
+    if (len + t.length > max) { t = t.slice(0, Math.max(0, max - len)).replace(/\s+\S*$/, '') + '…'; }
+    out += (b > a ? `<sup>${esc(versoDi(v))}</sup>` : '') + esc(t) + ' ';
+    len += t.length;
+    if (len >= max) break;
+  }
+  if (len < max && fine < b) out += '…';
+  return out.trim() || '<i>versetto omesso dalla CEI</i>';
+}
+function foglietti(c, radice) {
+  // the BJ notes called from the passage, as yellow slips (a click opens the whole note)
+  const ks = [];
+  for (let v = c.a; v <= Math.min(c.b, c.a + 8); v++) ks.push(...(S.noteAt[v] || []));
+  const max = radice ? 6 : 2;
+  const html = ks.slice(0, max).map(k => {
+    const x = D.note[k], intera = S.noteAperte.has(k), piano = testoPiano(x[5]), lim = radice ? 420 : 120;
+    const corpo = intera || piano.length <= lim ? x[5] : esc(piano.slice(0, lim).replace(/\s+\S*$/, '')) + '…';
+    const bottone = piano.length > lim ? `<button type="button" class="altro" data-nota="${k}">${intera ? 'riduci' : 'continua'}</button>` : '';
+    return `<div class="foglietto" data-n="${k}"><b>${esc(x[3])}${esc(x[2] || 'nota')}</b>${corpo} ${bottone}</div>`;
+  }).join('');
+  return html + (ks.length > max ? `<div class="foglietti-altre">${ks.length - max === 1 ? 'e un’altra nota' : `e altre ${ks.length - max} note`}: <a href="${hashVerso(c.a)}">nel lettore</a></div>` : '');
+}
+function htmlCarta(c) {
+  const radice = !c.padre, id = V.id[c.a], AT = D.libri[S.vb[c.a]].T === 'AT';
+  collegamenti(c);
+  const n = c.nvoci;
+  const cresci = radice ? `<span class="conta">${n ? `${n} collegament${n === 1 ? 'o' : 'i'}` : 'nessun collegamento'}</span>`
+    : `<button type="button" class="cresci" data-i="${c.i}" aria-expanded="${c.aperta}"${n ? '' : ' disabled'}>${n ? `${c.aperta ? '▾' : '▸'} ${n} collegament${n === 1 ? 'o' : 'i'}` : 'nessun altro collegamento'}</button>`;
+  return `<div class="carta${radice ? ' radice' : ''}" data-i="${c.i}" style="width:${radice ? S.albW.radice : S.albW.carta}px">
+    <div class="carta-testa"><span class="pallino ${AT ? 'at' : 'nt'}" title="${AT ? 'Antico' : 'Nuovo'} Testamento"></span><a class="carta-rif" href="#grafo/${id}${S.albProf > 1 ? '?p=2' : ''}" title="Metti al centro">${esc(rif(c.a, c.b))}</a><span class="carta-libro">${esc(D.libri[S.vb[c.a]].t)}</span></div>
+    <div class="carta-testo">${testoCarta(c.a, c.b, radice ? 900 : 260)}</div>
+    ${foglietti(c, radice)}
+    <div class="carta-piede">${cresci}<a class="leggi" href="${hashVerso(c.a, c.b)}">leggi ›</a></div></div>`;
+}
+function htmlGruppo(g) {
+  const resto = g.voci.length - g.figli.length;
+  return `<div class="ramo-gruppo" data-i="${g.i}" style="--c:var(${REL[g.rel].txt || REL[g.rel].col})"><span>${esc(titoloGruppo(g))}</span><small>${g.voci.length}</small>${resto > 0 ? `<button type="button" class="altri" data-i="${g.i}">+${Math.min(resto, ALB.PIU)} di ${resto}</button>` : ''}</div>`;
+}
+
+// ---- layout: a tidy tree from left to right; each node is centred on its children
+
+function disponi(n, x, top) {
+  n.x = x;
+  const figli = figliVisibili(n);
+  if (!figli.length) { n.y = top; return top + n.h; }
+  const dx = x + n.w + (n.tipo === 'carta' ? ALB.SPAZIO : ALB.SPAZIO_G);
+  let y = top;
+  figli.forEach((c, j) => { if (j) y += c.tipo === 'gruppo' ? ALB.PASSO * 1.8 : ALB.PASSO; y = disponi(c, dx, y); });
+  const p = figli[0], u = figli[figli.length - 1];
+  n.y = Math.max(top, (p.y + p.h / 2 + u.y + u.h / 2) / 2 - n.h / 2);
+  return Math.max(y, n.y + n.h);
+}
+function ramo(p, n) {
+  const x1 = p.x + p.w, y1 = p.y + Math.min(p.h / 2, p.tipo === 'carta' ? 60 : p.h / 2), x2 = n.x, y2 = n.y + Math.min(n.h / 2, n.tipo === 'carta' ? 28 : n.h / 2);
+  const g = n.tipo === 'gruppo' ? n : p, dm = (x2 - x1) / 2;
+  const dash = REL[g.rel].dash.length ? ` stroke-dasharray="${REL[g.rel].dash.map(x => x * 1.5).join(' ')}"` : '';
+  return `<path class="ramo" style="stroke:var(${REL[g.rel].col})"${dash} d="M${x1} ${y1}C${x1 + dm} ${y1} ${x2 - dm} ${y2} ${x2} ${y2}"/>`;
+}
+
+// ---- the view
+
 function mostraGrafo(id, par) {
   let i = S.vix.get(id);
   if (i === undefined && id) {
@@ -1021,6 +1131,10 @@ function mostraGrafo(id, par) {
     history.replaceState(null, '', `#grafo/${V.id[i]}${prof > 1 ? '?p=2' : ''}`);
   }
   S.ultimo = i;
+  S.albProf = prof;
+  const stretto = window.innerWidth < 700;
+  S.albW = { carta: stretto ? 250 : ALB.CARTA, radice: stretto ? 290 : ALB.RADICE, zmin: stretto ? 0.72 : 0.6 };
+  S.noteAperte = S.noteAperte || new Set();
   // the relation filters are part of the address (?f=parallel,doublet); none given = all
   S.filtro = new Set(par.f !== undefined ? par.f.split(',').filter(r => ORDINE_REL.includes(r)) : ORDINE_REL);
   const indirizzo = (p = prof) => {
@@ -1031,264 +1145,164 @@ function mostraGrafo(id, par) {
   for (const e of vicini(i, i, new Set(ORDINE_REL))) conta[e.rel] = (conta[e.rel] || 0) + 1;
   const linea = (r, w = 26) => `<svg width="${w}" height="10" aria-hidden="true"><line x1="1" y1="5" x2="${w - 1}" y2="5" stroke="var(${REL[r].col})" stroke-width="${r === 'parallel' ? 3 : 2}" stroke-dasharray="${REL[r].dash.join(' ')}"/></svg>`;
   pagina(`<div class="grafo-vista">
-    <div class="grafo-tela" id="tela"><canvas id="cv" aria-label="Rete dei collegamenti di ${esc(rif(i))}"></canvas>
-      <div class="grafo-titolo"><b>${esc(rif(i))}</b><span>${esc(D.libri[S.vb[i]].t)} · rete dei collegamenti, profondità ${prof}</span></div>
-      <div class="grafo-zoom"><button type="button" data-z="1.25" aria-label="Ingrandisci">+</button><button type="button" data-z="0.8" aria-label="Riduci">−</button><button type="button" data-z="0" aria-label="Centra" title="Centra">⌂</button></div></div>
+    <div class="grafo-tela" id="tela"><div class="mondo" id="mondo"></div>
+      <div class="grafo-titolo"><b>${esc(rif(i))}</b><span>${esc(D.libri[S.vb[i]].t)} · albero dei collegamenti</span></div>
+      <div class="grafo-zoom"><button type="button" data-z="1.2" aria-label="Ingrandisci">+</button><button type="button" data-z="0.83" aria-label="Riduci">−</button><button type="button" data-z="0" aria-label="Adatta alla finestra" title="Adatta alla finestra">⌂</button></div></div>
     <div class="grafo-lato">
       <h3>Versetto</h3><div class="grafo-info"><a class="bottone primario" href="#${V.id[i]}">Apri nel lettore</a></div>
-      <h3>Profondità</h3>
-      <div class="segmenti" role="group"><button type="button" data-p="1" aria-pressed="${prof === 1}">1 passo</button><button type="button" data-p="2" aria-pressed="${prof === 2}">2 passi</button></div>
-      <h3>Relazioni (archi)</h3>
+      <h3>Esplora</h3>
+      <div class="segmenti" role="group"><button type="button" data-esplora="piu">Apri un livello</button><button type="button" data-esplora="chiudi">Chiudi tutto</button></div>
+      <h3>Relazioni (rami)</h3>
       ${ORDINE_REL.map(r => `<label class="leg"><input type="checkbox" data-rel="${r}"${S.filtro.has(r) ? ' checked' : ''}>${linea(r)}<span>${REL[r].seg} ${REL[r].nome}</span><span class="n">${conta[r] || 0}</span></label>`).join('')}
-      <h3>Nodi</h3>
-      <div class="leg"><svg width="26" height="14"><circle cx="13" cy="7" r="6" fill="var(--s-at)"/></svg>Antico Testamento</div>
-      <div class="leg"><svg width="26" height="14"><circle cx="13" cy="7" r="6" fill="var(--s-nt)"/></svg>Nuovo Testamento</div>
-      <div class="leg"><svg width="26" height="14"><rect x="5" y="2" width="16" height="10" rx="5" fill="none" stroke="var(--tenue)" stroke-width="1.5"/></svg>passo di più versetti</div>
-      <h3>Rete</h3><div class="grafo-info" id="ginfo"></div>
-      <details class="grafo-nodi"><summary>Elenco dei nodi</summary><ul id="gnodi"></ul></details>
-      <p class="grafo-info nota-grafo">Clic su un nodo (o sul suo nome nell’elenco): diventa il centro. Trascina per spostare, rotella o +/− per lo zoom. Le frecce vanno dal versetto che stampa il rimando al passo indicato.</p>
+      <h3>Schede</h3>
+      <div class="leg"><svg width="26" height="14"><circle cx="13" cy="7" r="5" fill="var(--s-at)"/></svg>Antico Testamento</div>
+      <div class="leg"><svg width="26" height="14"><circle cx="13" cy="7" r="5" fill="var(--s-nt)"/></svg>Nuovo Testamento</div>
+      <div class="leg"><svg width="26" height="16"><rect x="3" y="2" width="20" height="12" fill="var(--foglietto)" stroke="var(--foglietto-tratto)"/></svg>nota della BJ</div>
+      <h3>Albero</h3><div class="grafo-info" id="ginfo"></div>
+      <details class="grafo-nodi"><summary>Elenco delle schede</summary><ul id="gnodi"></ul></details>
+      <p class="grafo-info nota-grafo">▸ su una scheda apre i suoi collegamenti, raggruppati per relazione; il riferimento la mette al centro. Trascina per spostarti, rotella per scorrere, Ctrl + rotella o +/− per lo zoom.</p>
     </div></div>`);
   document.title = `Grafo ${rif(i)} · Esploratore dei versetti`;
+  S.ridisegna = null;
   $('.grafo-lato').addEventListener('change', e => {
     const r = e.target.dataset.rel;
     if (!r) return;
     if (e.target.checked) S.filtro.add(r); else S.filtro.delete(r);
     history.replaceState(null, '', indirizzo());
-    disegnaGrafo(i, prof);
+    nuovoAlbero(i, prof);
   });
   $('.grafo-lato .segmenti').addEventListener('click', e => {
     const b = e.target.closest('button');
-    if (b) vai(indirizzo(+b.dataset.p), true);
+    if (!b) return;
+    if (b.dataset.esplora === 'chiudi') { tutti(S.albero).forEach(n => { if (n.tipo === 'carta' && n.padre) n.aperta = false; }); disegnaAlbero(null, true); return; }
+    // one more level: every visible leaf card with links, up to the cap
+    let quante = tutti(S.albero).length;
+    for (const n of tutti(S.albero)) {
+      if (n.tipo !== 'carta' || n.aperta || !n.padre || quante > ALB.MAX) continue;
+      collegamenti(n);
+      if (!n.nvoci) continue;
+      apri(n);
+      quante += n.figli.length + n.figli.reduce((s, g) => s + g.figli.length, 0);
+    }
+    disegnaAlbero(null, true);
   });
-  disegnaGrafo(i, prof);
+  interazioni();
+  nuovoAlbero(i, prof);
 }
-function rng(seed) { return () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; }; }
-function disegnaGrafo(i, prof) {
-  if (S.anim) cancelAnimationFrame(S.anim);
-  const G = costruisciEgo(i, prof, S.filtro);
-  const tela = $('#tela'), cv = $('#cv');
-  const ctx = cv.getContext('2d');
-  const casuale = rng(i + 1);
-  const n1 = G.nodi.filter(n => n.d === 1);
-  const R1 = Math.min(300, Math.max(140, n1.length * 7));
-  const box = tela.getBoundingClientRect();
-  const EX = Math.max(0.8, Math.min(1.7, (box.width / Math.max(1, box.height)) * 1.15));   // ellipse follows the canvas
-  G.nodi.forEach(n => {
-    if (n.d === 0) { n.x = 0; n.y = 0; n.fisso = true; return; }
-    const ang = n.d === 1 ? (2 * Math.PI * n1.indexOf(n)) / Math.max(1, n1.length) : casuale() * 2 * Math.PI;
-    const rag = n.d === 1 ? R1 : R1 * 1.8 + casuale() * 60;
-    n.x = Math.cos(ang) * rag * EX; n.y = Math.sin(ang) * rag; n.vx = 0; n.vy = 0;
+function nuovoAlbero(i, prof) {
+  S.albero = nuovaCarta(i, i, null);
+  apri(S.albero);
+  if (prof > 1) for (const g of S.albero.figli) for (const c of g.figli) { collegamenti(c); if (c.nvoci) apri(c); }
+  disegnaAlbero(null, true);
+}
+function disegnaAlbero(fermo, adattare) {
+  // fermo: a node that keeps its place on the screen (the one just opened)
+  const mondo = $('#mondo');
+  if (!mondo) return;
+  const prima = fermo ? { x: S.av.x + fermo.x * S.av.z, y: S.av.y + fermo.y * S.av.z } : null;
+  const nodi = tutti(S.albero);
+  nodi.forEach((n, k) => { n.i = k; n.liv = !n.padre ? 0 : n.tipo === 'carta' ? n.padre.padre.liv + 1 : n.padre.liv; });
+  S.albNodi = nodi;
+  mondo.innerHTML = '<svg class="rami" id="rami"></svg>' + nodi.map(n => (n.tipo === 'carta' ? htmlCarta(n) : htmlGruppo(n))).join('');
+  const els = mondo.children;
+  nodi.forEach((n, k) => { n.el = els[k + 1]; n.w = n.el.offsetWidth; n.h = n.el.offsetHeight; });
+  disponi(S.albero, 0, 0);
+  let y0 = Infinity, X = 0, Y = 0;
+  nodi.forEach(n => { y0 = Math.min(y0, n.y); });
+  nodi.forEach(n => {
+    n.y -= y0;
+    n.el.style.transform = `translate(${n.x}px,${n.y}px)`;
+    X = Math.max(X, n.x + n.w); Y = Math.max(Y, n.y + n.h);
   });
-  const nAT = G.nodi.filter(n => D.libri[S.vb[n.a]].T === 'AT').length;
-  const vuota = !S.filtro.size ? 'Nessuna relazione scelta: spunta almeno una casella qui a lato.'
-    : !G.archi.length ? 'Nessun collegamento: nessun rimando a margine o citazione parte da questo versetto o vi arriva.' : '';
-  $('#ginfo').innerHTML = `<b>${G.nodi.length}</b> nodi, <b>${G.archi.length}</b> archi<br>${nAT} nell’AT, ${G.nodi.length - nAT} nel NT${G.nodi.length >= (prof > 1 ? 150 : 61) ? '<br><small>rete troncata: mostrati i collegamenti più specifici</small>' : ''}`;
-  $('#tela .grafo-vuoto')?.remove();
-  if (vuota) $('#tela').insertAdjacentHTML('beforeend', `<p class="grafo-vuoto">${vuota}</p>`);
-  $('#gnodi').innerHTML = G.nodi.filter(n => n.d > 0).sort((p, q) => p.d - q.d || p.a - q.a)
-    .map(n => `<li><a href="#grafo/${V.id[n.a]}${prof > 1 ? '?p=2' : ''}" data-r="${n.a}-${n.b}">${esc(rif(n.a, n.b))}</a>${n.d > 1 ? ' <small>2° passo</small>' : ''}</li>`).join('');
-  const vista = { z: 1, x: 0, y: 0 };
-  let C = colori(), alpha = 1, giri = 0, sopra = null, trasc = null;
-  const raggio = n => (n.d === 0 ? 11 : 4.5 + Math.min(6, Math.sqrt(n.deg) * 1.4));
-  const etichetta = n => rif(n.a, n.b);
-  function misura() {
-    const r = tela.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
-    cv.width = Math.max(1, r.width * dpr); cv.height = Math.max(1, r.height * dpr);
-    S.gdim = { w: r.width, h: r.height, dpr };
-    const t = $('#tela .grafo-titolo').getBoundingClientRect();     // labels keep out of the title
-    S.gtitolo = [t.left - r.left - 4, t.top - r.top - 4, t.left - r.left + t.width + 4, t.top - r.top + t.height + 4];
-  }
-  function passo() {
-    const ns = G.nodi;
-    for (let p = 0; p < ns.length; p++) {
-      const A = ns[p];
-      for (let q = p + 1; q < ns.length; q++) {
-        const B = ns[q];
-        let dx = A.x - B.x, dy = A.y - B.y, d2 = dx * dx + dy * dy;
-        if (d2 < 1) { dx = casuale() - 0.5; dy = casuale() - 0.5; d2 = 1; }
-        if (d2 > 250000) continue;
-        const f = (2200 / d2) * alpha;
-        const d = Math.sqrt(d2);
-        A.vx += (dx / d) * f; A.vy += (dy / d) * f; B.vx -= (dx / d) * f; B.vy -= (dy / d) * f;
-      }
-    }
-    for (const e of G.archi) {
-      const dx = e.t.x - e.s.x, dy = e.t.y - e.s.y, d = Math.sqrt(dx * dx + dy * dy) || 1;
-      const L = e.s.d === 0 || e.t.d === 0 ? R1 : 70;
-      const f = ((d - L) / d) * 0.05 * alpha;
-      e.s.vx += dx * f; e.s.vy += dy * f; e.t.vx -= dx * f; e.t.vy -= dy * f;
-    }
-    for (const n of ns) {
-      if (n.fisso || n === trasc) { n.vx = n.vy = 0; continue; }
-      const d = Math.hypot(n.x / EX, n.y) || 1, rr = n.d === 1 ? R1 : R1 * 1.9, k = n.d === 1 ? 0.08 : 0.03;
-      n.vx += (n.x / d) * (rr - d) * k * alpha; n.vy += (n.y / d) * (rr - d) * k * alpha;
-      n.vx *= 0.62; n.vy *= 0.62;
-      n.x += Math.max(-30, Math.min(30, n.vx)); n.y += Math.max(-30, Math.min(30, n.vy));
-    }
-    alpha = Math.max(0.02, alpha * 0.985);
-  }
-  function freccia(x1, y1, x2, y2, r) {
-    const a = Math.atan2(y2 - y1, x2 - x1), x = x2 - Math.cos(a) * (r + 2), y = y2 - Math.sin(a) * (r + 2), s = 5 / vista.z;
-    ctx.beginPath(); ctx.moveTo(x, y);
-    ctx.lineTo(x - Math.cos(a - 0.45) * s * 1.6, y - Math.sin(a - 0.45) * s * 1.6);
-    ctx.lineTo(x - Math.cos(a + 0.45) * s * 1.6, y - Math.sin(a + 0.45) * s * 1.6);
-    ctx.closePath(); ctx.fill();
-  }
-  function disegna() {
-    const { w, h, dpr } = S.gdim;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, w, h);
-    ctx.setTransform(dpr * vista.z, 0, 0, dpr * vista.z, dpr * (w / 2 + vista.x), dpr * (h / 2 + vista.y));
-    const vicino = sopra ? new Set(G.archi.filter(e => e.s === sopra || e.t === sopra).flatMap(e => [e.s, e.t])) : null;
-    for (const e of G.archi) {
-      const tenue = vicino && !(e.s === sopra || e.t === sopra);
-      ctx.globalAlpha = tenue ? 0.12 : e.rel === 'related' || e.rel === 'cites' ? 0.75 : 0.95;
-      ctx.strokeStyle = ctx.fillStyle = C[e.rel];
-      ctx.lineWidth = (e.rel === 'parallel' ? 2.6 : e.rel === 'related' || e.rel === 'cites' ? 1.2 : 2) / vista.z;
-      ctx.setLineDash(REL[e.rel].dash.map(x => x / vista.z));
-      ctx.beginPath(); ctx.moveTo(e.s.x, e.s.y); ctx.lineTo(e.t.x, e.t.y); ctx.stroke();
-      ctx.setLineDash([]);
-      if (e.rel !== 'parallel' && e.rel !== 'doublet') freccia(e.s.x, e.s.y, e.t.x, e.t.y, raggio(e.t) / 1);
-    }
-    ctx.globalAlpha = 1;
-    for (const n of G.nodi) {
-      const r = raggio(n), tenue = vicino && !vicino.has(n);
-      ctx.globalAlpha = tenue ? 0.25 : 1;
-      ctx.fillStyle = D.libri[S.vb[n.a]].T === 'AT' ? C['--s-at'] : C['--s-nt'];
-      ctx.strokeStyle = C['--foglio'];
-      ctx.lineWidth = 2 / vista.z;
-      ctx.beginPath();
-      if (n.b > n.a) { const lw = r * 1.7; ctx.roundRect(n.x - lw, n.y - r, lw * 2, r * 2, r); } else ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
-      ctx.fill(); ctx.stroke();
-      if (n.d === 0 || n === sopra) { ctx.strokeStyle = C['--inchiostro']; ctx.lineWidth = 2 / vista.z; ctx.beginPath(); ctx.arc(n.x, n.y, r + 4 / vista.z, 0, Math.PI * 2); ctx.stroke(); }
-    }
-    ctx.globalAlpha = 1;
-    ctx.textBaseline = 'middle';
-    // labels: the centre, the hovered node and its neighbours first, then by depth and degree;
-    // a label overlapping one already drawn is skipped (hover a node to read it)
-    const ordine = G.nodi.filter(n => !(vicino && !vicino.has(n)))
-      .sort((p, q) => (q === sopra) - (p === sopra) || p.d - q.d || !!q.uscita - !!p.uscita || q.deg - p.deg);
-    const tt = S.gtitolo;                  // the title box, in world units: no label under it
-    const presi = tt ? [[(tt[0] - w / 2 - vista.x) / vista.z, (tt[1] - h / 2 - vista.y) / vista.z,
-      (tt[2] - w / 2 - vista.x) / vista.z, (tt[3] - h / 2 - vista.y) / vista.z]] : [];
-    const destra = (w / 2 - vista.x) / vista.z - 4 / vista.z, sinistraMax = (-w / 2 - vista.x) / vista.z + 4 / vista.z;
-    for (const n of ordine) {
-      if (n.d === 2 && vista.z < 1.1 && !vicino) continue;
-      const fs = (n.d === 0 ? 14 : 11.5) / vista.z;
-      ctx.font = `${n.d === 0 ? 700 : 500} ${fs}px system-ui, sans-serif`;
-      const t = etichetta(n), w = ctx.measureText(t).width, r = raggio(n) * (n.b > n.a ? 1.8 : 1) + 4 / vista.z;
-      let sinistra = n.d > 0 && n.x < 0;
-      if (!sinistra && n.x + r + w > destra) sinistra = true;          // no label cut at the right edge
-      else if (sinistra && n.x - r - w < sinistraMax) sinistra = false;
-      const x = sinistra ? n.x - r - w : n.x + r;
-      const q = [x - 2 / vista.z, n.y - fs * 0.6, x + w + 2 / vista.z, n.y + fs * 0.6];
-      if (n.d > 0 && n !== sopra && presi.some(o => q[0] < o[2] && o[0] < q[2] && q[1] < o[3] && o[1] < q[3])) continue;
-      presi.push(q);
-      ctx.lineWidth = 3.5 / vista.z; ctx.strokeStyle = C['--foglio']; ctx.lineJoin = 'round';
-      ctx.strokeText(t, x, n.y);
-      ctx.fillStyle = n.d === 0 ? C['--inchiostro'] : C['--secondo'];
-      ctx.fillText(t, x, n.y);
-    }
-  }
-  function ciclo() {
-    for (let k = 0; k < 3; k++) passo();
-    giri += 3;
-    disegna();
-    if (giri < 90 || trasc) S.anim = requestAnimationFrame(ciclo);
-  }
-  const mondo = (cx, cy) => ({ x: (cx - S.gdim.w / 2 - vista.x) / vista.z, y: (cy - S.gdim.h / 2 - vista.y) / vista.z });
-  const colpito = (cx, cy) => {
-    const p = mondo(cx, cy);
-    let best = null, bd = Infinity;
-    for (const n of G.nodi) {
-      const d = Math.hypot(n.x - p.x, n.y - p.y) - raggio(n) * (n.b > n.a ? 1.7 : 1);
-      if (d < 6 / vista.z && d < bd) { best = n; bd = d; }
-    }
-    return best;
-  };
-  const tip = document.createElement('div');
-  tip.className = 'suggerimento';
-  tip.hidden = true;
-  tela.appendChild(tip);
+  nodi.forEach(n => {
+    if (n.tipo !== 'carta') return;
+    contorno(n.el, n.a * 7 + n.b);
+    $$('.foglietto', n.el).forEach((f, j) => contorno(f, +f.dataset.n * 3 + j));
+  });
+  const rami = $('#rami');
+  rami.setAttribute('width', X); rami.setAttribute('height', Y);
+  rami.innerHTML = nodi.filter(n => n.padre).map(n => ramo(n.padre, n)).join('');
+  S.albDim = { w: X, h: Y };
+  if (adattare) adatta();
+  else if (prima) { S.av.x = prima.x - fermo.x * S.av.z; S.av.y = prima.y - fermo.y * S.av.z; }
+  applica();
+  const carte = nodi.filter(n => n.tipo === 'carta'), nAT = carte.filter(n => D.libri[S.vb[n.a]].T === 'AT').length;
+  const nNote = carte.reduce((s, n) => s + n.el.querySelectorAll('.foglietto').length, 0);
+  $('#ginfo').innerHTML = `<b>${carte.length}</b> schede, <b>${nNote}</b> note della BJ<br>${nAT} nell’AT, ${carte.length - nAT} nel NT` +
+    (!S.filtro.size ? '<br><small>nessuna relazione scelta: spunta almeno una casella</small>' : '');
+  $('#gnodi').innerHTML = carte.filter(n => n.padre).map(n => `<li><a href="#grafo/${V.id[n.a]}${S.albProf > 1 ? '?p=2' : ''}">${esc(rif(n.a, n.b))}</a></li>`).join('');
+}
+function applica() {
+  const m = $('#mondo');
+  if (m) m.style.transform = `translate(${S.av.x}px,${S.av.y}px) scale(${S.av.z})`;
+}
+function adatta(tutto = false) {
+  // the whole tree if it fits at a readable size (or always, with ⌂), else the root at the
+  // left, centred, at reading size
+  const t = $('#tela').getBoundingClientRect(), d = S.albDim, r = S.albero;
+  const alto = $('#tela .grafo-titolo').getBoundingClientRect().bottom - t.top + 14;     // below the title
+  const z = Math.min(1, (t.width - 48) / d.w, (t.height - alto - 24) / d.h);
+  // first view: the root and the next one or two columns of cards at a readable size
+  const vicine = Math.max(...S.albNodi.filter(n => n.liv <= 2).map(n => n.x + n.w));
+  const leggibile = Math.max(S.albW.zmin, Math.min(1, (t.width - 48) / vicine));
+  S.av = { z: tutto ? Math.max(0.3, z) : z < leggibile ? leggibile : z, x: 0, y: 0 };
+  S.av.x = d.w * S.av.z <= t.width - 48 ? (t.width - d.w * S.av.z) / 2 : 24;
+  if (d.h * S.av.z <= t.height - alto - 24) S.av.y = alto + (t.height - alto - d.h * S.av.z) / 2;
+  else S.av.y = Math.max(alto - r.y * S.av.z, t.height / 2 - (r.y + r.h / 2) * S.av.z);   // root centred, its top in view
+}
+function interazioni() {
+  const tela = $('#tela');
+  S.av = { x: 0, y: 0, z: 1 };
   let giu = null;
-  cv.onpointerdown = e => {
-    cv.setPointerCapture(e.pointerId);
-    const r = cv.getBoundingClientRect();
-    const n = colpito(e.clientX - r.left, e.clientY - r.top);
-    giu = { x: e.clientX, y: e.clientY, vx: vista.x, vy: vista.y, n, mosso: false };
-    if (n && n.d !== 0) { trasc = n; alpha = Math.max(alpha, 0.3); giri = 0; cancelAnimationFrame(S.anim); ciclo(); }
-    cv.classList.add('trascina');
-  };
-  cv.onpointermove = e => {
-    const r = cv.getBoundingClientRect(), cx = e.clientX - r.left, cy = e.clientY - r.top;
-    if (giu) {
-      if (Math.hypot(e.clientX - giu.x, e.clientY - giu.y) > 4) giu.mosso = true;
-      if (trasc) { const p = mondo(cx, cy); trasc.x = p.x; trasc.y = p.y; }
-      else { vista.x = giu.vx + e.clientX - giu.x; vista.y = giu.vy + e.clientY - giu.y; disegna(); }
+  tela.addEventListener('pointerdown', e => {
+    if (e.button !== 0 || e.target.closest('a, button, .foglietto')) return;
+    giu = { x: e.clientX, y: e.clientY, vx: S.av.x, vy: S.av.y, mosso: false };
+    tela.setPointerCapture(e.pointerId);
+  });
+  tela.addEventListener('pointermove', e => {
+    if (!giu) return;
+    if (Math.hypot(e.clientX - giu.x, e.clientY - giu.y) > 4) { giu.mosso = true; tela.classList.add('trascina'); }
+    if (giu.mosso) { S.av.x = giu.vx + e.clientX - giu.x; S.av.y = giu.vy + e.clientY - giu.y; applica(); }
+  });
+  const su = () => { giu = null; tela.classList.remove('trascina'); };
+  tela.addEventListener('pointerup', su);
+  tela.addEventListener('pointercancel', su);
+  tela.addEventListener('wheel', e => {
+    e.preventDefault();
+    if (e.ctrlKey || e.metaKey) {
+      const r = tela.getBoundingClientRect();
+      zoomAlbero(e.deltaY < 0 ? 1.1 : 1 / 1.1, e.clientX - r.left, e.clientY - r.top);
+    } else { S.av.x -= e.shiftKey ? e.deltaY : e.deltaX; S.av.y -= e.shiftKey ? 0 : e.deltaY; applica(); }
+  }, { passive: false });
+  tela.addEventListener('click', e => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    if (b.closest('.grafo-zoom')) {
+      if (+b.dataset.z === 0) { adatta(true); applica(); } else zoomAlbero(+b.dataset.z);
       return;
     }
-    const n = colpito(cx, cy);
-    if (n !== sopra) { sopra = n; disegna(); }
-    cv.style.cursor = n ? 'pointer' : '';
-    if (n) {
-      let t = testoPiano(V.h[n.a]);
-      if (t.length > 160) t = t.slice(0, 160).replace(/\s\S*$/, '') + '…';
-      tip.innerHTML = `<b>${esc(etichetta(n))}</b> · ${esc(D.libri[S.vb[n.a]].t)}<br><span style="font-family:var(--serif)">${esc(t)}</span>`;
-      tip.hidden = false;
-      tip.style.left = Math.min(e.clientX + 14, window.innerWidth - tip.offsetWidth - 8) + 'px';
-      tip.style.top = Math.min(e.clientY + 14, window.innerHeight - tip.offsetHeight - 8) + 'px';
-    } else tip.hidden = true;
-  };
-  cv.onpointerup = () => {
-    cv.classList.remove('trascina');
-    const g = giu;
-    giu = null;
-    if (trasc) { trasc.fisso = true; trasc = null; }
-    if (g && g.n && !g.mosso && g.n.d !== 0) vai(`#grafo/${V.id[g.n.a]}${prof > 1 ? '?p=2' : ''}`);
-  };
-  cv.onpointerleave = () => { if (!giu) { sopra = null; tip.hidden = true; disegna(); } };
-  cv.onwheel = e => {
-    e.preventDefault();
-    const r = cv.getBoundingClientRect();
-    zoom(e.deltaY < 0 ? 1.12 : 1 / 1.12, e.clientX - r.left, e.clientY - r.top);
-  };
-  function zoom(f, cx = S.gdim.w / 2, cy = S.gdim.h / 2) {
-    const p = mondo(cx, cy);
-    vista.z = Math.max(0.25, Math.min(5, vista.z * f));
-    vista.x = cx - S.gdim.w / 2 - p.x * vista.z;
-    vista.y = cy - S.gdim.h / 2 - p.y * vista.z;
-    disegna();
-  }
-  $('.grafo-zoom').onclick = e => {
-    const z = e.target.closest('button');
-    if (!z) return;
-    if (+z.dataset.z === 0) { adatta(); disegna(); } else zoom(+z.dataset.z);
-  };
-  function adatta() {
-    // nodes in world units, labels in screen pixels: fit both in the canvas
-    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity, ls = 0, ld = 0;
-    for (const n of G.nodi) {
-      x0 = Math.min(x0, n.x); x1 = Math.max(x1, n.x); y0 = Math.min(y0, n.y); y1 = Math.max(y1, n.y);
+    const n = S.albNodi[+b.dataset.i];
+    if (b.classList.contains('cresci')) {
+      if (n.aperta) n.aperta = false; else apri(n);
+      disegnaAlbero(n);
+    } else if (b.classList.contains('altri')) {
+      altri(n, ALB.PIU);
+      disegnaAlbero(n);
+    } else if (b.classList.contains('altro')) {
+      const k = +b.dataset.nota, c = S.albNodi[+b.closest('.carta').dataset.i];
+      if (S.noteAperte.has(k)) S.noteAperte.delete(k); else S.noteAperte.add(k);
+      disegnaAlbero(c);
     }
-    for (const n of G.nodi) {
-      if (n.d === 2) continue;
-      const lw = etichetta(n).length * (n.d ? 6.4 : 8) + 18;
-      if (n.d > 0 && n.x < 0 && n.x - x0 < 40) ls = Math.max(ls, lw);
-      if (!(n.d > 0 && n.x < 0) && x1 - n.x < 40) ld = Math.max(ld, lw);
-    }
-    const alto = S.gtitolo ? S.gtitolo[3] + 8 : 56, W = S.gdim.w, H = S.gdim.h;
-    vista.z = Math.max(0.25, Math.min(1.4, (W - ls - ld - 24) / Math.max(1, x1 - x0), (H - alto - 40) / Math.max(1, y1 - y0)));
-    vista.x = (-W / 2 + 12 + ls) - x0 * vista.z + Math.max(0, (W - ls - ld - 24) - (x1 - x0) * vista.z) / 2;
-    vista.y = -((y0 + y1) / 2) * vista.z + alto / 2;
-  }
-  misura();
-  for (let k = 0; k < 360; k++) passo();      // settle before the first frame
-  adatta();
-  ciclo();
-  if (S.ro) S.ro.disconnect();
-  S.ro = new ResizeObserver(() => { if (!document.body.contains(cv)) return S.ro.disconnect(); misura(); disegna(); });
-  S.ro.observe(tela);
-  S.ridisegna = () => { C = colori(); disegna(); };
+  });
+}
+function zoomAlbero(f, cx, cy) {
+  const t = $('#tela').getBoundingClientRect();
+  if (cx === undefined) { cx = t.width / 2; cy = t.height / 2; }
+  const z = Math.max(0.3, Math.min(2.2, S.av.z * f));
+  S.av.x = cx - (cx - S.av.x) * (z / S.av.z);
+  S.av.y = cy - (cy - S.av.y) * (z / S.av.z);
+  S.av.z = z;
+  applica();
 }
 
 // ---------------------------------------------------------------- overview

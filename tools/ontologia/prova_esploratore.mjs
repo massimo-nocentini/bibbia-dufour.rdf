@@ -232,44 +232,42 @@ try {
   verifica('filtri del grafo nell’indirizzo', await p.$$eval('.grafo-lato input[data-rel]', xs => xs.filter(x => x.checked).map(x => x.dataset.rel).join()) === 'parallel');
   await p.evaluate(() => { location.hash = '#grafo/Gen.25.5'; });
   await p.waitForSelector('#ginfo b');
-  verifica('grafo senza collegamenti lo dice (F12)', !!(await p.$('.grafo-vuoto')), await p.$eval('#ginfo', x => x.textContent));
+  verifica('grafo senza collegamenti lo dice (F12)', /nessun collegamento/.test(await p.$eval('.carta.radice .conta', x => x.textContent)), await p.$eval('#ginfo', x => x.textContent));
   await foto(p, '23-grafo-vuoto');
+  // the tree: the root card with its text and notes, the groups, the cards of the first level
   await p.evaluate(() => { location.hash = '#grafo/John.3.16'; });
   await p.waitForSelector('#ginfo b');
-  await p.waitForTimeout(600);
   const g1 = await p.$eval('#ginfo', x => x.textContent);
-  const pieno = await p.$eval('#cv', c => {
-    const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
-    let n = 0;
-    for (let k = 3; k < d.length; k += 16) if (d[k] > 0) n++;
-    return n;
-  });
-  verifica('grafo con nodi', /^\d+ nodi/.test(g1) && parseInt(g1) > 3 && pieno > 500, g1 + `, ${pieno} pixel campionati`);
+  const radice = await p.$eval('.carta.radice', c => ({
+    testo: c.querySelector('.carta-testo').textContent, note: c.querySelectorAll('.foglietto').length,
+    contorno: !!c.querySelector('svg.contorno path.tratto'),
+  }));
+  verifica('albero: la radice ha testo, note e contorno a mano', /tanto amato il mondo/.test(radice.testo) && radice.note >= 1 && radice.contorno, JSON.stringify(radice));
+  const primo = await p.$$eval('.carta:not(.radice)', cs => cs.length);
+  verifica('albero con schede e gruppi', /^\d+ schede/.test(g1) && primo > 3 && (await p.$$('.ramo-gruppo')).length > 0 && (await p.$$('#rami path')).length >= primo, g1);
   metriche.grafo_p1 = g1;
   await foto(p, '07-grafo');
-  await p.click('.grafo-lato [data-p="2"]');
-  await p.waitForFunction(() => location.hash.endsWith('?p=2'));
-  await p.waitForTimeout(800);
+  // ▸ grows a card in place
+  const prima1 = (await p.$$('.carta')).length;
+  await p.evaluate(() => document.querySelector('.carta:not(.radice) .cresci:not([disabled])').click());
+  verifica('▸ apre i collegamenti di una scheda', (await p.$$('.carta')).length > prima1, `${prima1} -> ${(await p.$$('.carta')).length} schede`);
+  // a note slip opens whole
+  const lungo = await p.$('.foglietto .altro');
+  if (lungo) {
+    const n0 = await p.$eval('.foglietto .altro', b => b.closest('.foglietto').textContent.length);
+    await p.evaluate(() => document.querySelector('.foglietto .altro').click());
+    const k = await p.$eval('.foglietto .altro', b => b.textContent);
+    verifica('una nota si apre per intero', k === 'riduci', `${n0} caratteri prima`);
+  }
+  await p.click('.grafo-lato [data-esplora="piu"]');
   metriche.grafo_p2 = await p.$eval('#ginfo', x => x.textContent);
-  verifica('grafo a 2 passi', parseInt(metriche.grafo_p2) > parseInt(g1), metriche.grafo_p2);
+  verifica('apri un livello', parseInt(metriche.grafo_p2) > parseInt(g1), metriche.grafo_p2);
   await foto(p, '08-grafo-2');
-  // click a node: it becomes the centre
-  const nodo = await p.evaluate(() => {
-    // find a depth-1 node on screen by scanning the canvas hit test through synthetic moves is costly; use the layout
-    const cv = document.querySelector('#cv');
-    const r = cv.getBoundingClientRect();
-    for (let y = 30; y < r.height - 30; y += 6) for (let x = 30; x < r.width - 30; x += 6) {
-      cv.dispatchEvent(new PointerEvent('pointermove', { clientX: r.left + x, clientY: r.top + y, bubbles: true }));
-      if (cv.style.cursor === 'pointer' && Math.hypot(x - r.width / 2, y - r.height / 2) > 40) return { x: r.left + x, y: r.top + y };
-    }
-    return null;
-  });
-  if (nodo) {
-    const prima = await hash(p);
-    await p.mouse.click(nodo.x, nodo.y);
-    await p.waitForFunction(h => decodeURIComponent(location.hash) !== h, prima, { timeout: 5000 }).catch(() => {});
-    verifica('clic su un nodo ricentra', (await hash(p)) !== prima, await hash(p));
-  } else verifica('clic su un nodo ricentra', false, 'nessun nodo trovato');
+  // the reference of a card makes it the root
+  const prima = await hash(p);
+  await p.evaluate(() => document.querySelector('.carta:not(.radice) .carta-rif').click());
+  await p.waitForFunction(h => decodeURIComponent(location.hash) !== h, prima, { timeout: 5000 }).catch(() => {});
+  verifica('clic su un riferimento ricentra', (await hash(p)) !== prima, await hash(p));
 
   // overview and matrix
   await p.evaluate(() => { location.hash = '#panoramica'; });

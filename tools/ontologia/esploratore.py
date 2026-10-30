@@ -256,9 +256,19 @@ def payload(data, links, summary):
 
 
 
+def fonts():
+    """font.css with every @@FONT:file@@ replaced by that woff2 file of font/ as a data: URL."""
+    css = open(os.path.join(MODELLO, 'font.css'), encoding='utf-8').read()
+
+    def data_url(m):
+        raw = open(os.path.join(MODELLO, 'font', m.group(1)), 'rb').read()
+        return 'data:font/woff2;base64,' + base64.b64encode(raw).decode('ascii')
+    return re.sub(r'@@FONT:([\w.-]+)@@', data_url, css)
+
+
 def pagina(P):
     js = open(os.path.join(MODELLO, 'app.js'), encoding='utf-8').read()
-    css = open(os.path.join(MODELLO, 'stile.css'), encoding='utf-8').read()
+    css = fonts() + open(os.path.join(MODELLO, 'stile.css'), encoding='utf-8').read()
     html = open(os.path.join(MODELLO, 'modello.html'), encoding='utf-8').read()
     raw = json.dumps(P, ensure_ascii=False, separators=(',', ':')).encode('utf-8')
     gz = gzip.compress(raw, compresslevel=9, mtime=0)
