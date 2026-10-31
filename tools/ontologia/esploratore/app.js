@@ -84,6 +84,7 @@ function indici() {
   for (let i = 0; i < n; i++) { c += diff[i]; S.indeg[i] = c; }
   S.ultimoAT = D.libri.findIndex(b => b.T === 'NT') - 1;
   indiciDizionario();
+  indiciParatesto();
 }
 function indiciDizionario() {
   // per verse: the citations of the dictionary naming a passage that includes it (all, and those
@@ -708,9 +709,16 @@ function instrada() {
   else if (via.startsWith('intro/')) { vista = 'intro'; mostraIntro(via.slice(6)); }
   else if (via === 'dizionario') { vista = 'dizionario'; mostraDizionario(parametri(query)); }
   else if (via.startsWith('voce/')) { vista = 'dizionario'; mostraVoce(via.slice(5), parametri(query)); }
+  else if (/^(introduzione-generale|indice-note|temi|cronologia)(\/|$)/.test(via)) {
+    vista = 'apparati';
+    const [v0, ...resto] = via.split('/'), arg = resto.join('/');
+    if (v0 === 'introduzione-generale') mostraPreliminari(arg);
+    else if (v0 === 'cronologia') mostraCronologia(arg, parametri(query));
+    else mostraIndiceAnalitico(v0 === 'temi' ? 'temi' : 'note', arg, parametri(query));
+  }
   else vista = mostraRif(via, parametri(query));
   $$('.schede a').forEach(a => a.classList.toggle('attiva', a.dataset.vista === vista ||
-    (vista === 'lettore' && a.dataset.vista === 'indice')));
+    ((vista === 'lettore' || vista === 'apparati') && a.dataset.vista === 'indice')));
   S.vista = vista;
   if (vista !== 'lettore') chiudiPannello(false);
   annuncia(document.title);
@@ -787,7 +795,14 @@ function mostraIndice() {
       <span><b>${num(r.note_citations + r.intro_citations)}</b> citazioni in note e introduzioni</span>
       <span><b>${num(Z.meta.piene)}</b> voci del <a href="#dizionario">Dizionario di Teologia Biblica</a> <small>${num(Z.meta.citazioni)} citazioni</small></span>
     </div>
-    <div class="testamenti">${col('AT')}${col('NT')}</div></div>`);
+    <div class="testamenti">${col('AT')}${col('NT')}</div>
+    <div class="h2">Pagine iniziali e appendici</div>
+    <div class="apparati">
+      <a class="apparato" href="#introduzione-generale"><b>Pagine iniziali</b><span>presentazione, prefazioni, canone, abbreviazioni, avvertenze</span></a>
+      <a class="apparato" href="#indice-note"><b>Indice delle note</b><span>${num(A.meta.note.entries)} voci · ${num(A.meta.note.references)} rinvii alle note</span></a>
+      <a class="apparato" href="#temi"><b>Temi pastorali</b><span>${num(A.meta.temi.entries)} temi · ${num(A.meta.temi.references)} riferimenti</span></a>
+      <a class="apparato" href="#cronologia"><b>Tavola cronologica</b><span>${num(A.meta.cron)} voci · dinastie</span></a>
+    </div></div>`);
   document.title = 'Esploratore dei versetti';
 }
 
@@ -863,7 +878,6 @@ function mostraCapitolo(b, c) {
     }
     const poesia = V.f[i] & 1;
     if (aperto !== (poesia ? 'div' : 'p')) { chiudi(); h += poesia ? '<div class="strofa">' : '<p>'; aperto = poesia ? 'div' : 'p'; }
-    if (V.ac[i]) h += `<span class="acr">${esc(V.ac[i])}</span>`;
     const pg = V.pg[i] !== pag ? `<span class="pg" title="pagina stampata">p. ${V.pg[i]}</span>` : '';
     pag = V.pg[i];
     const cl = 'v' + (poesia ? ' vp' : '') + (S.indeg[i] ? ' k' + calore(S.indeg[i]) : '') + (S.dizS[i] ? ' d' + caloreDiz(S.dizS[i]) : '');
@@ -871,7 +885,11 @@ function mostraCapitolo(b, c) {
     const aria = rif(i) + (nv ? `, citato in ${nv} ${nv === 1 ? 'voce' : 'voci'} del Dizionario` : '');
     let corpo = chiamate(i, lettere);
     if (V.f[i] & 2) corpo += '<span class="omesso" title="Il numero è stampato, il testo CEI omette il versetto">(versetto omesso)</span>';
-    if (poesia) corpo = corpo.split('<br>').map(r => `<span class="r">${r}</span>`).join('');
+    // the acrostic letters in the margin, beside the line each one opens (Na 1,3: Bet at line 3)
+    const lettera = l => `<span class="acr" title="Lettera acrostica ${esc(l)}${l.startsWith('(') ? ', mancante nel testo ebraico' : ''}"><b lang="he">${esc(A.ebr[l.replace(/[()]/g, '')] || '')}</b> ${esc(l)}</span>`;
+    const acr = n => (V.ac[i] || []).filter(x => x[1] === n).map(([l]) => lettera(l)).join('');
+    if (poesia) corpo = corpo.split('<br>').map((r, n) => `<span class="r">${acr(n + 1)}${r}</span>`).join('');
+    else if (V.ac[i]) corpo = V.ac[i].map(([l]) => lettera(l)).join('') + corpo;
     h += `<span class="${cl}" id="v${i}" data-i="${i}" tabindex="0" role="button" aria-label="${esc(aria)}">${segnoMargine(i)}${segnoDiz(i, dv.get(i))}${pg}<span class="vn" aria-hidden="true">${esc(V.l[i])}</span>${corpo}</span>${poesia ? '' : ' '}`;
   }
   chiudi();
@@ -1074,7 +1092,7 @@ function mostraPannello(i) {
     });
     h += elencoLungo(`<span class="seg">¶</span>Citato nelle introduzioni <span class="n">${E.intro.length}</span>`, righe);
   }
-  h += '</section>' + sezioneDiz(i, DZ) + '</div>';
+  h += '</section>' + sezioneIndice('note', i) + sezioneIndice('temi', i) + sezioneCronologia(i) + sezioneDiz(i, DZ) + '</div>';
   p.innerHTML = h;
   collegaCitazioni(p);
   p.hidden = false;
@@ -1095,10 +1113,12 @@ function elencoLungo(titolo, righe, primi = 6) {
 }
 function collegaCitazioni(radice) {
   // the <a class="ci" data-c|data-i> spans of notes and introductions get their target
+  // (and data-p, data-t: the front-matter texts and the chronology)
   $$('a.ci', radice).forEach(a => {
     const c = a.dataset.c !== undefined ? D.nc[+a.dataset.c] : null;
-    const r = c ? c[1] : D.ic[+a.dataset.i][2];
-    const motivo = c ? c[3] : D.ic[+a.dataset.i][4];
+    const x = a.dataset.p !== undefined ? A.pc[+a.dataset.p] : a.dataset.t !== undefined ? A.cron.cit[+a.dataset.t] : null;
+    const r = c ? c[1] : x ? (a.dataset.p !== undefined ? x[2] : x[1]) : D.ic[+a.dataset.i][2];
+    const motivo = c ? c[3] : x ? (a.dataset.p !== undefined ? x[4] : x[3]) : D.ic[+a.dataset.i][4];
     if (!r.length) { a.classList.add('x'); a.title = motivo || 'riferimento non risolto'; a.removeAttribute('href'); return; }
     a.href = hashVerso(r[0]);
     a.dataset.r = runsAttr(r);
@@ -1186,7 +1206,7 @@ function mostraCerca(par) {
     <div class="ricerca-campi">
       <input type="search" id="rq" value="${esc(q)}" placeholder="Parola o frase…" aria-label="Testo da cercare" spellcheck="false">
       <div class="segmenti" role="group" aria-label="Dove cercare">
-        ${[['tutto', 'Tutto'], ['versetti', 'Versetti'], ['note', 'Note'], ['dizionario', 'Dizionario']].map(([v, t]) => `<button type="button" data-in="${v}" aria-pressed="${v === dove}">${t}</button>`).join('')}
+        ${[['tutto', 'Tutto'], ['versetti', 'Versetti'], ['note', 'Note'], ['dizionario', 'Dizionario'], ['apparati', 'Appendici']].map(([v, t]) => `<button type="button" data-in="${v}" aria-pressed="${v === dove}">${t}</button>`).join('')}
       </div>
       <select id="rt" aria-label="Testamento"><option value="">Tutta la Bibbia</option><option value="AT"${T === 'AT' ? ' selected' : ''}>Antico Testamento</option><option value="NT"${T === 'NT' ? ' selected' : ''}>Nuovo Testamento</option></select>
       <select id="rb" aria-label="Libro"><option value="">Tutti i libri</option>${opz}</select>
@@ -1269,13 +1289,17 @@ function aggiornaRisultati(q, dove, T, bsel) {
       nn++;
     });
   }
+  // the front matter and the appendices: index entries, chronology, the texts (no testament or book filter)
+  const conPar = (dove === 'tutto' || dove === 'apparati') && !T && bfil < 0;
+  const [hPar, np] = conPar ? bloccoPar(I, ts, tutti) : ['', 0];
   const ms = performance.now() - t0;
-  const nd = dpar.length + dv.length;
+  const nd = dpar.length + dv.length + np;
   const parti = [];
-  if (dove !== 'dizionario') parti.push(`<b>${num(nv)}</b> versetti e <b>${num(nn)}</b> note in <b>${per.size}</b> libri`);
+  if (dove !== 'dizionario' && dove !== 'apparati') parti.push(`<b>${num(nv)}</b> versetti e <b>${num(nn)}</b> note in <b>${per.size}</b> libri`);
   if (conDiz) parti.push(`<b>${num(dv.length)}</b> ${dv.length === 1 ? 'voce' : 'voci'} e <b>${num(dpar.length)}</b> ${dpar.length === 1 ? 'paragrafo' : 'paragrafi'} del Dizionario`);
+  if (conPar) parti.push(`<b>${num(np)}</b> nelle pagine iniziali e nelle appendici`);
   esito.innerHTML = nv + nn + nd ? `${parti.join('; ')} <small>(${ms.toFixed(0)} ms)</small>`
-    : `Nessun risultato per «${esc(q)}»${!conDiz && dove !== 'versetti' && dove !== 'note' ? ' (i filtri di testamento e libro escludono il Dizionario)' : ''}.`;
+    : `Nessun risultato per «${esc(q)}»${!conDiz && dove !== 'versetti' && dove !== 'note' ? ' (i filtri di testamento e libro escludono il Dizionario e le appendici)' : ''}.`;
   const libri = [...per.keys()].sort((a, b) => a - b);
   const riga = ([tipo, k]) => {
     if (tipo === 0) return `<div class="r"><a class="dove" href="${hashVerso(k)}" data-r="${k}-${k}">${esc(rif(k))}</a><div class="frase">${evidenzia(I.vp[k], I.vn[k], ts)}</div></div>`;
@@ -1299,6 +1323,7 @@ function aggiornaRisultati(q, dove, T, bsel) {
     if (dpar.length > lim) h += altriDiz(lim);
     h += '</section>';
   }
+  h += hPar;
   for (const b of libri) {
     const xs = per.get(b);
     xs.sort((x, y) => (x[0] ? D.note[x[1]][0] : x[1]) - (y[0] ? D.note[y[1]][0] : y[1]) || x[0] - y[0]);
@@ -1325,6 +1350,391 @@ function aggiornaRisultati(q, dove, T, bsel) {
     btn.insertAdjacentHTML('beforebegin', xs.slice(btn.parentNode.querySelectorAll('.r').length).map(riga).join(''));
     btn.remove();
   };
+}
+
+// ---------------------------------------------------------------- the front matter and the appendices
+// D.par (esploratore.py, paratesto()): the edition and the texts before the Old Testament, the
+// canon lists, the abbreviations and codices, the woodcuts, the two indices of the appendices,
+// the chronological table and the dynasties.
+
+let A;
+const INDICI = {
+  note: { via: 'indice-note', breve: 'Indice delle note', nome: 'Indice alfabetico delle note più importanti', seg: '¤' },
+  temi: { via: 'temi', breve: 'Temi pastorali', nome: 'Indice dei temi biblici d’interesse pastorale', seg: '✦' },
+};
+const CORRISP = ['nota', 'copre', 'capitolo', 'rimandi', 'nessuna'];
+const TIPI_ABBR = [['libro', 'Abbreviazioni bibliche'], ['libro-forma-antica', 'Forme antiche'],
+  ['abbreviazione', 'Altre abbreviazioni'], ['segno', 'Segni delle referenze marginali'],
+  ['codice-maiuscolo', 'Codici maiuscoli'], ['codice-minuscolo', 'Codici minuscoli'], ['papiro', 'Papiri'],
+  ['codice-vetus-latina', 'Codici della vetus latina']];
+
+function indiciParatesto() {
+  A = D.par;
+  // every printed reference of the two indices with the runs it names for the verse panel (the
+  // corrected passage for a misprint the checklist corrects; nothing for an unresolved one)
+  S.ixRefs = [];
+  S.ixN = {};
+  for (const id of Object.keys(INDICI)) {
+    S.ixN[id] = new Map(A.indici[id].map((v, k) => [v[0], k]));
+    A.indici[id].forEach((v, k) => v[6].forEach((it, j) => {
+      const r = it[11] ? it[11][1] : it[7] <= 1 ? it[6] : [];
+      if (r.length) S.ixRefs.push([id, k, j, r]);
+    }));
+  }
+  S.cronDi = A.cron.voci.map(() => []);
+  A.cron.cit.forEach((c, k) => S.cronDi[c[0]].push(k));
+}
+const hashIndice = (id, n, sv = 0) => `#${INDICI[id].via}/${n}${sv ? '.' + sv : ''}`;
+const hashCron = n => `#cronologia/${A.cron.voci[n - 1][0]}?v=${n}`;
+const romanoInt = s => { let n = 0, p = 0; for (const ch of s.toLowerCase().split('').reverse()) { const v = { i: 1, v: 5, x: 10, l: 50 }[ch]; n += v < p ? -v : v; p = Math.max(p, v); } return n; };
+
+// the entries of an index naming verse i: [[entry, [[sub, item], ...]], ...], the most specific first
+function indiceDi(id, i) {
+  const per = new Map();
+  for (const [x, k, j, r] of S.ixRefs) {
+    if (x !== id || !contiene(r, i)) continue;
+    if (!per.has(k)) per.set(k, { js: [], w: Infinity });
+    const e = per.get(k);
+    e.js.push(j);
+    e.w = Math.min(e.w, ampiezza(r));
+  }
+  return [...per.entries()].sort((a, b) => a[1].w - b[1].w || a[0] - b[0]).map(([k, e]) => [k, e.js]);
+}
+function nomeSotto(id, k, sv) {
+  const v = A.indici[id][k];
+  return sv ? v[5][sv - 1][2] : v[2];
+}
+function chipIndice(it, conNote) {
+  // one printed reference of an index: the passage, what follows it, the BJ note it points to
+  const [, , raw, , cf, seg, r, st, mot, note, corr, fix, extra] = it;
+  const pre = cf ? '<small>cf.</small> ' : '';
+  const dopo = seg ? ` <small>${esc(seg)}</small>` : '';
+  if (it[0] === 1) return `<a class="chip" href="#${D.libri[extra[0]].o}" title="tutto il libro">${pre}${esc(raw)}${dopo}</a>`;
+  let h = '';
+  if (fix) {
+    h += `<span class="chip x refuso" title="refuso: ${esc(fix[3])}">${pre}${esc(raw)}</span>` +
+      chip(fix[1], '→ ' + esc(fix[0]) + dopo, ` title="${esc('corretto: ' + fix[3])}"`, 'corretto');
+  } else if (!r.length || st === 2) {
+    return `<span class="chip x" title="${esc(mot || 'riferimento non risolto')}">${pre}${esc(raw)}</span>`;
+  } else h += chip(r, pre + esc(raw) + dopo, st === 1 ? ` title="${esc('in parte: ' + mot)}"` : '');
+  if (!conNote) return h;
+  const ns = fix ? fix[2] : note;
+  const tipo = fix ? 0 : corr;
+  if (ns.length) {
+    h += ns.map(k => `<a class="nota-ix${tipo === 1 ? ' copre' : ''}" href="${hashVerso(D.note[k][0])}" data-nota="${k}" title="${tipo === 1 ? 'la nota comprende questo versetto' : 'la nota della BJ a cui l’indice manda'}">nota ${esc(D.note[k][3] + (D.note[k][2] || ''))}</a>`).join('');
+  } else if (tipo >= 3) h += `<small class="senza-nota">${tipo === 3 ? 'nessuna nota qui, solo rimandi' : 'nessuna nota qui'}</small>`;
+  return h;
+}
+function elencoBreve(righe, primi) {
+  const resto = righe.length - primi;
+  return `<ul class="elenco">${righe.slice(0, primi).join('')}</ul>${resto > 0
+    ? `<details class="altri"><summary class="altro">mostra altre ${resto}</summary><ul class="elenco">${righe.slice(primi).join('')}</ul></details>` : ''}`;
+}
+function sezioneIndice(id, i) {
+  const E = indiceDi(id, i);
+  if (!E.length) return '';
+  const I = INDICI[id];
+  const righe = E.map(([k, js]) => {
+    const v = A.indici[id][k];
+    const sotto = [...new Set(js.map(j => v[6][j][1]))].filter(s => s).map(s => esc(v[5][s - 1][2]));
+    const refs = js.map(j => chipIndice(v[6][j], id === 'note')).join(' ');
+    return `<li><a href="${hashIndice(id, v[0], js.length === 1 ? v[6][js[0]][1] : 0)}">${v[1]}</a>${sotto.length ? ` <small>› ${sotto.join(' · ')}</small>` : ''}<span class="frase chips">${refs}</span></li>`;
+  });
+  return `<section class="sez ix"><h3 title="${esc(I.nome)}">${id === 'note' ? 'Nell’indice delle note' : 'Temi pastorali'} <span class="n">${E.length}</span></h3>${elencoBreve(righe, 5)}</section>`;
+}
+function sezioneCronologia(i) {
+  const ks = [];
+  A.cron.cit.forEach((c, k) => { if (c[2] <= 1 && contiene(c[1], i)) ks.push(k); });
+  const xilo = A.xilo.find(x => contiene(x[3], i));
+  if (!ks.length && !xilo) return '';
+  let h = '<section class="sez cron">';
+  if (ks.length) {
+    ks.sort((x, y) => ampiezza(A.cron.cit[x][1]) - ampiezza(A.cron.cit[y][1]) || A.cron.cit[x][0] - A.cron.cit[y][0]);
+    const righe = [...new Set(ks.map(k => A.cron.cit[k][0]))].map(n => {
+      const v = A.cron.voci[n], c = ks.find(k => A.cron.cit[k][0] === n);
+      return `<li><a href="${hashCron(n + 1)}">${v[7] ? esc(v[7]) : 'senza data'}</a> <small>${esc(A.cron.col[v[4]][1])} · ${esc(A.cron.sez[v[0] - 1][1].split(' ')[0])}</small><span class="frase">${contesto(v[11], A.cron.cit[c][4])}</span></li>`;
+    });
+    h += `<h3>Nella tavola cronologica <span class="n">${righe.length}</span></h3>${elencoBreve(righe, 4)}`;
+  }
+  if (xilo) h += `<p class="xilo-nota"><span class="seg">▣</span>Illustrato dalla xilografia che apre ${esc(D.libri[xilo[0]].t)} (${esc(xilo[1])} ${esc(xilo[2])}; <a href="#introduzione-generale/avvertenze">Avvertenze</a>).</p>`;
+  return h + '</section>';
+}
+
+// ---------------------------------------------------------------- views: the two indices
+
+function inizialeIndice(v) { return normalizza(v[2].replace(/^[«(‘’'"\s]+/, '')).charAt(0).toUpperCase(); }
+function mostraIndiceAnalitico(id, arg, par = {}) {
+  const I = INDICI[id], voci = A.indici[id], m = A.meta[id];
+  if (arg) return mostraVoceIndice(id, arg);
+  const lettere = [...new Set(voci.map(inizialeIndice))];
+  const nref = v => v[6].filter(it => it[0] <= 1).length;
+  const card = (v, k) => `<a class="dvl ixl" href="${hashIndice(id, v[0])}" data-nome="${esc(normalizza(v[2] + ' ' + v[5].map(s => s[2]).join(' ')))}" title="${quanti(nref(v), 'riferimento', 'riferimenti')}${v[5].length ? ', ' + quanti(v[5].length, 'sottovoce', 'sottovoci') : ''}"><b>${v[1]}</b><span>${num(nref(v))}</span></a>`;
+  const sotto = id === 'note'
+    ? `${num(m.entries)} voci e ${num(m.subentries)} sottovoci; ${num(m.references)} riferimenti, ${num(m.nota.nota || 0)} alla prima riga di una nota della BJ, ${num(m.nota.copre || 0)} dentro una nota che li comprende. L’indice esiste per portare alle note: ogni riferimento apre il versetto con la sua nota. ${num(m.see)} rimandi «v.».`
+    : `${num(m.entries)} temi e ${num(m.subentries)} sottotemi (di G. Barbaglio), ${num(m.references)} riferimenti biblici, ${num(m.books)} a libri interi.`;
+  pagina(`<div class="pagina dizionario indice-an"><div class="sopratitolo">Appendici · pp. ${id === 'note' ? '29–39' : '40–58'}</div>
+    <h1>${esc(I.nome)}</h1><p class="sotto">${sotto}</p>
+    <div class="diz-campi"><input type="search" id="dq" value="${esc(par.q || '')}" placeholder="Filtra le voci…" aria-label="Filtra le voci" spellcheck="false">
+    <nav class="lettere" aria-label="Lettere">${lettere.map(l => `<button type="button" data-l="${esc(l)}">${esc(l)}</button>`).join('')}</nav></div>
+    ${lettere.map(l => `<section class="lettera" id="lett-${esc(l)}"><h2>${esc(l)}</h2><div class="dvoci">${voci.map((v, k) => [v, k]).filter(([v]) => inizialeIndice(v) === l).map(([v, k]) => card(v, k)).join('')}</div></section>`).join('')}
+    <p class="vuoto" id="dnessuna" hidden>Nessuna voce corrisponde.</p></div>`);
+  document.title = `${I.breve} · Esploratore dei versetti`;
+  $('.lettere').addEventListener('click', e => {
+    const b = e.target.closest('[data-l]');
+    if (!b) return;
+    const alto = $('.barra').getBoundingClientRect().bottom;
+    window.scrollTo(0, $('#lett-' + b.dataset.l).getBoundingClientRect().top + window.scrollY - alto - 8);
+  });
+  const filtra = () => {
+    const testo = $('#dq').value.trim(), q = normalizza(testo);
+    let tot = 0;
+    $$('.lettera').forEach(sez => {
+      let n = 0;
+      $$('.dvl', sez).forEach(a => { const ok = !q || a.dataset.nome.includes(q); a.hidden = !ok; n += ok; });
+      sez.hidden = !n;
+      $(`.lettere [data-l="${sez.id.slice(5)}"]`).disabled = !n;
+      tot += n;
+    });
+    $('#dnessuna').hidden = tot > 0;
+    return testo;
+  };
+  $('#dq').addEventListener('input', () => {
+    const testo = filtra();
+    history.replaceState(history.state, '', `#${I.via}` + (testo ? '?q=' + encodeURIComponent(testo) : ''));
+  });
+  if (par.q) filtra();
+  ripristinaScorrimento();
+}
+function mostraVoceIndice(id, arg) {
+  const I = INDICI[id];
+  const [n0, sv0] = arg.split('.');
+  const k = S.ixN[id].get(+n0);
+  if (k === undefined) {
+    pagina(`<div class="pagina"><h1>Voce non trovata</h1><p class="sotto">«${esc(arg)}» non è una voce dell’${esc(I.nome.charAt(0).toLowerCase() + I.nome.slice(1))}.</p><p><a href="#${I.via}">Tutte le voci</a></p></div>`);
+    document.title = 'Voce non trovata · ' + I.breve;
+    return;
+  }
+  const v = A.indici[id][k], [n, html, , stile, pag, subs, items] = v;
+  const gruppi = [[0, null], ...subs.map(s => [s[0], s])];
+  let h = '';
+  for (const [sv, s] of gruppi) {
+    const its = items.filter(it => it[1] === sv);
+    if (!its.length && sv) continue;
+    let riga = its.map(it => {
+      if (it[0] === 2) return it[12].map(t => { const kk = S.ixN[id].get(t); return `<a class="vedi" href="${hashIndice(id, t)}">v. ${A.indici[id][kk][1]}</a>`; }).join(' ') || `<span class="vedi x" title="nessuna voce con questo lemma">v. ${esc(it[2])}</span>`;
+      if (it[0] === 3) return it[12].map(j => `<a class="vedi" href="#intro/${esc(D.intro[j][0])}" title="${esc(D.intro[j][1])}">p. ${esc(it[2])}</a>`).join(' ') || `<span class="vedi">p. ${esc(it[2])}</span>`;
+      return chipIndice(it, id === 'note');
+    }).join(' ');
+    if (!riga) continue;
+    // the index exists to point to the notes: each one is here, closed, to be read in place
+    const note = id === 'note' ? [...new Set(its.flatMap(it => (it[11] ? it[11][2] : it[9])))] : [];
+    const schede = note.map(nk => {
+      const x = D.note[nk], piano = testoPiano(x[5]);
+      return `<details class="nota ix-nota"><summary><span class="etichetta">${esc(rif(x[0]))} ${esc(x[3])}${esc(x[2] || '')}</span><span class="assaggio">${esc(piano.slice(0, 160))}</span></summary><div class="nota-testo">${x[5]}<div class="contatori"><a href="${hashVerso(x[0])}" data-nota="${nk}">apri ${esc(rif(x[0]))} con la nota</a><span>copre <b>${esc(rifRuns(x[6]))}</b></span><span>p. ${x[7]}</span></div></div></details>`;
+    }).join('');
+    h += `<div class="ix-riga${sv ? ' sv' : ''}" id="sv${sv}">${s ? `<span class="ix-sv">${esc(s[1])}</span>` : ''}<div><span class="chips">${riga}</span>${schede}</div></div>`;
+  }
+  const nr = items.filter(it => it[0] <= 1).length;
+  const vicine = [A.indici[id][k - 1], A.indici[id][k + 1]];
+  pagina(`<div class="pagina voce-ix"><div class="sopratitolo"><a href="#${I.via}">${esc(I.nome)}</a> · appendici, p. ${pag}</div>
+    <h1 class="st-${esc(stile)}">${html}</h1><p class="sotto">${quanti(nr, 'riferimento', 'riferimenti')}${subs.length ? ' · ' + quanti(subs.length, 'sottovoce', 'sottovoci') : ''}${id === 'note' ? ' · ogni «nota» apre il versetto con la nota della BJ' : ''}</p>
+    <div class="ix-corpo">${h}</div>
+    <div class="fine">${vicine[0] ? `<a href="${hashIndice(id, vicine[0][0])}">‹ ${vicine[0][1]}</a>` : '<span></span>'}${vicine[1] ? `<a href="${hashIndice(id, vicine[1][0])}">${vicine[1][1]} ›</a>` : ''}</div></div>`);
+  collegaCitazioni($('#vista'));
+  document.title = `${v[2]} · ${I.breve}`;
+  if (sv0) {
+    const r = $('#sv' + sv0);
+    if (r) { r.classList.add('sel'); const alto = $('.barra').getBoundingClientRect().bottom; window.scrollTo(0, r.getBoundingClientRect().top + window.scrollY - alto - 16); }
+  }
+}
+
+// ---------------------------------------------------------------- views: the chronological table
+
+function annoTesto(a) { return a < 0 ? `${-a} a.C.` : `${a} d.C.`; }
+function mostraCronologia(arg, par = {}) {
+  const C = A.cron;
+  if (arg === 'dinastie') return mostraDinastie();
+  const s = arg ? +arg : 0;
+  if (arg && !(s >= 1 && s <= C.sez.length)) return nonTrovato('cronologia/' + arg);
+  const span = sz => {
+    const vs = C.voci.filter(v => v[0] === sz && v[8] !== null);
+    if (!vs.length) return '';
+    const lo = Math.min(...vs.map(v => v[8])), hi = Math.max(...vs.map(v => v[9]));
+    return `${annoTesto(lo)} – ${annoTesto(hi)}`;
+  };
+  const nav = `<nav class="cron-nav" aria-label="Sezioni della tavola">${C.sez.map(([n, t]) => `<a href="#cronologia/${n}"${n === s ? ' aria-current="page"' : ''} title="${esc(t)}">${esc(t.split('.')[0])}</a>`).join('')}<a href="#cronologia/dinastie"${arg === 'dinastie' ? ' aria-current="page"' : ''}>Dinastie</a></nav>`;
+  if (!s) {
+    pagina(`<div class="pagina cronologia"><div class="sopratitolo">Appendici · pp. 3–23</div><h1>Tavola cronologica</h1>
+      <p class="sotto">${num(C.voci.length)} voci in ${num(C.sez.length)} periodi e ${num(new Set(C.voci.map(v => v[1])).size)} righe; ${num(A.meta.datate)} con una data leggibile, ${num(C.cit.length)} riferimenti biblici. Le date sono quelle stampate; gli anni a margine sono la scala della stampa.</p>
+      ${C.intro.map(p => `<p class="cron-intro">${p}</p>`).join('')}
+      ${nav}<div class="cron-sezioni">${C.sez.map(([n, t]) => `<a class="tessera" href="#cronologia/${n}"><b>${esc(t.split('.')[0])}</b><span>${esc(t.slice(t.indexOf('.') + 1).trim())}</span><small>${num(C.voci.filter(v => v[0] === n).length)} voci${span(n) ? ' · ' + span(n) : ''}</small></a>`).join('')}
+      <a class="tessera" href="#cronologia/dinastie"><b>Dinastie</b><span>Asmonea e Erodiana</span><small>${num(A.din.length)} persone</small></a></div></div>`);
+    collegaCitazioni($('#vista'));
+    document.title = 'Tavola cronologica · Esploratore dei versetti';
+    return;
+  }
+  const vs = C.voci.map((v, k) => [v, k]).filter(([v]) => v[0] === s);
+  const righe = [...new Set(vs.map(([v]) => v[1]))];
+  // the columns in print order: within a row the entries follow the cells from left to right
+  const posto = new Map();
+  for (const r of righe) {
+    const cs = [...new Set(vs.filter(([v]) => v[1] === r).map(([v]) => v[4]))];
+    cs.forEach((c, j) => { const x = posto.get(c) || [0, 0]; posto.set(c, cs.length > 1 ? [x[0] + j / (cs.length - 1), x[1] + 1] : x); });
+  }
+  const media = c => { const x = posto.get(c); return x[1] ? x[0] / x[1] : c / 10; };
+  const cols = [...posto.keys()].sort((a, b) => media(a) - media(b) || a - b);
+  const sel = par.v ? +par.v - 1 : null;
+  let pag = null;
+  const corpo = righe.map(r => {
+    const qui = vs.filter(([v]) => v[1] === r);
+    const anni = qui[0][0][2];
+    const pg = qui[0][0][3] !== pag ? `<span class="pg">p. ${qui[0][0][3]}</span>` : '';
+    pag = qui[0][0][3];
+    return `<div class="cron-riga" style="--n:${cols.length}"><div class="cron-anni">${pg}${anni ? anni.split('; ').map(esc).join('<br>') : ''}</div>${cols.map(c => {
+      const cella = qui.filter(([v]) => v[4] === c);
+      return `<div class="cron-cella" data-col="${esc(C.col[c][1])}">${cella.map(([v, k]) => `<p id="cv${k + 1}" class="${k === sel ? 'sel' : ''}"${v[7] ? ` title="${esc(v[7])}${v[8] !== null ? ` · ${annoTesto(v[8])}${v[9] !== v[8] ? ' – ' + annoTesto(v[9]) : ''}${v[10] ? ' circa' : ''}` : ''}"` : ''}>${v[6]}</p>`).join('')}</div>`;
+    }).join('')}</div>`;
+  }).join('');
+  const prec = s > 1 ? s - 1 : null, succ = s < C.sez.length ? s + 1 : null;
+  pagina(`<div class="pagina cronologia larga"><div class="sopratitolo"><a href="#cronologia">Tavola cronologica</a> · ${span(s)}</div>
+    <h1>${esc(C.sez[s - 1][1])}</h1>${nav}
+    <div class="cron-testata" style="--n:${cols.length}"><div></div>${cols.map(c => `<div>${esc(C.col[c][1])}</div>`).join('')}</div>
+    <div class="cron-tavola">${corpo}</div>
+    <div class="fine">${prec ? `<a href="#cronologia/${prec}">‹ ${esc(C.sez[prec - 1][1].split('.')[0])}</a>` : '<span></span>'}${succ ? `<a href="#cronologia/${succ}">${esc(C.sez[succ - 1][1].split('.')[0])} ›</a>` : '<a href="#cronologia/dinastie">Dinastie ›</a>'}</div></div>`);
+  collegaCitazioni($('#vista'));
+  document.title = `${C.sez[s - 1][1].split('.')[0]}. Tavola cronologica`;
+  if (sel !== null) {
+    const p = $('#cv' + (sel + 1));
+    if (p) { const alto = $('.barra').getBoundingClientRect().bottom; window.scrollTo(0, p.getBoundingClientRect().top + window.scrollY - alto - 60); }
+  }
+}
+function mostraDinastie() {
+  const P = new Map(A.din.map(x => [x[0], x]));
+  const figli = new Map(A.din.map(x => [x[0], []]));
+  A.din.forEach(x => { for (const g of [x[5], x[6]]) if (g && !figli.get(g).includes(x[0])) figli.get(g).push(x[0]); });
+  const nome = x => `${x[1] ? `<span class="num">${esc(x[1])}.</span> ` : ''}${x[3] ? `<em>${esc(x[2])}</em>` : esc(x[2])}${x[4] ? ` <small>${esc(x[4])}</small>` : ''}`;
+  const visti = new Set();
+  const ramo = id => {
+    const x = P.get(id);
+    visti.add(id);
+    const coniugi = x[7].map(c => P.get(c)).map(c => `<span class="sposo" title="matrimonio">∞</span> ${nome(c)}`).join(' ');
+    const fs = figli.get(id).filter(f => P.get(f)[5] === id || !P.get(f)[5]);    // under the father (or the mother alone)
+    return `<li id="din-${esc(id)}"><span class="persona">${nome(x)}</span>${coniugi ? ` ${coniugi}` : ''}${x[8] ? `<span class="nota-din">${esc(x[8])}</span>` : ''}${fs.length ? `<ul>${fs.map(f => {
+      const madre = P.get(f)[6];
+      return ramo(f).replace('<span class="persona">', madre && P.get(id)[7].length > 1 ? `<span class="madre">da ${esc(P.get(madre)[2])}</span><span class="persona">` : '<span class="persona">');
+    }).join('')}</ul>` : ''}</li>`;
+  };
+  const radici = A.din.filter(x => !x[5] && !x[6] && !A.din.some(y => y[7].includes(x[0]) && (y[5] || y[6])));
+  const albero = radici.map(x => ramo(x[0])).join('');
+  pagina(`<div class="pagina cronologia"><div class="sopratitolo"><a href="#cronologia">Tavola cronologica</a> · appendici, p. 24</div>
+    <h1>Dinastie Asmonea e Erodiana</h1>
+    <p class="sotto">${num(A.din.length)} persone, i figli sotto il padre (con la madre quando le mogli sono più d’una); ∞ indica matrimonio, i numeri d’ordine, il corsivo e le date sono quelli stampati. Alcune persone stampate due volte nella tavola sono qui una sola (nota accanto).</p>
+    <nav class="cron-nav" aria-label="Sezioni della tavola">${A.cron.sez.map(([n, t]) => `<a href="#cronologia/${n}" title="${esc(t)}">${esc(t.split('.')[0])}</a>`).join('')}<a href="#cronologia/dinastie" aria-current="page">Dinastie</a></nav>
+    <ul class="dinastie">${albero}</ul></div>`);
+  document.title = 'Dinastie Asmonea e Erodiana · Tavola cronologica';
+}
+
+// ---------------------------------------------------------------- views: the front matter
+
+function mostraPreliminari(arg) {
+  if (arg === 'abbreviazioni') return mostraAbbreviazioni();
+  const m = (arg || '').match(/^(.*?)(?:\.(\d+))?$/);
+  if (arg) {
+    const k = A.testi.findIndex(x => x[0] === m[1]);
+    if (k < 0) return nonTrovato('introduzione-generale/' + arg);
+    return mostraTestoPreliminare(k, m[2]);
+  }
+  const E = A.ed;
+  const voce = (x, k) => `<a class="pre-testo" href="#introduzione-generale/${esc(x[0])}"><b>${esc(x[1])}</b>${x[2] ? `<i>${esc(x[2])}</i>` : ''}<span>${x[4] ? esc(x[4]) + ' · ' : ''}p. ${esc(x[3])}</span></a>`;
+  pagina(`<div class="pagina preliminari"><div class="sopratitolo">Pagine iniziali · pp. ii–xxviii</div>
+    <h1>${esc(E.t)}</h1><p class="sotto">${esc(E.pub)}, ${esc(E.luogo)} · ISBN ${esc(E.isbn)} · ${E.stampe.map(s => `${esc(s[0])}: ${esc(s[1])}`).join('; ')}</p>
+    <details class="colofone"><summary>Dati editoriali (p. iv)</summary><p>${E.colofone.map(esc).join('<br>')}</p></details>
+    <div class="h2">Presentazione e prefazioni</div><div class="pre-testi">${A.testi.filter(x => x[7] === 'presentazione' || x[7] === 'prefazione').map(voce).join('')}</div>
+    <div class="h2">Il canone e le abbreviazioni</div><div class="pre-testi">${A.testi.filter(x => x[7] === 'canone').map(voce).join('')}
+      <a class="pre-testo" href="#introduzione-generale/abbreviazioni"><b>Abbreviazioni e codici</b><span>${num(A.abbr.filter(a => a[2] === 'libro').length)} sigle dei libri, ${num(A.abbr.filter(a => a[2].startsWith('codice') || a[2] === 'papiro').length)} codici e papiri · pp. xxii–xxiv</span></a></div>
+    <div class="h2">Avvertenze</div><div class="pre-testi">${A.testi.filter(x => x[7] === 'avvertenze').map(voce).join('')}</div>
+    <div class="h2">Nelle appendici</div><div class="pre-testi">
+      <a class="pre-testo" href="#indice-note"><b>${esc(INDICI.note.nome)}</b><span>${num(A.meta.note.entries)} voci · ${num(A.meta.note.references)} riferimenti</span></a>
+      <a class="pre-testo" href="#temi"><b>${esc(INDICI.temi.nome)}</b><span>${num(A.meta.temi.entries)} temi · ${num(A.meta.temi.references)} riferimenti</span></a>
+      <a class="pre-testo" href="#cronologia"><b>Tavola cronologica</b><span>${num(A.meta.cron)} voci · dinastie Asmonea e Erodiana</span></a></div></div>`);
+  document.title = 'Pagine iniziali · Esploratore dei versetti';
+}
+function mostraTestoPreliminare(k, nn) {
+  const [id, titolo, sotto, pag0, firma, qual, corsivo, tipo, pars] = A.testi[k];
+  let pag = null;
+  const corpo = pars.map(([n, pg, h]) => {
+    const seg = pg !== pag ? `<span class="pg">p. ${esc(pg)}</span>` : '';
+    pag = pg;
+    return `<p id="par${n}">${seg}${h}</p>`;
+  }).join('');
+  let extra = '';
+  if (tipo === 'canone') {
+    const c = A.canoni[id === 'divisione-ebraica' ? 0 : 1];
+    const voce = it => {
+      const dove = [...it[3].map(b => `<a href="#${D.libri[b].o}">${esc(D.libri[b].s)}</a>`), ...it[4].map(x => `<a href="#${x}">${esc(D.libri[S.osis.get(x.split('.')[0])].s)} ${esc(x.split('.')[1])}</a>`)];
+      return `<li class="${it[6] ? 'apocrifo' : ''}"><span class="cn">${c[0] === 'ebraico' ? it[0] + '.' : ''}</span>${it[2]}${dove.length ? ` <small class="in-bibbia">→ ${dove.join(', ')}</small>` : it[6] ? ' <small class="in-bibbia">non in questa Bibbia</small>' : ''}</li>`;
+    };
+    extra = c[1].map(g => `<div class="canone-gruppo${g[2] ? ' sotto' : ''}"><div class="canone-tit">${g[1]}</div><ul class="canone">${c[2].filter(it => it[1] === g[0]).map(voce).join('')}</ul></div>`).join('');
+    extra = `<div class="h2">L’elenco</div><div class="canone-box">${extra}</div>`;
+  }
+  if (id === 'avvertenze') {
+    extra = `<div class="h2">Le xilografie e i passi che illustrano</div><p class="sotto">Dai riferimenti qui sopra: la xilografia che apre ogni libro, con i suoi versetti.</p><div class="chips xilo">${A.xilo.map(x => chip(x[3], `${esc(D.libri[x[0]].s)} ${esc(x[2])}`, ` title="${esc(x[1])}"`)).join('')}</div>`;
+  }
+  pagina(`<div class="pagina"><div class="sopratitolo"><a href="#introduzione-generale">Pagine iniziali</a> · p. ${esc(pag0)}</div>
+    <h1>${esc(titolo)}</h1>${sotto ? `<p class="sotto"><i>${esc(sotto)}</i></p>` : ''}
+    ${firma ? `<div class="firma-pre"><b>${esc(firma)}</b>${qual.map(q => `<span>${esc(q)}</span>`).join('')}</div>` : ''}
+    <div class="intro-testo${corsivo ? ' corsivo' : ''}">${corpo}</div>${extra}</div>`);
+  collegaCitazioni($('#vista'));
+  document.title = titolo + ' · Pagine iniziali';
+  if (nn) {
+    const p = $('#par' + nn);
+    if (p) { p.classList.add('sel'); window.scrollTo(0, p.getBoundingClientRect().top + window.scrollY - 110); }
+  }
+}
+function mostraAbbreviazioni() {
+  const riga = a => {
+    const libri = a[4].map(b => `<a href="#${D.libri[b].o}">${esc(D.libri[b].t)}</a>`).join(', ');
+    return `<tr><td class="ab-f">${esc(a[0])}</td><td>${esc(a[1])}${libri && a[2] === 'libro' && a[4].length > 1 ? ` <small>(${libri})</small>` : ''}${a[5] && a[5] !== a[0] ? ` <small class="greg">Gregory-Aland ${esc(a[5])}</small>` : ''}</td></tr>`;
+  };
+  const libro = a => a[4].length === 1 ? `<a href="#${D.libri[a[4][0]].o}">${esc(a[1])}</a>` : esc(a[1]);
+  const gruppi = TIPI_ABBR.map(([t, tit]) => {
+    const xs = A.abbr.filter(a => a[2] === t);
+    if (!xs.length) return '';
+    if (t === 'libro') return `<div class="h2">${tit} <span class="n">${xs.length}</span></div><div class="abbr-libri">${xs.map(a => `<span><b>${esc(a[0])}</b> ${libro(a)}</span>`).join('')}</div>`;
+    return `<div class="h2">${tit} <span class="n">${xs.length}</span></div><table class="abbr"><tbody>${xs.map(riga).join('')}</tbody></table>`;
+  }).join('');
+  pagina(`<div class="pagina preliminari"><div class="sopratitolo"><a href="#introduzione-generale">Pagine iniziali</a> · pp. xxii–xxiv</div>
+    <h1>Abbreviazioni e codici</h1><p class="sotto">Come stampate. Le sigle dei libri sono quelle del canone di questa Bibbia (Est indica i due testi di Ester); i codici con il loro numero nella lista Gregory-Aland.</p>${gruppi}</div>`);
+  document.title = 'Abbreviazioni e codici · Pagine iniziali';
+}
+
+// ---------------------------------------------------------------- search in the front matter and appendices
+
+function indicePar(I) {
+  if (I.pt) return;
+  I.pt = [];          // [kind, a, b, plain]: 0 text paragraph (text, paragraph index), 1 chronology entry, 2 index entry (index, entry)
+  A.testi.forEach((x, k) => x[8].forEach((p, j) => I.pt.push([0, k, j, testoPiano(p[2])])));
+  A.cron.voci.forEach((v, k) => I.pt.push([1, k, 0, v[11]]));
+  for (const id of Object.keys(INDICI)) A.indici[id].forEach((v, k) => I.pt.push([2, id, k, v[2] + (v[5].length ? ' · ' + v[5].map(s => s[2]).join(' · ') : '')]));
+  I.ptn = I.pt.map(x => normalizza(x[3]));
+}
+function bloccoPar(I, ts, tutti) {
+  indicePar(I);
+  const hit = [];
+  I.ptn.forEach((x, j) => { if (tutti(x)) hit.push(j); });
+  if (!hit.length) return ['', 0];
+  const voci = hit.filter(j => I.pt[j][0] === 2), altri = hit.filter(j => I.pt[j][0] !== 2);
+  const riga = j => {
+    const [t, a, b] = I.pt[j];
+    if (t === 0) { const x = A.testi[a]; return `<div class="r rp"><a class="dove" href="#introduzione-generale/${esc(x[0])}.${x[8][b][0]}">${esc(x[1])}<small>p. ${esc(x[8][b][1])}</small></a><div class="frase">${evidenzia(I.pt[j][3], I.ptn[j], ts)}</div></div>`; }
+    const v = A.cron.voci[a];
+    return `<div class="r rp"><a class="dove" href="${hashCron(a + 1)}">Cronologia<small>${v[7] ? esc(v[7]) : esc(A.cron.sez[v[0] - 1][1].split('.')[0])}</small></a><div class="frase">${evidenzia(I.pt[j][3], I.ptn[j], ts)}</div></div>`;
+  };
+  let h = `<section class="blocco bpar"><h3><span class="seg">¶</span>Pagine iniziali e appendici<small>${quanti(voci.length, 'voce d’indice', 'voci d’indice')} · ${quanti(altri.length, 'altro risultato', 'altri risultati')}</small></h3>`;
+  if (voci.length) h += `<div class="chips pchips">${voci.map(j => { const [, id, k] = I.pt[j], v = A.indici[id][k]; return `<a class="chip" href="${hashIndice(id, v[0])}" title="${esc(INDICI[id].nome)}">${v[1]} <small>${id === 'note' ? 'indice note' : 'tema'}</small></a>`; }).join('')}</div>`;
+  h += altri.slice(0, 30).map(riga).join('');
+  if (altri.length > 30) h += `<details class="altri"><summary class="altro">mostra altri ${altri.length - 30}</summary>${altri.slice(30).map(riga).join('')}</details>`;
+  return [h + '</section>', hit.length];
 }
 
 // ---------------------------------------------------------------- graph view
@@ -1794,6 +2204,7 @@ function mostraPanoramica(sel) {
     <p class="sotto" style="margin-bottom:.4rem">Quanti rimandi a margine indicano un passo che comprende il versetto.</p>
     <table class="classifica"><tbody>${top.map((i, k) => `<tr><td class="pos">${k + 1}</td><td class="rif"><a href="${hashVerso(i)}" data-r="${i}-${i}">${esc(rif(i))}</a></td><td class="cnt"><div><i style="width:${(5 * S.indeg[i] / S.indeg[top[0]]).toFixed(2)}rem"></i>${S.indeg[i]}</div></td><td class="frase">${esc(testoPiano(V.h[i]).slice(0, 120))}${testoPiano(V.h[i]).length > 120 ? '…' : ''}</td></tr>`).join('')}</tbody></table>
     ${panoramicaDiz()}
+    ${panoramicaPar()}
   </div>`);
   document.title = 'Panoramica · Esploratore dei versetti';
   disegnaMatrice(sel, sel.length === 2);
@@ -1803,6 +2214,19 @@ function mostraPanoramica(sel) {
     $$('#dtop-scelta button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
     $('#dtop tbody').innerHTML = righeTopDiz(b.dataset.top === 'stretti');
   });
+}
+function panoramicaPar() {
+  const m = A.meta, n = m.note, t = m.temi;
+  const pct = (a, b) => (100 * a / b).toFixed(1).replace('.', ',') + '%';
+  const tessere = [
+    [num(n.entries), 'voci dell’indice delle note', `${num(n.subentries)} sottovoci · <a href="#indice-note">l’indice</a>`],
+    [num(n.references), 'rinvii alle note della BJ', `${pct(n.nota.nota || 0, n.references)} alla prima riga di una nota, ${pct(n.nota.copre || 0, n.references)} dentro una nota`],
+    [num(t.entries), 'temi pastorali', `${num(t.subentries)} sottotemi · ${num(t.references)} riferimenti · <a href="#temi">i temi</a>`],
+    [num(m.cron), 'voci della tavola cronologica', `${num(m.datate)} datate · ${num(m.ccit)} riferimenti · <a href="#cronologia">la tavola</a>`],
+  ];
+  return `<div class="h2 par-h2"><span class="seg">¶</span>Pagine iniziali e appendici</div>
+    <p class="sotto">Gli indici e la tavola cronologica collegati ai versetti; ${num(m.corr)} refusi degli indici hanno anche il riferimento corretto (dal registro dei dubbi del volume). <a href="#introduzione-generale">Pagine iniziali</a>: ${num(A.testi.length)} testi, ${num(m.pcit)} citazioni bibliche, ${num(A.abbr.length)} abbreviazioni.</p>
+    <div class="tessere tessere-par">${tessere.map(([x, l, s]) => `<div class="tessera"><b>${x}</b><span>${l}</span>${s ? `<small>${s}</small>` : ''}</div>`).join('')}</div>`;
 }
 function topDiz(stretti) {
   // the 20 verses most cited by the dictionary: every citation naming a passage that includes
@@ -2052,6 +2476,11 @@ function eventi() {
     }
     const nota = e.target.closest('[data-nota]');
     if (nota) S.notaChiave = +nota.dataset.nota;
+    if (nota && nota.matches('.nota-ix') && nota.getAttribute('href') === location.hash && S.sel !== null && S.sel !== undefined) {
+      e.preventDefault();             // the note of the verse already open: show it in the panel
+      mostraPannello(S.sel);
+      return;
+    }
     const chiudi = e.target.closest('[data-chiudi]');
     if (chiudi) { chiudiPannello(true); return; }
     const anteprima = e.target.closest('[data-r], [data-x]');

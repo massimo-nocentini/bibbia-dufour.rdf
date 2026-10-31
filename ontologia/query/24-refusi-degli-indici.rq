@@ -1,0 +1,24 @@
+# I refusi degli indici: il riferimento come stampato, quello corretto, il perché (dal registro
+# dei dubbi del volume) e, nell'indice delle note, la nota a cui il riferimento corretto manda.
+# The misprints of the indices: the reference as printed, the corrected one, why, and (index of
+# notes) the note the corrected reference sends to.
+PREFIX bj: <https://massimo-nocentini.github.io/bibbia-gerusalemme/ontologia#>
+PREFIX verso: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/verso/>
+PREFIX libro: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/libro/>
+PREFIX indice: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/indice/>
+PREFIX cronologia: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/cronologia/>
+PREFIX dinastia: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/dinastia/>
+PREFIX canone: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/canone/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX schema: <https://schema.org/>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+
+SELECT ?indice ?voce ?stampato ?corretto ?perche ?nota WHERE {
+  ?c bj:testoCorretto ?corretto ; bj:testo ?stampato ; bj:correzione ?perche ; bj:daVoceIndice ?x .
+  ?x skos:inScheme/dcterms:identifier ?indice ; skos:prefLabel ?voce .
+  OPTIONAL { ?c bj:indicaNota/rdfs:label ?nota }
+}
+ORDER BY ?indice ?voce

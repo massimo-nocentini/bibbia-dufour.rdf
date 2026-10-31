@@ -13,7 +13,12 @@ typed link per reference to collegamenti.json:
   intro-cites  a reference cited in an introduction
 Each link has its targets (verse ids, ranges expanded), a status (resolved, partial,
 unresolved, numbering, comment) and, when not resolved, the reason. Misprints stay
-as printed and are reported, never corrected.
+as printed and are reported, never corrected (a range whose end is misprinted is linked
+to its first verse, status partial). Where the sense of the sentence gives another book or
+chapter than the grammar, a last pass ("the sense of the sentence", below) reads the
+citations again (rules catena, puntatore, capitolo, elenco, ester, inizio and the table
+CORREZIONI) and adds the siglum-less references of the introductions to several books and
+the bare "c,v" after a preposition; each such link says its rule in 'corrected'.
 
 The grammar (README, "Stage 2"): CEI sigla, "c,v", "." joins verses of a chapter,
 "–" ranges (also across chapters), ";" separates references, which inherit the book
@@ -795,6 +800,533 @@ def intro_links(data, B):
     return links
 
 
+# ---------------------------------------------------------------- the sense of the sentence
+# The grammar above reads a reference without a siglum in the book of the reference before
+# it in its chain, else in the current book. Where the sentence says otherwise, the links of
+# the notes and introductions are read again (in this order, after all the links are made):
+#
+#   catena     a chain the grammar broke goes on in the same book: "Dt 24 passim; 26,12",
+#              "Sir 14,20–15,10, e soprattutto 24,1–29", "Ger 23,5 = 33,15", "Qo 4,12 [?];
+#              11,2", "Ez 38–39, in particolare (cf. 38,22)": the reference after it takes
+#              the book (and last chapter) of the one before
+#   puntatore  "v N" right after a reference of another book or chapter, joined by
+#              ", soprattutto", ", in particolare (i)", "(il", "(notare soprattutto il",
+#              "(con un’aggiunta nel": a verse of that chapter ("Ger 39,1–10 (con
+#              un’aggiunta nel v 3)" is Ger 39,3; "un v del Sal 34 (il v 21)" is Sal 34,21)
+#   capitolo   "v N" in a note on several chapters (label "13,1–16,31", "cc 13–14"): the
+#              chapter named last in the same sentence by a reference of the book, when it
+#              is one of the label's chapters and has verse N ("(15,1–8.9–19) con una prima
+#              conclusione (v 20)" is Gdc 15,20); a "v N" with no such verse in the chapter
+#              it was read in: the chapter named last in the sentence, else the next chapters
+#              of the label, else the next chapter ("cf. 17,12–30; il v 31" is 1Sam 17,31;
+#              "vv 13–14" in a note on Is 15–16 is Is 16,13; "nei vv 13–16" in the note on
+#              Gdt 15,14, the last verse of the chapter, is Gdt 16,13)
+#   elenco     "vv 4,7,15" (no chapter after vv): verses 4, 7 and 15 of the chapter, not
+#              Sal 4,7
+#   manuale    the table CORREZIONI: references whose book is given by the sense of the
+#              sentence, not by its grammar (a person named "Giovanni" or "Marco" before the
+#              parentheses, "Isaia parla delle due case di Israele (8,14)" in a note on
+#              Geremia, the symbolic acts of Ezechiele listed in a note on Ger 18); every row
+#              was read in the note and gives its reason; a row that matches no reference
+#              is an error
+#   ester      (margins too) a key-note reference "Est 3,8+" goes to the Esther text that
+#              has the note there (the Hebrew text is tried first; 69 of the 71 notes of
+#              Esther are in the Greek text)
+#   inizio     (margins too) a range whose first verse exists but whose end does not
+#              ("2Mac 12,43–46", "Mt 4,18–29"): linked to its first verse, status partial,
+#              the misprint kept as printed (a misprinted start stays unresolved)
+# and two kinds of links are added:
+#   introduzione  the references without a siglum of the introductions to several books
+#              (no current book), in the book of their sentence or section
+#   nudo       a siglum-less "c,v" after a preposition in a note ("come in 11,7, o"),
+#              which the grammar does not read (a bare "3,1," may be a decimal list)
+#   aggiunta   the table AGGIUNTE: references the grammar does not read at all ("Nm 11,17
+#              (Mosè); 25–26", "ai cc 11, 27 e 31 del Deuteronomio", "Dt 5, soprattutto vv 4
+#              e 22"), each row read on the page image and given its reason
+# A corrected link records the rule ('corrected'), its former first verse ('corrected_from')
+# and why ('why'); an added link has 'corrected' and 'why' too. These rules were written for
+# the Tufte edition (tools/tufte/contesto.py, now a thin layer over this section) after a
+# content audit of its links.
+
+POINTER = re.compile(r'(?:[Cc]fr?\.\s*(?:anche\s+|già\s+)?)?(vv?|cc?)\.?\s+(\S.*)$')
+# what joins a reference to the one before it when the chain broke there
+CONTINUA = re.compile(r'\s*(?:passim\s*;|\[\?\]\s*;|=|;|,\s*(?:e\s+)?(?:soprattutto|anche|in particolare))\s*$')
+# what joins "v N" to a reference of another chapter it belongs to
+PUNTA = re.compile(r'\s*(?:,\s*(?:soprattutto|in particolare)(?:\s+(?:i|il|nei|nel|ai|al))?|'
+                   r'\(\s*(?:il|notare soprattutto il|con un’aggiunta nel)|\(il)\s*$')
+FRASE = re.compile(r'(?<!\bcf)(?<!\bcfr)(?<!\bvv)(?<!\bv)(?<!\bss)(?<!\bcc)(?<!\bc)(?<!\becc)(?<!\bp)[.!?]\s+'
+                   r'(?=[A-ZÀ-Ü«“(—])|\s—\s')
+
+# (source, reference as printed, n-th reference so printed in the source or 0 for all,
+#  book (CEI siglum), chapter or None, the reason). Read in the notes.
+CORREZIONI = [
+    ('note:Luke.1.43', 'Marco (7,13', 0, 'Lc', None, '"più frequentemente che Matteo e Marco (7,13; …)": the verses of Luca'),
+    ('note:Luke.1.43', '10,1.39.41', 0, 'Lc', None, 'the same list, verses of Luca'),
+    ('note:Luke.7.11', 'Giovanni (7,22', 0, 'Lc', None, '"agli inviati di Giovanni (7,22)": the Baptist, Lc 7,22'),
+    ('note:Acts.13.9', 'Marco (12,12', 0, 'At', None, '"Giovanni portava il nome Marco (12,12)": At 12,12'),
+    ('note:Rev.10.8', 'Giovanni (1,1–2.9–20', 0, 'Ap', None, '"la missione di Giovanni": the seer, Ap 1'),
+    ('note:John.4.34', 'Geremia (10,36+', 0, 'Gv', None, '"come Geremia (10,36+)": the key note at Gv 10,36'),
+    ('note:John.13.2', 'cf. 13,29', 0, 'Gv', None, '"(cf. 13,29)": Judas and the purse, Gv 13,29'),
+    ('note:1Macc.1.16', 'v 28', 0, 'Dn', 11, '"dal libro di Daniele: 11,25–27: …; v 28; v 29; v 30; vv 31–39": Dn 11'),
+    ('note:1Macc.1.16', 'v 29', 0, 'Dn', 11, 'the same list'),
+    ('note:1Macc.1.16', 'v 30', 0, 'Dn', 11, 'the same list'),
+    ('note:1Macc.1.16', 'vv 31–39', 0, 'Dn', 11, 'the same list'),
+    ('note:Josh.24.28', '2,6–10', 0, 'Gdc', None, '"al libro dei Giudici (2,6–10)"'),
+    ('note:2Chr.26.22', '1,1', 0, 'Is', None, '"nel libro di Isaia solo nei titoli (1,1; 6,1; 7,1)"'),
+    ('note:2Chr.26.22', '6,1', 0, 'Is', None, 'the same list'),
+    ('note:2Chr.26.22', '7,1', 0, 'Is', None, 'the same list'),
+    ('note:Jer.5.11', '8,14', 0, 'Is', None, '"Isaia parla delle «due case di Israele» (8,14)"'),
+    ('note:Jer.18.1', '4,9–17', 0, 'Ez', None, 'the symbolic acts of Ezechiele: "i viveri razionati (4,9–17)"'),
+    ('note:Jer.18.1', 'c 5', 0, 'Ez', None, 'the same list: "i capelli (c 5)"'),
+    ('note:Jer.18.1', '12,1–20', 0, 'Ez', None, 'the same list: "il mimo del deportato (12,1–20)"'),
+    ('note:Jer.18.1', '24,3–14', 0, 'Ez', None, 'the same list: "la pentola (24,3–14)"'),
+    ('note:Jer.18.1', '37,15–28', 0, 'Ez', None, 'the same list: "i due pezzi di legno (37,15–28)"'),
+    ('note:Jer.31.29', 'cf. 18,2', 0, 'Ez', None, '"contro il quale si opporrà anche Ezechiele, cf. 18,2": Ez 18,2'),
+    ('note:Matt.27.9', '18,2s', 0, 'Ger', None, '"Geremia parla di vasi (18,2s)"'),
+    ('note:Matt.27.9', '19,1s', 0, 'Ger', None, '"nella regione di Haqeldama (19,1s)": Ger 19,1'),
+    ('note:1Pet.1.23', '1,25', 1, 'Gc', None, '"Per Giacomo, la Parola è ancora la Legge mosaica (1,25)"'),
+    ('note:1Pet.1.23', '1,1+', 0, 'Gv', None, '"per Giovanni, è il Figlio di Dio in persona (1,1+)"'),
+    ('note:2Kgs.19.4', 'cf. 4,3+', 0, 'Is', None, '"uno dei temi della predicazione di Isaia (cf. 4,3+)": the remnant, Is 4,3'),
+    ('note:Isa.41.14', 'cf. 19,15+', 0, 'Sal', None, '"molto frequente nei Salmi (cf. 19,15+)": the note on Sal 19,15'),
+    ('note:Mark.12.29', '3,17+.31', 0, 'Gv', None, '"Il Vangelo di Giovanni esprime il fatto diversamente … (3,17+.31)"'),
+    ('note:Luke.5.8', 'cf. 1,40', 0, 'Gv', None, '"non si riscontra che in Giovanni (17 volte; cf. 1,40)"'),
+    ('note:Isa.11.2', '24,2', 0, 'Nm', None, '"Nm 11,17 (Mosè); 25–26; 24,2": Balaam, Nm 24,2'),
+    ('note:Exod.20.1', 'vv 4', 0, 'Dt', 5, '"del contesto immediato in Dt 5, soprattutto vv 4 e 22"'),
+    ('note:Exod.20.1', 'v 9', 0, 'Ger', 7, '"quella di Ger 7, soprattutto v 9"'),
+    ('note:Acts.2.33', 'v 16', 0, 'Sal', 118, '"un’allusione al Sal 118 (v 16, LXX: «La destra del Signore…»)"'),
+    ('note:Sir.48.25', 'cc 24–27', 0, 'Is', None, '"(Is 40–55) o ai cc 24–27 o al 61": Is 24–27'),
+    ('note:Sir.11.19', 'v 19', 0, 'Lc', 12, '"la parabola di Lc 12,16–21 (notare soprattutto il v 19)"'),
+    ('note:1Cor.12.31', 'vv 1–3', 0, '1Cor', 13, 'the hymn to love: "superiorità della carità (vv 1–3)", 1Cor 13'),
+    ('note:1Cor.12.31', 'vv 4–7', 0, '1Cor', 13, 'the same: 1Cor 13,4–7'),
+    ('note:1Cor.12.31', 'vv 8–13', 0, '1Cor', 13, 'the same: 1Cor 13,8–13'),
+    ('note:1Cor.12.31', 'v 13', 0, '1Cor', 13, 'the same: 1Cor 13,13'),
+    ('note:Matt.23.1', 'vv 26–28.37–41', 0, 'Mt', 24, 'the eschatological discourse, Mt 24 (the Q additions 24,26–28.37–41)'),
+    ('note:Matt.23.1', 'vv 3.27.37.39', 0, 'Mt', 24, '"parusia" in Mt 24,3.27.37.39'),
+    ('note:Matt.23.1', 'v 3', 0, 'Mt', 24, '"fine dell’èra": Mt 24,3'),
+    ('note:Matt.23.1', 'v 30', 0, 'Mt', 24, '"il segno del Figlio dell’uomo": Mt 24,30'),
+    ('note:Josh.8.30', 'cc 11', 0, 'Dt', None, '"si ispira ai cc 11, 27 e 31 del Deuteronomio": the book is named after'),
+    ('note:Matt.8.3', '8,1–4,5', 0, 'Mt', None, '"8,1–4,5–13.14–15" (a comma misprinted for "."): Mt 8,1'),
+    ('intro-atti.8', '15,22ss', 0, 'Rm', None, '"la Lettera ai Romani, soprattutto 15,22ss"'),
+    ('intro-apocalisse.2', 'Giovanni (1,9', 0, 'Ap', None, '"il suo nome: Giovanni (1,9)": Ap 1,9'),
+]
+# a row whose raw text is a misprint read as another span: the verse the row links to
+CORREZIONI_VERSO = {('note:Matt.8.3', '8,1–4,5'): 'Matt.8.1'}
+CONTEXT_FIELDS = ('book', 'targets', 'ranges', 'flags', 'keynote', 'keynote_notes', 'keynote_mrefs',
+                  'keynote_verses', 'status', 'reason')
+
+
+def first_target(link):
+    """The first verse a resolved or partial link points to (None otherwise)."""
+    if link['status'] not in ('resolved', 'partial'):
+        return None
+    return (link.get('ranges') or [[None]])[0][0] or (link.get('targets') or [None])[0]
+
+
+def reread(ref, B, osis, cap):
+    """ref read again in book osis (chapter cap for a verse pointer): the resolved ref, or None."""
+    raw = ref['raw']
+    ctx = dict(book=osis, chapter=cap, margin=False)
+    text = raw
+    if not POINTER.match(raw) and ref['spans'] and ref['spans'][0]['v1'] is not None and ',' not in raw and \
+            not ref.get('explicit') and re.match(r'\d', raw):
+        text = 'v ' + raw                       # "22" after "vv 4 e": a verse, inherited mode
+    if ref.get('explicit') and not re.match(r'[1-3]?\s?[A-Z][a-z]+\s+\d', raw):
+        text = re.sub(r'^[^\d(]*?\s*[(:]\s*', '', raw)      # "Marco (7,13" -> "7,13"
+    got, end = parse(text, ctx, prose=True)
+    if not got or end < len(text.rstrip()):
+        return None
+    new = dict(got[0], raw=raw, offset=ref['offset'], current=True, siglum=None)
+    resolve_as_printed(new, B, ctx)
+    return new if new['status'] == 'resolved' and new['book'] == osis else None
+
+
+def _correct(link, new, rule, why, out):
+    """Give link the reading new; recorded (and returned True) when its first verse changes."""
+    before = first_target(link)
+    for k in CONTEXT_FIELDS:
+        link[k] = new.get(k, [] if k in ('targets', 'ranges', 'flags', 'keynote_notes', 'keynote_mrefs',
+                                         'keynote_verses') else None)
+    link.pop('inferred', None)
+    after = first_target(link)
+    if after == before:
+        return False
+    link.update(corrected=rule, corrected_from=before, why=why)
+    out.append(dict(link=link['id'], source=link['source'], raw=link['raw'], rule=rule, before=before,
+                    after=after, why=why))
+    return True
+
+
+def sentence_start(text, at):
+    s = 0
+    for m in FRASE.finditer(text, 0, at):
+        s = m.end()
+    return s
+
+
+def _is_pointer(ref):
+    m = POINTER.match(ref['raw'])
+    return bool(m) and m.group(1).startswith('v') and ',' not in m.group(2) and ref['current']
+
+
+def _texts(data, B):
+    texts = {}
+    for n in data['notes']:
+        texts[n['id']] = (n['text'], note_context(n, B), n)
+    for it in data['intros']:
+        ctx = dict(book=it['books'][0] if len(it['books']) == 1 else None, chapter=None, margin=False)
+        for p in it['paragraphs']:
+            texts['%s.%d' % (it['id'], p['n'])] = (p['text'], ctx, None)
+    return texts
+
+
+def context_corrections(data, links, B):
+    """Apply the rules above to links (in place); the list of corrections made."""
+    out = []
+    by_source = defaultdict(list)
+    for ln in links:
+        if ln['kind'] in ('note-cites', 'intro-cites'):
+            by_source[ln['source']].append(ln)
+    for k in by_source:
+        by_source[k].sort(key=lambda x: int(x['id'].rsplit('#c', 1)[1]))
+    texts = _texts(data, B)
+    manual = defaultdict(list)
+    for row in CORREZIONI:
+        manual[row[0]].append(row)
+    used = Counter()
+    for src, lns in by_source.items():
+        text, ctx, note = texts[src]
+        refs = scan_prose(text, ctx)
+        if len(refs) != len(lns) or any(r['raw'] != ln['raw'] for r, ln in zip(refs, lns)):
+            raise ValueError('context: %s: the references do not match the links' % src)
+        caps = []
+        if note and note['targets']:
+            caps = sorted({B.verses[t]['chapter'] for t in note['targets']})
+        seen = Counter()
+        for k, (r, ln) in enumerate(zip(refs, lns)):
+            seen[r['raw']] += 1
+            prev = lns[k - 1] if k else None
+            gap = text[prev['offset'] + prev['length']:ln['offset']] if prev else ''
+            # the table first: it is read in the notes
+            row = next((x for x in manual.get(src, []) if x[1] == r['raw'] and x[2] in (0, seen[r['raw']])), None)
+            if row:
+                used[row[:3]] += 1
+                osis = (SIGLA.get(row[3]) or [None])[0]
+                cap = row[4] if row[4] is not None else (ctx.get('chapter') if osis == ctx.get('book') else None)
+                vid = CORREZIONI_VERSO.get((src, r['raw']))
+                if vid:
+                    new = dict(book=osis, targets=[vid], ranges=[[vid, vid]], status='partial',
+                               reason='misprinted range, linked to its first verse')
+                else:
+                    new = reread(dict(r, explicit=r.get('explicit')), B, osis, cap or 1)
+                if new is None:
+                    raise ValueError('context: %s %r does not resolve in %s %s' % (src, r['raw'], row[3], cap))
+                _correct(ln, new, 'manuale', row[5], out)
+                continue
+            if not ctx.get('book'):
+                continue
+            pointer = _is_pointer(r)
+            # catena: a broken chain goes on in the same book
+            if r['current'] and not pointer and prev and prev.get('book') and prev['book'] != ctx['book'] and \
+                    prev['status'] in ('resolved', 'partial') and CONTINUA.fullmatch(gap) and \
+                    prev['book'] in OSIS2SIGLA:
+                pc = (B.verses[prev['ranges'][-1][-1]]['chapter'] if prev.get('ranges') else 1)
+                new = reread(r, B, prev['book'], pc)
+                if new:
+                    _correct(ln, new, 'catena', 'continues the chain of %s' % prev['raw'], out)
+                    continue
+            # puntatore: "v N" after a reference of another chapter, joined by "soprattutto"…
+            if pointer and prev and prev.get('book') and prev['status'] in ('resolved', 'partial') and \
+                    PUNTA.fullmatch(gap) and prev.get('ranges'):
+                last = B.verses[prev['ranges'][-1][-1]]
+                if (last['book'], last['chapter']) != (ctx['book'], ctx.get('chapter')):
+                    new = reread(r, B, last['book'], last['chapter'])
+                    if new:
+                        _correct(ln, new, 'puntatore', 'verse of %s' % prev['raw'], out)
+                        continue
+            if pointer:
+                # capitolo: the chapter named last in the sentence by a reference of this book
+                s0 = sentence_start(text, ln['offset'])
+                named = None
+                for j in range(k - 1, -1, -1):
+                    pj = lns[j]
+                    if pj['offset'] < s0:
+                        break
+                    if pj.get('book') == ctx['book'] and pj['status'] in ('resolved', 'partial') and \
+                            pj.get('ranges') and (',' in pj['raw'] or re.match(r'cc?\s', pj['raw']) or
+                                                  pj.get('corrected')):
+                        named = B.verses[pj['ranges'][-1][-1]]['chapter']
+                        break
+                tries = []
+                if len(caps) > 1 and named and named in caps and named != ctx.get('chapter'):
+                    tries.append((named, 'the chapter named last in the sentence (%d)' % named))
+                if ln['status'] == 'unresolved':
+                    if named and named != ctx.get('chapter'):
+                        tries.append((named, 'no such verse in chapter %s; the chapter named last (%d)' % (
+                            ctx.get('chapter'), named)))
+                    for c in caps:
+                        if c > (ctx.get('chapter') or 0):
+                            tries.append((c, 'no such verse in chapter %s; chapter %d of the label' % (
+                                ctx.get('chapter'), c)))
+                    if ctx.get('chapter') and (not caps or max(caps) == ctx['chapter']):
+                        tries.append((ctx['chapter'] + 1, 'no such verse in chapter %d; the next chapter'
+                                      % ctx['chapter']))
+                done = False
+                for c, why in tries:
+                    new = reread(r, B, ctx['book'], c)
+                    if new:
+                        _correct(ln, new, 'capitolo', why, out)
+                        done = True
+                        break
+                if done:
+                    continue
+            # elenco: "vv 4,7,15"
+            m = re.fullmatch(r'vv (\d+),(\d+)', r['raw'])
+            if m and re.match(r',\s*\d', text[ln['offset'] + ln['length']:]) and ctx.get('chapter'):
+                new = reread(dict(r, raw='vv %s' % m.group(1)), B, ctx['book'], ctx['chapter'])
+                if new:
+                    new['raw'] = r['raw']
+                    _correct(ln, new, 'elenco', 'a list of verses after "vv"', out)
+                    continue
+    missing = [row for row in CORREZIONI if not used[row[:3]]]
+    if missing:
+        raise ValueError('context: rows of CORREZIONI that match no reference: %s' % missing)
+    # all kinds: Esther key notes, and ranges with a misprinted end
+    for ln in links:
+        if ln['kind'] not in ('mref', 'note-cites', 'intro-cites'):
+            continue
+        if ln.get('keynote') and ln['status'] == 'resolved' and ln['book'] in ESTER and not ln['keynote_notes'] \
+                and ln.get('keynote_verses'):
+            v = B.verses[ln['keynote_verses'][0]]
+            other = [x for x in ESTER if x != ln['book']][0]
+            alt = B.by_num.get((other, v['chapter'], v['verse']))
+            if alt:
+                notes, _ = B.keynote(alt[0]['id'])
+                if notes:
+                    vs = [B.verses[t] for t in ln['targets']]
+                    tg = [a['id'] for x in vs for a in B.by_num.get((other, x['chapter'], x['verse']), [])[:1]]
+                    new = dict(ln, book=other, targets=tg, ranges=[[tg[0], tg[-1]]], keynote_notes=notes,
+                               keynote_verses=[alt[0]['id']], keynote_mrefs=[])
+                    _correct(ln, new, 'ester', 'the key note is in the %s text' % (
+                        'Greek' if other == 'EsthGr' else 'Hebrew'), out)
+                    continue
+        if ln['status'] == 'unresolved' and (ln.get('reason') or '').startswith('no verse') and ln.get('book') \
+                and ln['book'] in B.books and not ln.get('corrected'):
+            first = _range_start(ln, B)
+            if first:
+                new = dict(ln, targets=[first], ranges=[[first, first]], status='partial',
+                           reason=ln['reason'] + '; linked to the first verse of the range')
+                _correct(ln, new, 'inizio', 'the end of the range does not exist (%s)' % ln['reason'], out)
+    return out
+
+
+def _range_start(ln, B):
+    """The first verse of a range whose end does not exist ("12,43–46" in 2Mac 12 of 45
+    verses): only when the range starts at a verse of the book (not a whole chapter)."""
+    m = re.search(r'(\d+),(\d+)([a-z]?)\s*[–-]\s*(?:\d+,)?\d+[a-z]?', ln['raw'])
+    if not m:
+        return None
+    p = B.point(ln['book'], int(m.group(1)), int(m.group(2)), m.group(3))
+    return p[0]['id'] if p else None
+
+
+def _added(rec, a, b, raw, hmap, rule, why):
+    rec.update(offset=a, length=b - a, raw=raw, corrected=rule, corrected_from=None, why=why,
+               html_offset=hmap[a] if hmap else None, html_end=hmap[b] if hmap else None)
+    return rec
+
+
+# introductions to several books: their siglum-less references take, in this order, the
+# book of a reference with a siglum before it in the sentence (the chain broke there); a
+# book named in full in the same clause, at most 60 characters before it ("la parte
+# geografica di Giosuè (13,1–6; …)"); the book of the section, named by its run-in heading
+# (\titoletto "Il libro di Giosuè.", "Geremia.") when it names one book; a book named earlier
+# in the sentence ("L’Esodo sviluppa due temi principali: la liberazione dall’Egitto
+# (1,1–15,21)"). Else they stay plain text.
+LIBRI_NOMI = {
+    'Genesi': 'Gen', 'Esodo': 'Es', 'Levitico': 'Lv', 'Numeri': 'Nm', 'Deuteronomio': 'Dt', 'Giosuè': 'Gs',
+    'Giudici': 'Gdc', 'Rut': 'Rt', 'Tobia': 'Tb', 'Giuditta': 'Gdt', 'Ester': 'Est', 'Giobbe': 'Gb', 'Salmi': 'Sal',
+    'Salterio': 'Sal', 'Proverbi': 'Pr', 'Qoèlet': 'Qo', 'Cantico': 'Ct', 'Sapienza': 'Sap', 'Siracide': 'Sir',
+    'Isaia': 'Is', 'Geremia': 'Ger', 'Lamentazioni': 'Lam', 'Baruc': 'Bar', 'Ezechiele': 'Ez', 'Daniele': 'Dn',
+    'Osea': 'Os', 'Gioele': 'Gl', 'Amos': 'Am', 'Abdia': 'Abd', 'Giona': 'Gn', 'Michea': 'Mi', 'Naum': 'Na',
+    'Abacuc': 'Ab', 'Sofonia': 'Sof', 'Aggeo': 'Ag', 'Zaccaria': 'Zc', 'Malachia': 'Ml', 'Matteo': 'Mt',
+    'Marco': 'Mc', 'Luca': 'Lc', 'Giovanni': 'Gv', 'Romani': 'Rm', 'Galati': 'Gal', 'Efesini': 'Ef',
+    'Filippesi': 'Fil', 'Colossesi': 'Col', 'Filemone': 'Fm', 'Ebrei': 'Eb', 'Giacomo': 'Gc', 'Esdra': 'Esd',
+    'Neemia': 'Ne'}
+# names that are not the book after them ("Giovanni Battista"); books in two parts need "Primo …"
+NOME_LIBRO = re.compile(r'(?<![\w])(%s)(?![\w])(?!\s+(?:Battista|Ircano|Marco|il Battista))' %
+                        '|'.join(sorted(LIBRI_NOMI, key=len, reverse=True)))
+
+
+def intro_book_links(data, links, B):
+    """New intro-cites links for the references without a siglum of the introductions to
+    several books; they never overlap a link made before."""
+    by_source = defaultdict(list)
+    for ln in links:
+        if ln['kind'] == 'intro-cites':
+            by_source[ln['source']].append(ln)
+    new = []
+    for it in data['intros']:
+        if len(it['books']) < 2:
+            continue
+        topic = None
+        for p in it['paragraphs']:
+            src = '%s.%d' % (it['id'], p['n'])
+            t = p['text']
+            hmap = None
+            if p.get('titoletto'):           # a new section: its book, if it names one
+                names = {LIBRI_NOMI[m.group(1)] for m in NOME_LIBRO.finditer(p['titoletto'])}
+                topic = names.pop() if len(names) == 1 and not re.match(r'I libri\b', p['titoletto']) else None
+            have = sorted(by_source.get(src, []), key=lambda x: x['offset'])
+            k = max([int(x['id'].rsplit('#c', 1)[1]) for x in have] + [0])
+            spans = [(x['offset'], x['offset'] + x['length']) for x in have]
+            for r in scan_prose(t, dict(book=it['books'][0], chapter=None, margin=False)):
+                if not r['current'] or r.get('problem'):
+                    continue
+                a, b = r['offset'], r['offset'] + len(r['raw'])
+                if any(x < b and a < y for x, y in spans):
+                    continue
+                s0 = sentence_start(t, a)
+                pre = re.sub(r'[\s(\[]*$', '', t[s0:a])
+                c0 = s0 + max(pre.rfind(c) for c in ';:(') + 1
+                # names and references inside a parenthesis closed before it do not count ("(che … con
+                # Luca) e insiste", "(… cf. Lc 4,39), e nel sommario di 1,32–34")
+                flat = t[:s0] + re.sub(r'\([^()]*\)', lambda x: ' ' * len(x.group(0)), t[s0:a])
+                refs_before = [(x['offset'], OSIS2SIGLA.get(x['book'])) for x in have
+                               if s0 <= x['offset'] < a and x.get('book') in OSIS2SIGLA
+                               and flat[x['offset']] != ' ']
+                near = [(m.start(), LIBRI_NOMI[m.group(1)]) for m in NOME_LIBRO.finditer(flat, max(c0, a - 60), a)]
+                far = [(m.start(), LIBRI_NOMI[m.group(1)]) for m in NOME_LIBRO.finditer(flat, s0, a)]
+                if refs_before and (not near or max(refs_before)[0] > max(near)[0]):
+                    sig, how = max(refs_before)[1], 'the reference before it in the sentence'
+                elif near:
+                    sig, how = max(near)[1], 'the book named right before it'
+                elif topic:
+                    sig, how = topic, 'the book of the section'
+                elif far:
+                    sig, how = max(far)[1], 'the book named in the sentence'
+                else:
+                    continue
+                osis = [o for o in SIGLA.get(sig, []) if o in it['books']] or SIGLA.get(sig, [])
+                if not osis:
+                    continue
+                got = reread(dict(r, explicit=False), B, osis[0], 1)
+                if not got:
+                    continue
+                k += 1
+                if hmap is None:
+                    hmap = html_offsets(t, p['html']) if p['html'] else False
+                rec = record('%s#c%d' % (src, k), 'intro-cites', src, None, 'cites', got)
+                rec['paragraph'] = p['n']
+                new.append(_added(rec, a, b, r['raw'], hmap, 'introduzione', how))
+                spans.append((a, b))
+    return new
+
+
+# a chapter,verse without a siglum followed by a comma ("come in 11,7, o qualsiasi", "secondo
+# 33,19,"), after a preposition or "è": a reference of the current book
+NUDO = re.compile(r'(?<=\s)(?:in|di|con|secondo|è|a|da|compreso|prima di|dopo|come in|cf\.)\s+'
+                  r'(\d{1,3},\d{1,3}[a-z]?)(?=,\s|;|\)|\s[a-zà-ù])')
+
+
+def bare_note_links(data, links, B):
+    """New note-cites links for the siglum-less chapter,verse after a preposition; never
+    overlapping a link made before, never a measure ("22,5 cm")."""
+    by_source = defaultdict(list)
+    for ln in links:
+        if ln['kind'] == 'note-cites':
+            by_source[ln['source']].append(ln)
+    new = []
+    for n in data['notes']:
+        t = n['text']
+        have = by_source.get(n['id'], [])
+        spans = [(x['offset'], x['offset'] + x['length']) for x in have]
+        k = max([int(x['id'].rsplit('#c', 1)[1]) for x in have] + [0])
+        ctx = note_context(n, B)
+        hmap = None
+        for m in NUDO.finditer(t):
+            a, b = m.start(1), m.end(1)
+            if any(x < b and a < y for x, y in spans) or MISURA.match(t, a):
+                continue
+            got, end = parse(m.group(1), ctx, prose=True)
+            if not got or end < len(m.group(1)):
+                continue
+            ref = dict(got[0], offset=a)
+            resolve_as_printed(ref, B, ctx)
+            if ref['status'] != 'resolved':
+                continue
+            k += 1
+            if hmap is None:
+                hmap = html_offsets(t, n['html']) if n['html'] else False
+            rec = record('%s#c%d' % (n['id'], k), 'note-cites', n['id'], n['anchor'], 'cites', ref)
+            new.append(_added(rec, a, b, m.group(1), hmap, 'nudo', 'a chapter,verse after a preposition'))
+            spans.append((a, b))
+    return new
+
+
+# references of the notes the grammar does not read at all, read in the note against the page
+# image (rule 'aggiunta'): (source, the printed context as a regex whose group 1 is the
+# reference as printed, the reference in full, why). A row that matches the note not exactly
+# once, overlaps a link, or does not resolve is an error.
+AGGIUNTE = [
+    ('note:Isa.11.2', r'Nm 11,17 \(Mosè\); (25–26);', 'Nm 11,25–26',
+     '"ispira i profeti: Nm 11,17 (Mosè); 25–26; 24,2" (PDF 1761): the elders who prophesy, Nm 11,25–26'),
+    ('note:Josh.8.30', r'ai cc 11, (27) e 31 del Deuteronomio', 'Dt 27',
+     '"si ispira ai cc 11, 27 e 31 del Deuteronomio" (PDF 477): Dt 27'),
+    ('note:Josh.8.30', r'ai cc 11, 27 e (31) del Deuteronomio', 'Dt 31', 'the same list: Dt 31'),
+    ('note:Exod.20.1', r'in Dt 5, soprattutto vv 4 e (22),', 'Dt 5,22',
+     '"del contesto immediato in Dt 5, soprattutto vv 4 e 22" (PDF 200): Dt 5,22'),
+]
+
+
+AGGIUNTI = ('introduzione', 'nudo', 'aggiunta')      # the rules that add a link
+
+
+def table_links(data, links, B):
+    """New note-cites links for the rows of AGGIUNTE."""
+    have = defaultdict(list)
+    for ln in links:
+        if ln['kind'] == 'note-cites':
+            have[ln['source']].append(ln)
+    notes = {n['id']: n for n in data['notes']}
+    new = []
+    for src, pat, full, why in AGGIUNTE:
+        n = notes[src]
+        t = n['text']
+        ms = list(re.finditer(pat, t))
+        if len(ms) != 1:
+            raise ValueError('AGGIUNTE: %s %r matches %d times' % (src, pat, len(ms)))
+        a, b = ms[0].span(1)
+        if any(x['offset'] < b and a < x['offset'] + x['length'] for x in have[src]):
+            raise ValueError('AGGIUNTE: %s %r overlaps a link' % (src, t[a:b]))
+        ctx = note_context(n, B)
+        got, end = parse(full, ctx, prose=True)
+        if not got or end < len(full):
+            raise ValueError('AGGIUNTE: %r not read' % full)
+        ref = dict(got[0], offset=a, raw=t[a:b])
+        resolve(ref, B, ctx)
+        if ref['status'] != 'resolved':
+            raise ValueError('AGGIUNTE: %r does not resolve' % full)
+        k = max([int(x['id'].rsplit('#c', 1)[1]) for x in have[src]] + [0]) + 1
+        hmap = html_offsets(t, n['html']) if n['html'] else False
+        rec = record('%s#c%d' % (src, k), 'note-cites', src, n['anchor'], 'cites', ref)
+        rec = _added(rec, a, b, t[a:b], hmap, 'aggiunta', why)
+        new.append(rec)
+        have[src].append(rec)
+    return new
+
+
+def context_links(data, links, B):
+    """The pass of this section: corrections in place, then the added links (appended)."""
+    fixed = context_corrections(data, links, B)
+    added = intro_book_links(data, links, B)
+    links += added
+    added2 = bare_note_links(data, links, B)
+    links += added2
+    added3 = table_links(data, links, B)
+    links += added3
+    return fixed, added + added2 + added3
+
+
 # ---------------------------------------------------------------- report
 
 def checks(links, data, B):
@@ -867,6 +1399,7 @@ def summary(links):
         notes_with_citations=len({x['source'] for x in cites}),
         intro_citations=len(icites), intro_citations_resolved=sum(1 for x in icites if x['status'] == 'resolved'),
         status=dict(Counter(x['status'] for x in links)),
+        corrected=dict(sorted(Counter(x['corrected'] for x in links if x.get('corrected')).items())),
         links=len(links))
     s['pct_mref_entries_fully_resolved'] = round(pct(s['mref_entries_fully_resolved'], s['mref_entries']), 2)
     s['pct_mref_references_resolved'] = round(pct(s['mref_references_resolved'], s['mref_references']), 2)
@@ -883,6 +1416,7 @@ def main(a):
     data = json.load(open(inp, encoding='utf-8'))
     B = Bibbia(data)
     links = margin_links(data, B) + note_links(data, B) + intro_links(data, B)
+    fixed, added = context_links(data, links, B)
     errors = checks(links, data, B)
     s = summary(links)
     bad = [x for x in links if x['status'] in ('unresolved', 'partial')]
@@ -898,6 +1432,16 @@ def main(a):
                                **{'comments-on': 'the verses a note comments on'}),
                 flags=dict(s='and the next verse', ss='and following (to the end of the pericope)',
                            p='and its parallels'),
+                corrected=dict(catena='a chain the grammar broke goes on in the book of the reference before',
+                               puntatore='"v N" after a reference of another chapter: a verse of that chapter',
+                               capitolo='"v N" in a note on several chapters: the chapter named last in the sentence',
+                               elenco='"vv 4,7,15": verses of the current chapter',
+                               manuale='the table CORREZIONI: the book given by the sense of the sentence',
+                               ester='a key note in the other Esther text',
+                               inizio='a range with a misprinted end: its first verse (partial)',
+                               introduzione='added: a reference without siglum of an introduction to several books',
+                               nudo='added: a chapter,verse without siglum after a preposition in a note',
+                               aggiunta='added: the table AGGIUNTE, a reference the grammar does not read'),
                 summary=s)
     dump(dict(meta=meta, links=links,
               unresolved=[dict(raw=k[0], reason=k[1], count=n) for k, n in worst.most_common()]), out)
@@ -916,6 +1460,13 @@ def main(a):
              s['intro_citations'], s['pct_intro_citations_resolved']))
     print('keynotes (+) in margins, notes and intros: %d, %d to a margin group (no note there), %d to neither'
           % (s['keynotes'], s['keynotes_to_margins'], s['keynotes_without_target']))
+    print('read in the sense of the sentence: %d links corrected (%s), %d added (%s)' % (
+        len(fixed), ', '.join('%s %d' % kv for kv in Counter(c['rule'] for c in fixed).most_common()),
+        len(added), ', '.join('%s %d' % kv for kv in Counter(x['corrected'] for x in added).most_common())))
+    if not quiet:
+        for c in fixed:
+            print('  %-9s %-24s %-22r %s -> %s  (%s)' % (c['rule'], c['source'], c['raw'], c['before'], c['after'],
+                                                          c['why']))
     for e in errors[:30]:
         print('ERROR  ' + e)
     print('checks: %s; wrote %s' % ('ok' if not errors else '%d errors' % len(errors), os.path.relpath(out, C)))

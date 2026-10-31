@@ -311,11 +311,11 @@ class Libro:
         sink['calls'].append(dict(kind=kind, latex=content, page=self.page, pre=self.cur is None))
 
 
-# Hebrew letters printed before the stanzas of the alphabetic psalms and of Pr 31,10-31,
-# at a line start, "(Mem)" when the letter is missing in the Hebrew text
-ACROSTIC = re.compile(r'(?:(?<=\n)|(?<=\}))(\()?\\emph\{(\(?(?:Alef|Bet|Ghimel|Dalet|He|Vau|Zain|Het|Tet|Iod|'
-                      r'Caf|Lamed|Mem|Nun|Samec|Ain|Pe|Sade|Kof|Res|Sin|Śin|Tau)\)?)\}(?(1)\))')
-ACROSTIC_BOOKS = ('Sal', 'Pr')
+# \acrostico{Alef}: a Hebrew letter printed before a stanza of an alphabetic poem (Sal 9-10, 25, 34,
+# 37, 111, 112, 119, 145; Pr 31,10-31; Lam 1-4; Na 1); \acrostico{(Mem)}, printed in parentheses: the
+# letter is missing in the Hebrew text. Stored as the name ('Mem') and, for the bracketed ones, a flag
+# (acrostic_brackets).
+ACROSTICO = re.compile(r'(\()?([A-Za-zŚŠ]+)(\))?$')
 # a margin reference followed by at most this many words of its verse belongs to the next one
 CARRY_WORDS = 2
 BEFORE_VERSE = re.compile(r'\s*(?:\\pagina\{\d+\}\s*|\\begin\{poesia\}\s*|\\end\{poesia\}\s*)*\\vs\{')
@@ -327,9 +327,6 @@ INLINE_MACROS = {'emph', 'detto', 'textsuperscript', 'textit', 'textbf', 'titole
 def scan_book(sid, volume, path):
     t = open(path, encoding='utf-8').read()
     t = re.sub(r'(?<!\\)%.*', '', t)
-    if sid in ACROSTIC_BOOKS:
-        t = ACROSTIC.sub(lambda m: '\\acrostico{%s}' % (m.group(2) if not m.group(1) else
-                                                        '(%s)' % m.group(2).strip('()')), t)
     b = Libro(sid, volume, path)
     i, n = 0, len(t)
     while i < n:
@@ -413,10 +410,15 @@ def scan_book(sid, volume, path):
             b.sink()['buf'].append('\\\\')
         elif name == 'acrostico':
             arg, i = group(t, i)
+            m = ACROSTICO.match(arg)
+            if not m or bool(m.group(1)) != bool(m.group(3)):
+                raise ValueError('%s: \\acrostico{%s}' % (sid, arg))
+            arg = (m.group(2), bool(m.group(1)))
             if BEFORE_VERSE.match(t, i) or b.cur is None:
-                b.acrostic.append(arg)          # it heads the next verse
-            else:
-                b.cur.setdefault('acrostic', []).append(arg)
+                b.acrostic.append((arg, 1))     # it heads the next verse (its first line)
+            else:                               # it heads a later line of this verse
+                lines = [x for x in inline(''.join(b.cur['buf'])).split('\n') if x.strip()]
+                b.cur.setdefault('acrostic', []).append((arg, len(lines) + 1))
         elif name == 'enlargethispage':
             i = group(t, i)[1]
         elif name in INLINE_MACROS:
@@ -457,7 +459,10 @@ def build_verses(b, order0):
         if v['printed_in'] != v['cap']:
             rec['printed_in_chapter'] = v['printed_in']
         if v.get('acrostic'):
-            rec['acrostic'] = v['acrostic']
+            rec['acrostic'] = [a for (a, _), _ in v['acrostic']]
+            rec['acrostic_lines'] = [n for _, n in v['acrostic']]
+            if any(p for (_, p), _ in v['acrostic']):
+                rec['acrostic_brackets'] = [p for (_, p), _ in v['acrostic']]
         bare = plain.strip()
         if bare in ('', '[]', '[ ]'):
             rec['omitted'] = True

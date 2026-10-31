@@ -25,6 +25,7 @@
 @prefix prov:    <http://www.w3.org/ns/prov#> .
 @prefix vann:    <http://purl.org/vocab/vann/> .
 @prefix foaf:    <http://xmlns.com/foaf/0.1/> .
+@prefix schema:  <https://schema.org/> .
 
 <https://massimo-nocentini.github.io/bibbia-gerusalemme/ontologia>
     a owl:Ontology ;
@@ -54,6 +55,14 @@ cito:isCitedBy a owl:ObjectProperty .
 dcterms:creator a owl:ObjectProperty .
 dcterms:contributor a owl:ObjectProperty .
 skos:related a owl:ObjectProperty .
+skos:broader a owl:ObjectProperty .
+skos:narrower a owl:ObjectProperty .
+skos:notation a owl:DatatypeProperty .
+schema:parent a owl:ObjectProperty .
+schema:children a owl:ObjectProperty .
+schema:spouse a owl:ObjectProperty , owl:SymmetricProperty .
+schema:Person a owl:Class .
+schema:Event a owl:Class .
 prov:wasDerivedFrom a owl:ObjectProperty .
 oa:Annotation a owl:Class .
 oa:SpecificResource a owl:Class .
@@ -112,8 +121,8 @@ bj:Introduzione a owl:Class ;
 
 bj:Paragrafo a owl:Class ;
     rdfs:label "Paragrafo"@it , "Paragraph"@en ;
-    rdfs:comment "Un paragrafo di un'introduzione, eventualmente con un titoletto."@it ,
-                 "A paragraph of an introduction, possibly with a run-in heading."@en .
+    rdfs:comment "Un paragrafo di un'introduzione o di un testo preliminare (bj:TestoPreliminare), eventualmente con un titoletto."@it ,
+                 "A paragraph of an introduction or of a front-matter text (bj:TestoPreliminare), possibly with a run-in heading."@en .
 
 bj:Nota a owl:Class ;
     rdfs:subClassOf oa:Annotation ;
@@ -135,8 +144,8 @@ bj:Rimando a owl:Class ;
 bj:Citazione a owl:Class ;
     rdfs:subClassOf cito:Citation ;
     rdfs:label "Citazione"@it , "Citation"@en ;
-    rdfs:comment "Un riferimento biblico citato nel testo di una nota o di un paragrafo di introduzione, con la sua posizione nel testo."@it ,
-                 "A biblical reference cited in the text of a note or of an introduction paragraph, with its position in the text."@en .
+    rdfs:comment "Un riferimento biblico citato nel testo di una nota, di un paragrafo di introduzione o di un testo preliminare, di una voce della tavola cronologica (con la sua posizione nel testo) o in una voce di un indice."@it ,
+                 "A biblical reference cited in the text of a note, of an introduction or front-matter paragraph, of a chronology entry (with its position in the text) or in an index entry."@en .
 
 bj:Passaggio a owl:Class ;
     rdfs:subClassOf oa:SpecificResource ;
@@ -396,11 +405,11 @@ bj:rinviaANotaChiave a owl:ObjectProperty ;
 
 bj:citaVersetto a owl:ObjectProperty ;
     rdfs:subPropertyOf cito:cites ;
-    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:Nota bj:Introduzione ) ] ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:Nota bj:Introduzione bj:TestoPreliminare bj:EventoCronologia ) ] ;
     rdfs:range bj:Versetto ;
     rdfs:label "cita il versetto"@it , "cites verse"@en ;
-    rdfs:comment "Scorciatoia: la nota o l'introduzione cita nel suo testo un passaggio che comprende il versetto (riassume le bj:Citazione risolte)."@it ,
-                 "Shortcut: the note or introduction cites in its text a passage including the verse (sums up the resolved bj:Citazione)."@en .
+    rdfs:comment "Scorciatoia: la nota, l'introduzione, il testo preliminare o la voce della tavola cronologica cita nel suo testo un passaggio che comprende il versetto (riassume le bj:Citazione risolte o parziali)."@it ,
+                 "Shortcut: the note, introduction, front-matter text or chronology entry cites in its text a passage including the verse (sums up the resolved or partial bj:Citazione)."@en .
 
 bj:proprietaDiretta a owl:AnnotationProperty ;
     rdfs:label "proprietà diretta"@it , "direct property"@en ;
@@ -495,8 +504,8 @@ bj:titoloSalmo a owl:DatatypeProperty , owl:FunctionalProperty ;
 bj:acrostico a owl:DatatypeProperty ;
     rdfs:domain bj:Versetto ; rdfs:range xsd:string ;
     rdfs:label "lettera acrostica"@it , "acrostic letter"@en ;
-    rdfs:comment "Una lettera ebraica dell'acrostico che apre il versetto (Salmi, Pr 31); due quando il versetto ne apre due strofe."@it ,
-                 "A Hebrew acrostic letter heading the verse (Psalms, Pr 31); two when the verse opens two stanzas."@en .
+    rdfs:comment "Il nome di una lettera ebraica dell'acrostico stampata nel versetto, senza le parentesi («Alef»; «Mem» anche se stampata «(Mem)», cioè mancante nel testo ebraico: bj:mancanteNelTesto sulla bj:LetteraAcrostica): Salmi, Pr 31, Lamentazioni, Na 1; fino a tre quando il versetto apre più strofe (Sal 111,9). Il rigo e l'ordine sono in bj:haLetteraAcrostica."@it ,
+                 "The name of a Hebrew acrostic letter printed in the verse, without parentheses («Alef»; «Mem» also when printed «(Mem)», i.e. missing in the Hebrew text: bj:mancanteNelTesto on the bj:LetteraAcrostica): Psalms, Pr 31, Lamentations, Na 1; up to three when the verse opens several stanzas (Ps 111,9). The line and order are in bj:haLetteraAcrostica."@en .
 
 bj:sigla a owl:DatatypeProperty , owl:FunctionalProperty ;
     rdfs:domain bj:Libro ; rdfs:range xsd:string ;
@@ -842,10 +851,10 @@ bj:daSezione a owl:ObjectProperty , owl:FunctionalProperty ;
 
 bj:curatore a owl:ObjectProperty ;
     rdfs:subPropertyOf dcterms:contributor ;
-    rdfs:domain bj:Dizionario ; rdfs:range foaf:Person ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:Dizionario bj:Edizione ) ] ; rdfs:range foaf:Person ;
     rdfs:label "curatore"@it , "editor"@en ;
-    rdfs:comment "Chi ha diretto l'opera («pubblicato sotto la direzione di»)."@it ,
-                 "Who directed the work («published under the direction of»)."@en .
+    rdfs:comment "Chi ha diretto l'opera («pubblicato sotto la direzione di»); per l'edizione della BJ, la «curatela»."@it ,
+                 "Who directed the work («published under the direction of»); for the BJ edition, the «curatela»."@en .
 
 bj:traduttore a owl:ObjectProperty ;
     rdfs:subPropertyOf dcterms:contributor ;
@@ -948,7 +957,7 @@ bj:numeroParole a owl:DatatypeProperty , owl:FunctionalProperty ;
                  "The words of the entry's text (from the Dufour corpus)."@en .
 
 bj:firma a owl:DatatypeProperty ;
-    rdfs:domain bj:Voce ; rdfs:range xsd:string ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:Voce bj:TestoPreliminare ) ] ; rdfs:range xsd:string ;
     rdfs:label "firma"@it , "signature"@en ;
     rdfs:comment "La firma stampata in fondo alla voce («P. GRELOT», «R. FEUILLET e A. VIARD»); gli autori sono dcterms:creator. Una voce firmata per parti (NOME: VT e NT) ha due firme, e ogni parte ha il suo dcterms:creator."@it ,
                  "The signature printed at the end of the entry («P. GRELOT», «R. FEUILLET e A. VIARD»); the authors are dcterms:creator. An entry signed part by part (NOME: VT and NT) has two signatures, and each part has its own dcterms:creator."@en .
@@ -1066,3 +1075,525 @@ bj:collegamentoRinvio a skos:Concept , bj:TipoCollegamento ;
     rdfs:comment "Una voce, con le sue sezioni, a cui manda una voce di rinvio."@it ,
                  "An entry, with its sections, a redirect entry sends to."@en ;
     bj:proprietaDiretta bj:rinviaAVoce .
+
+# ================================================================== the front matter and the appendices
+#
+# What the volume prints before the Old Testament (progetti/introduzione-generale) and after
+# the Apocalypse (progetti/appendici), read by tools/ontologia/paratesto.py. The edition
+# (bj:Edizione) with its printings, the texts of the front matter (bj:TestoPreliminare, whose
+# paragraphs are bj:Paragrafo and whose Bible references are bj:Citazione, as in the
+# introductions), the two lists of the canon (bj:Canone, bj:GruppoCanone, bj:VoceCanone), the
+# abbreviations (bj:Abbreviazione) and the manuscripts they name (bj:Manoscritto), the woodcuts
+# opening the books (bj:Xilografia). The two indices are SKOS concept schemes (bj:Indice) of
+# entries and sub-entries (bj:VoceIndice, skos:broader / skos:narrower, «v.» as skos:related);
+# each printed reference is a bj:Citazione from the entry (bj:daVoceIndice) to its passages and,
+# in the index of the notes, to the BJ notes there (bj:indicaNota): the index exists to point to
+# notes. The Tavola cronologica is a table of events (bj:EventoCronologia, a schema:Event) in
+# sections and columns, with the date as printed and a year range where it is unambiguous; the
+# Dinastie Asmonea e Erodiana are persons (bj:PersonaStorica, a schema:Person) with schema.org
+# family links. Pages of the front matter and of the appendices have their own numbering.
+
+# ------------------------------------------------------------------ classes
+
+bj:Edizione a owl:Class ;
+    rdfs:label "Edizione"@it , "Edition"@en ;
+    rdfs:comment "L'edizione stampata del volume (EDB 2009): editore, ISBN, fonti del testo e delle note, imprimatur, diritti, le sue stampe (bj:Stampa); bj:edizioneDi la Bibbia."@it ,
+                 "The printed edition of the volume (EDB 2009): publisher, ISBN, sources of text and notes, imprimatur, rights, its printings (bj:Stampa); bj:edizioneDi the Bible."@en .
+
+bj:Stampa a owl:Class ;
+    rdfs:label "Stampa"@it , "Printing"@en ;
+    rdfs:comment "Una stampa dell'edizione come elencata nella pagina dei dati (prima edizione, prima ristampa, ...), con la data stampata e il mese."@it ,
+                 "A printing of the edition as listed on the imprint page (first edition, first reprint, ...), with the printed date and the month."@en .
+
+bj:TestoPreliminare a owl:Class ;
+    rdfs:label "Testo preliminare"@it , "Front-matter text"@en ;
+    rdfs:comment "Un testo stampato prima dell'Antico Testamento: la presentazione, una prefazione (con l'autore, dcterms:creator), le avvertenze, la divisione della Bibbia ebraica o greca; i suoi paragrafi sono bj:Paragrafo."@it ,
+                 "A text printed before the Old Testament: the presentation, a preface (with its author, dcterms:creator), the notices, the division of the Hebrew or Greek Bible; its paragraphs are bj:Paragrafo."@en .
+
+bj:PaginaPreliminare a owl:Class ;
+    rdfs:subClassOf bj:Pagina ;
+    rdfs:label "Pagina preliminare"@it , "Front-matter page"@en ;
+    rdfs:comment "Una pagina delle pagine iniziali, numerata in romano (bj:etichetta «xxii», bj:numero 22; pagina del PDF = numero + 5)."@it ,
+                 "A page of the front matter, numbered in Roman figures (bj:etichetta «xxii», bj:numero 22; PDF page = number + 5)."@en .
+
+bj:PaginaAppendice a owl:Class ;
+    rdfs:subClassOf bj:Pagina ;
+    rdfs:label "Pagina delle appendici"@it , "Appendix page"@en ;
+    rdfs:comment "Una pagina delle appendici, che hanno una numerazione propria (pagina del PDF = numero + 3001)."@it ,
+                 "A page of the appendices, which have their own numbering (PDF page = number + 3001)."@en .
+
+bj:Canone a owl:Class ;
+    rdfs:label "Canone"@it , "Canon"@en ;
+    rdfs:comment "Un elenco dei libri come stampato nelle pagine iniziali: la Bibbia ebraica (24 libri in tre parti) o la Bibbia greca dei Settanta (edizione di Rahlfs)."@it ,
+                 "A list of the books as printed in the front matter: the Hebrew Bible (24 books in three parts) or the Greek Bible of the Seventy (Rahlfs' edition)."@en .
+
+bj:GruppoCanone a owl:Class ;
+    rdfs:label "Gruppo del canone"@it , "Canon group"@en ;
+    rdfs:comment "Una parte di un canone come stampata («I. LA LEGGE (Pentateuco)», «A. Profeti anteriori»); dcterms:isPartOf il canone o il gruppo che la contiene."@it ,
+                 "A part of a canon as printed («I. LA LEGGE (Pentateuco)», «A. Profeti anteriori»); dcterms:isPartOf the canon or the group holding it."@en .
+
+bj:VoceCanone a owl:Class ;
+    rdfs:label "Voce del canone"@it , "Canon item"@en ;
+    rdfs:comment "Un libro dell'elenco come stampato («Samuele (1 e 2 riuniti insieme)», «Susanna (= Daniele 13)»), con i libri (bj:comprendeLibro) o i capitoli (bj:comprendeCapitolo) di questa Bibbia a cui corrisponde."@it ,
+                 "A book of the list as printed («Samuele (1 e 2 riuniti insieme)», «Susanna (= Daniele 13)»), with the books (bj:comprendeLibro) or chapters (bj:comprendeCapitolo) of this Bible it corresponds to."@en .
+
+bj:Abbreviazione a owl:Class ;
+    rdfs:label "Abbreviazione"@it , "Abbreviation"@en ;
+    rdfs:comment "Una riga degli elenchi di abbreviazioni (pp. xxii-xxiv): la forma (skos:notation), il significato, il tipo, e il libro (bj:abbreviaLibro) o il manoscritto (bj:abbreviaManoscritto) che indica."@it ,
+                 "A row of the abbreviation lists (pp. xxii-xxiv): the form (skos:notation), the meaning, the kind, and the book (bj:abbreviaLibro) or manuscript (bj:abbreviaManoscritto) it stands for."@en .
+
+bj:Manoscritto a owl:Class ;
+    rdfs:label "Manoscritto"@it , "Manuscript"@en ;
+    rdfs:comment "Un codice o un papiro dell'elenco «Codici importanti»: la sigla, il numero Gregory-Aland, la categoria (codice maiuscolo, minuscolo, papiro, vetus latina) e la descrizione come stampata."@it ,
+                 "A codex or papyrus of the list «Codici importanti»: its siglum, Gregory-Aland number, category (uncial, minuscule, papyrus, vetus latina) and the description as printed."@en .
+
+bj:Xilografia a owl:Class ;
+    rdfs:label "Xilografia"@it , "Woodcut"@en ;
+    rdfs:comment "La xilografia (dalla Bibbia di Venezia del 1625) che apre un libro, con i passi che illustra secondo le Avvertenze."@it ,
+                 "The woodcut (from the Venice Bible of 1625) opening a book, with the passages it illustrates according to the notices."@en .
+
+bj:Indice a owl:Class ;
+    rdfs:subClassOf skos:ConceptScheme ;
+    rdfs:label "Indice"@it , "Index"@en ;
+    rdfs:comment "Un indice delle appendici come schema di concetti: l'indice alfabetico delle note più importanti o l'indice dei temi biblici d'interesse pastorale."@it ,
+                 "An index of the appendices as a concept scheme: the alphabetical index of the most important notes or the index of biblical themes of pastoral interest."@en .
+
+bj:VoceIndice a owl:Class ;
+    rdfs:subClassOf skos:Concept ;
+    rdfs:label "Voce d'indice"@it , "Index entry"@en ;
+    rdfs:comment "Una voce o una sottovoce di un indice (skos:broader la voce), con le citazioni bibliche stampate (bj:Citazione, bj:daVoceIndice), i rimandi «v.» (bj:vediVoce, skos:related) e le pagine delle introduzioni (bj:rinviaAIntroduzione)."@it ,
+                 "An entry or sub-entry of an index (skos:broader the entry), with its printed Bible references (bj:Citazione, bj:daVoceIndice), its «v.» cross-references (bj:vediVoce, skos:related) and the introduction pages (bj:rinviaAIntroduzione)."@en .
+
+bj:TavolaCronologica a owl:Class ;
+    rdfs:label "Tavola cronologica"@it , "Chronological table"@en ;
+    rdfs:comment "La tavola cronologica delle appendici: sezioni (bj:SezioneCronologia) di righe di voci (bj:EventoCronologia) disposte in colonne."@it ,
+                 "The chronological table of the appendices: sections (bj:SezioneCronologia) of rows of entries (bj:EventoCronologia) set in columns."@en .
+
+bj:SezioneCronologia a owl:Class ;
+    rdfs:label "Sezione della tavola cronologica"@it , "Chronology section"@en ;
+    rdfs:comment "Un periodo della tavola come stampato («III. MOSÈ E GIOSUÈ (Es; Nm; Dt; Gs)»)."@it ,
+                 "A period of the table as printed («III. MOSÈ E GIOSUÈ (Es; Nm; Dt; Gs)»)."@en .
+
+bj:EventoCronologia a owl:Class ;
+    rdfs:subClassOf schema:Event ;
+    rdfs:label "Voce della tavola cronologica"@it , "Chronology entry"@en ;
+    rdfs:comment "Un capoverso di una cella della tavola cronologica: il testo come stampato, la colonna, la riga, la data come stampata (bj:datazione) e, quando non è ambigua, l'intervallo di anni (bj:annoInizio, bj:annoFine), le citazioni bibliche."@it ,
+                 "A paragraph of a cell of the chronological table: the text as printed, the column, the row, the date as printed (bj:datazione) and, when unambiguous, the year range (bj:annoInizio, bj:annoFine), the Bible citations."@en .
+
+bj:ColonnaCronologia a owl:Class ;
+    rdfs:subClassOf skos:Concept ;
+    rdfs:label "Colonna della tavola cronologica"@it , "Chronology column"@en ;
+    rdfs:comment "Una colonna della tavola: storia universale, storia palestinese e biblica, i regni di Israele e di Giuda, Egitto, Lagidi, Seleucidi (schema bj:colonneCronologia)."@it ,
+                 "A column of the table: world history, Palestinian and biblical history, the kingdoms of Israel and Judah, Egypt, Lagids, Seleucids (scheme bj:colonneCronologia)."@en .
+
+bj:TavolaGenealogica a owl:Class ;
+    rdfs:label "Tavola genealogica"@it , "Genealogical chart"@en ;
+    rdfs:comment "Una tavola genealogica delle appendici: le dinastie Asmonea e Erodiana."@it ,
+                 "A genealogical chart of the appendices: the Hasmonean and Herodian dynasties."@en .
+
+bj:PersonaStorica a owl:Class ;
+    rdfs:subClassOf schema:Person ;
+    rdfs:label "Persona storica"@it , "Historical person"@en ;
+    rdfs:comment "Una persona della tavola delle dinastie, con il numero d'ordine, le date e il corsivo come stampati; i legami di famiglia sono schema:parent, schema:children e schema:spouse."@it ,
+                 "A person of the dynasties chart, with the order number, dates and italics as printed; the family links are schema:parent, schema:children and schema:spouse."@en .
+
+bj:LetteraAcrostica a owl:Class ;
+    rdfs:label "Lettera acrostica"@it , "Acrostic letter"@en ;
+    rdfs:comment "Una lettera ebraica di un componimento alfabetico stampata accanto al rigo che apre (Salmi, Pr 31, Lamentazioni, Na 1): il nome come stampato ma senza le parentesi (bj:testo; quelle tra parentesi hanno bj:mancanteNelTesto), il carattere ebraico, la posizione nell'alfabeto, il rigo del versetto."@it ,
+                 "A Hebrew letter of an alphabetic poem printed beside the line it opens (Psalms, Pr 31, Lamentations, Na 1): its name as printed but without the parentheses (bj:testo; the bracketed ones have bj:mancanteNelTesto), the Hebrew character, its place in the alphabet, the line of the verse."@en .
+
+# ------------------------------------------------------------------ the edition and the front matter
+
+bj:edizioneDi a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Edizione ; rdfs:range bj:Bibbia ;
+    rdfs:label "edizione di"@it , "edition of"@en ;
+    rdfs:comment "L'opera di cui l'edizione è la stampa."@it ,
+                 "The work the edition prints."@en .
+
+bj:stampaDi a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Stampa ; rdfs:range bj:Edizione ;
+    rdfs:label "stampa di"@it , "printing of"@en ;
+    rdfs:comment "L'edizione di cui questa è una stampa."@it ,
+                 "The edition this is a printing of."@en .
+
+bj:direzioneEditoriale a owl:ObjectProperty ;
+    rdfs:subPropertyOf dcterms:contributor ;
+    rdfs:domain bj:Edizione ; rdfs:range foaf:Person ;
+    rdfs:label "direzione editoriale"@it , "editorial direction"@en ;
+    rdfs:comment "Chi ha la direzione editoriale dell'edizione."@it ,
+                 "Who has the editorial direction of the edition."@en .
+
+bj:isbn a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Edizione ; rdfs:range xsd:string ;
+    rdfs:label "ISBN"@it , "ISBN"@en ;
+    rdfs:comment "L'ISBN stampato nella pagina dei dati."@it ,
+                 "The ISBN printed on the imprint page."@en .
+
+bj:luogo a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Edizione ; rdfs:range xsd:string ;
+    rdfs:label "luogo"@it , "place"@en ;
+    rdfs:comment "Il luogo dell'editore."@it ,
+                 "The publisher's place."@en .
+
+bj:stampatore a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Edizione ; rdfs:range xsd:string ;
+    rdfs:label "stampatore"@it , "printer"@en ;
+    rdfs:comment "La tipografia come stampata («La Tipografica Varese S.p.A.», Varese 2011)."@it ,
+                 "The printer as printed («La Tipografica Varese S.p.A.», Varese 2011)."@en .
+
+bj:imprimatur a owl:DatatypeProperty ;
+    rdfs:domain bj:Edizione ; rdfs:range xsd:string ;
+    rdfs:label "imprimatur"@it , "imprimatur"@en ;
+    rdfs:comment "Un imprimatur come stampato (per l'edizione italiana e per l'originale francese)."@it ,
+                 "An imprimatur as printed (for the Italian edition and for the French original)."@en .
+
+bj:dataStampata a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Stampa ; rdfs:range xsd:string ;
+    rdfs:label "data stampata"@it , "printed date"@en ;
+    rdfs:comment "La data della stampa come stampata («gennaio 2009»); il mese è dcterms:date."@it ,
+                 "The date of the printing as printed («gennaio 2009»); the month is dcterms:date."@en .
+
+bj:qualifica a owl:DatatypeProperty ;
+    rdfs:domain bj:TestoPreliminare ; rdfs:range xsd:string ;
+    rdfs:label "qualifica"@it , "author's position"@en ;
+    rdfs:comment "Le righe sotto la firma dell'autore, come stampate (una per riga)."@it ,
+                 "The lines under the author's signature, as printed (one per line)."@en .
+
+bj:sottotitolo a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:TestoPreliminare ; rdfs:range xsd:string ;
+    rdfs:label "sottotitolo"@it , "subtitle"@en ;
+    rdfs:comment "Il sottotitolo stampato sotto il titolo."@it ,
+                 "The subtitle printed under the title."@en .
+
+bj:corsivo a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:TestoPreliminare bj:PersonaStorica ) ] ; rdfs:range xsd:boolean ;
+    rdfs:label "in corsivo"@it , "in italics"@en ;
+    rdfs:comment "Vero se il testo è stampato in corsivo (dentro, bj:testoHtml segna con <em> le parole stampate in tondo), o se il nome della persona è in corsivo nella tavola."@it ,
+                 "True if the text is printed in italics (inside it, bj:testoHtml marks with <em> the words printed in roman), or if the person's name is in italics in the chart."@en .
+
+# ------------------------------------------------------------------ canon, abbreviations, manuscripts, woodcuts
+
+bj:comprendeLibro a owl:ObjectProperty ;
+    rdfs:domain bj:VoceCanone ; rdfs:range bj:Libro ;
+    rdfs:label "comprende il libro"@it , "includes book"@en ;
+    rdfs:comment "Un libro di questa Bibbia a cui corrisponde la voce del canone («Re (1 e 2 riuniti insieme)»: 1Re e 2Re)."@it ,
+                 "A book of this Bible the canon item corresponds to («Re (1 e 2 riuniti insieme)»: 1Kgs and 2Kgs)."@en .
+
+bj:comprendeCapitolo a owl:ObjectProperty ;
+    rdfs:domain bj:VoceCanone ; rdfs:range bj:Capitolo ;
+    rdfs:label "comprende il capitolo"@it , "includes chapter"@en ;
+    rdfs:comment "Il capitolo di questa Bibbia a cui corrisponde una voce del canone greco («Susanna (= Daniele 13)», «Lettera di Geremia (= Baruc 6)»)."@it ,
+                 "The chapter of this Bible a Greek canon item corresponds to («Susanna (= Daniele 13)», «Lettera di Geremia (= Baruc 6)»)."@en .
+
+bj:deuterocanonico a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:VoceCanone ; rdfs:range xsd:boolean ;
+    rdfs:label "deuterocanonico"@it , "deuterocanonical"@en ;
+    rdfs:comment "Vero per un libro della Bibbia greca che non appartiene alla Bibbia ebraica ed è entrato nel canone cristiano (stampato in corsivo)."@it ,
+                 "True for a book of the Greek Bible not in the Hebrew Bible and received in the Christian canon (printed in italics)."@en .
+
+bj:apocrifo a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:VoceCanone ; rdfs:range xsd:boolean ;
+    rdfs:label "apocrifo"@it , "apocryphal"@en ;
+    rdfs:comment "Vero per un libro della Bibbia greca non accolto dalla Chiesa (stampato tra parentesi quadre): non è in questa Bibbia."@it ,
+                 "True for a book of the Greek Bible not received by the Church (printed in square brackets): it is not in this Bible."@en .
+
+bj:significato a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Abbreviazione ; rdfs:range xsd:string ;
+    rdfs:label "significato"@it , "meaning"@en ;
+    rdfs:comment "Lo scioglimento dell'abbreviazione come stampato («Lettere ai Corinzi», «testo masoretico»)."@it ,
+                 "What the abbreviation stands for, as printed («Lettere ai Corinzi», «testo masoretico»)."@en .
+
+bj:tipoAbbreviazione a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Abbreviazione ; rdfs:range xsd:string ;
+    rdfs:label "tipo di abbreviazione"@it , "abbreviation kind"@en ;
+    rdfs:comment "libro, libro-forma-antica, abbreviazione, segno, codice-maiuscolo, codice-minuscolo, papiro, codice-vetus-latina."@it ,
+                 "libro (book), libro-forma-antica (older form), abbreviazione, segno (sign), codice-maiuscolo, codice-minuscolo, papiro, codice-vetus-latina."@en .
+
+bj:abbreviaLibro a owl:ObjectProperty ;
+    rdfs:domain bj:Abbreviazione ; rdfs:range bj:Libro ;
+    rdfs:label "abbrevia il libro"@it , "abbreviates book"@en ;
+    rdfs:comment "Il libro (o i libri: «1 2 Cor») che la sigla indica, attraverso le sigle CEI del canone; «Est» indica i due testi di Ester."@it ,
+                 "The book (or books: «1 2 Cor») the siglum stands for, through the CEI sigla of the canon; «Est» stands for both texts of Esther."@en .
+
+bj:abbreviaManoscritto a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Abbreviazione ; rdfs:range bj:Manoscritto ;
+    rdfs:label "abbrevia il manoscritto"@it , "abbreviates manuscript"@en ;
+    rdfs:comment "Il manoscritto indicato dalla sigla."@it ,
+                 "The manuscript the siglum stands for."@en .
+
+bj:numeroGregoryAland a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Manoscritto ; rdfs:range xsd:string ;
+    rdfs:label "numero Gregory-Aland"@it , "Gregory-Aland number"@en ;
+    rdfs:comment "Il numero del manoscritto nella lista Gregory-Aland («01» per il Sinaitico, «P46», «1739»), come stampato o dedotto dalla sigla; assente per i codici della vetus latina."@it ,
+                 "The manuscript's number in the Gregory-Aland list («01» for Sinaiticus, «P46», «1739»), as printed or taken from the siglum; absent for the vetus latina codices."@en .
+
+bj:categoriaManoscritto a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Manoscritto ; rdfs:range xsd:string ;
+    rdfs:label "categoria"@it , "category"@en ;
+    rdfs:comment "codice-maiuscolo, codice-minuscolo, papiro, codice-vetus-latina."@it ,
+                 "codice-maiuscolo (uncial), codice-minuscolo (minuscule), papiro (papyrus), codice-vetus-latina."@en .
+
+bj:descrizione a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Manoscritto ; rdfs:range xsd:string ;
+    rdfs:label "descrizione"@it , "description"@en ;
+    rdfs:comment "La descrizione del manoscritto come stampata (secolo, luogo, contenuto)."@it ,
+                 "The description of the manuscript as printed (century, place, contents)."@en .
+
+bj:apreLibro a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Xilografia ; rdfs:range bj:Libro ;
+    rdfs:label "apre il libro"@it , "opens book"@en ;
+    rdfs:comment "Il libro che la xilografia apre."@it ,
+                 "The book the woodcut opens."@en .
+
+bj:illustra a owl:ObjectProperty ;
+    rdfs:domain bj:Xilografia ; rdfs:range bj:Passaggio ;
+    rdfs:label "illustra"@it , "illustrates"@en ;
+    rdfs:comment "Un passo che la xilografia illustra, secondo i riferimenti delle Avvertenze."@it ,
+                 "A passage the woodcut illustrates, according to the references of the notices."@en .
+
+bj:illustraVersetto a owl:ObjectProperty ;
+    rdfs:domain bj:Xilografia ; rdfs:range bj:Versetto ;
+    rdfs:label "illustra il versetto"@it , "illustrates verse"@en ;
+    rdfs:comment "Scorciatoia: un versetto dei passi illustrati dalla xilografia."@it ,
+                 "Shortcut: a verse of the passages the woodcut illustrates."@en .
+
+# ------------------------------------------------------------------ the indices
+
+bj:daVoceIndice a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:subPropertyOf cito:hasCitingEntity ;
+    rdfs:domain bj:Citazione ; rdfs:range bj:VoceIndice ;
+    rdfs:label "dalla voce d'indice"@it , "from index entry"@en ;
+    rdfs:comment "La voce (o sottovoce) d'indice in cui il riferimento è stampato."@it ,
+                 "The index entry (or sub-entry) the reference is printed in."@en .
+
+bj:daEvento a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:subPropertyOf cito:hasCitingEntity ;
+    rdfs:domain bj:Citazione ; rdfs:range bj:EventoCronologia ;
+    rdfs:label "dalla voce della cronologia"@it , "from chronology entry"@en ;
+    rdfs:comment "La voce della tavola cronologica nel cui testo compare la citazione."@it ,
+                 "The chronology entry whose text contains the citation."@en .
+
+bj:indicaNota a owl:ObjectProperty ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:Citazione bj:VoceIndice ) ] ;
+    rdfs:range bj:Nota ;
+    rdfs:label "indica la nota"@it , "points to note"@en ;
+    rdfs:comment "Per un riferimento dell'indice delle note: la nota della BJ richiamata al primo versetto, o che comincia lì, o la cui etichetta lo comprende (bj:corrispondenzaNota dice quale); per la voce d'indice, la scorciatoia."@it ,
+                 "For a reference of the index of notes: the BJ note called at its first verse, or starting there, or whose label covers it (bj:corrispondenzaNota says which); for the index entry, the shortcut."@en .
+
+bj:aPassaggioCorretto a owl:ObjectProperty ;
+    rdfs:domain bj:Citazione ; rdfs:range bj:Passaggio ;
+    rdfs:label "al passaggio corretto"@it , "to corrected passage"@en ;
+    rdfs:comment "Per un riferimento d'indice con un refuso: il passaggio del riferimento corretto, quando il registro dei dubbi del volume (checklist-ocr.md) lo indica con la sua prova; il riferimento stampato resta in bj:testo e bj:aPassaggio."@it ,
+                 "For an index reference with a misprint: the passage of the corrected reference, where the volume's log of doubts (checklist-ocr.md) states it with its evidence; the printed reference stays in bj:testo and bj:aPassaggio."@en .
+
+bj:testoCorretto a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Citazione ; rdfs:range xsd:string ;
+    rdfs:label "testo corretto"@it , "corrected text"@en ;
+    rdfs:comment "Il riferimento corretto («Gs 14,6» per «Gb 14,6»)."@it ,
+                 "The corrected reference («Gs 14,6» for «Gb 14,6»)."@en .
+
+bj:correzione a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Citazione ; rdfs:range xsd:string ;
+    rdfs:label "correzione"@it , "correction"@en ;
+    rdfs:comment "Perché il riferimento è corretto: la prova del registro dei dubbi."@it ,
+                 "Why the reference is corrected: the evidence of the log of doubts."@en .
+
+bj:corrispondenzaNota a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Citazione ; rdfs:range xsd:string ;
+    rdfs:label "corrispondenza con le note"@it , "note match"@en ;
+    rdfs:comment "Che cosa ha la BJ al primo versetto di un riferimento dell'indice delle note: nota (una nota vi è richiamata o comincia lì), copre (l'etichetta di una nota lo comprende), capitolo (una nota sul capitolo), rimandi (solo rimandi a margine), nessuna."@it ,
+                 "What the BJ has at the first verse of a reference of the index of notes: nota (a note is called or starts there), copre (a note's label covers it), capitolo (a note on the chapter), rimandi (margin references only), nessuna (none)."@en .
+
+bj:seguito a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Citazione ; rdfs:range xsd:string ;
+    rdfs:label "seguito"@it , "trailer"@en ;
+    rdfs:comment "Quello che l'indice stampa dopo il riferimento: «e par», «e par.», «ecc.»."@it ,
+                 "What the index prints after the reference: «e par», «e par.», «ecc.»."@en .
+
+bj:indicaVersetto a owl:ObjectProperty ;
+    rdfs:subPropertyOf cito:cites ;
+    owl:inverseOf bj:nellIndice ;
+    rdfs:domain bj:VoceIndice ; rdfs:range bj:Versetto ;
+    rdfs:label "indica il versetto"@it , "points to verse"@en ;
+    rdfs:comment "Scorciatoia: la voce d'indice cita un passaggio che comprende il versetto (per un riferimento corretto, il passaggio corretto)."@it ,
+                 "Shortcut: the index entry cites a passage including the verse (for a corrected reference, the corrected passage)."@en .
+
+bj:nellIndice a owl:ObjectProperty ;
+    rdfs:subPropertyOf cito:isCitedBy ;
+    rdfs:domain bj:Versetto ; rdfs:range bj:VoceIndice ;
+    rdfs:label "nell'indice"@it , "in index entry"@en ;
+    rdfs:comment "Scorciatoia: il versetto è indicato dalla voce d'indice (inversa di bj:indicaVersetto, materializzata)."@it ,
+                 "Shortcut: the verse is pointed to by the index entry (inverse of bj:indicaVersetto, materialised)."@en .
+
+bj:vediVoce a owl:ObjectProperty ;
+    rdfs:subPropertyOf skos:related ;
+    rdfs:domain bj:VoceIndice ; rdfs:range bj:VoceIndice ;
+    rdfs:label "vedi"@it , "see"@en ;
+    rdfs:comment "Un rimando «v.» stampato nella voce, nella direzione stampata (skos:related è materializzato nei due sensi)."@it ,
+                 "A «v.» cross-reference printed in the entry, in the printed direction (skos:related is materialised both ways)."@en .
+
+bj:rinviaAIntroduzione a owl:ObjectProperty ;
+    rdfs:domain bj:VoceIndice ; rdfs:range bj:Introduzione ;
+    rdfs:label "rinvia all'introduzione"@it , "refers to introduction"@en ;
+    rdfs:comment "Un numero di pagina dell'edizione stampato nella voce («cf. pp. 1689 e 2925s»): l'introduzione stampata in quella pagina."@it ,
+                 "A page number of the edition printed in the entry («cf. pp. 1689 e 2925s»): the introduction printed on that page."@en .
+
+bj:stile a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:VoceIndice ; rdfs:range xsd:string ;
+    rdfs:label "stile"@it , "style"@en ;
+    rdfs:comment "Come è stampato il lemma: maiuscoletto (persone, luoghi, popoli), corsivo (termini ebraici, aramaici, greci), grassetto (i temi), tondo."@it ,
+                 "How the headword is printed: maiuscoletto (small caps: persons, places, peoples), corsivo (italics: Hebrew, Aramaic, Greek terms), grassetto (bold: the themes), tondo (roman)."@en .
+
+# ------------------------------------------------------------------ the chronological table
+
+bj:colonna a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:EventoCronologia ; rdfs:range bj:ColonnaCronologia ;
+    rdfs:label "colonna"@it , "column"@en ;
+    rdfs:comment "La colonna della tavola in cui la voce è stampata."@it ,
+                 "The column of the table the entry is printed in."@en .
+
+bj:riga a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:EventoCronologia ; rdfs:range xsd:integer ;
+    rdfs:label "riga"@it , "row"@en ;
+    rdfs:comment "La riga della tavola (un blocco di capoversi stampati alla stessa altezza), numerata da 1 per tutta la tavola."@it ,
+                 "The row of the table (a block of paragraphs printed at the same height), numbered from 1 through the whole table."@en .
+
+bj:anniMargine a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:EventoCronologia ; rdfs:range xsd:string ;
+    rdfs:label "anni a margine"@it , "margin years"@en ;
+    rdfs:comment "Le date della scala stampata a margine accanto alla riga («1300; 1250»)."@it ,
+                 "The dates of the scale printed in the margin beside the row («1300; 1250»)."@en .
+
+bj:datazione a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:EventoCronologia bj:PersonaStorica ) ] ; rdfs:range xsd:string ;
+    rdfs:label "datazione"@it , "date as printed"@en ;
+    rdfs:comment "La data come stampata: in testa alla voce («Nov. 164», «Fra il 34 e il 45») o nell'unico intervallo tra parentesi («51–30»); per una persona della tavola delle dinastie, le date accanto al nome («37–4 a.C.», «† 44»)."@it ,
+                 "The date as printed: at the start of the entry («Nov. 164», «Fra il 34 e il 45») or in the one range in parentheses («51–30»); for a person of the dynasties chart, the dates beside the name («37–4 a.C.», «† 44»)."@en .
+
+bj:annoInizio a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:EventoCronologia ; rdfs:range xsd:integer ;
+    rdfs:label "anno iniziale"@it , "start year"@en ;
+    rdfs:comment "Il primo anno della datazione, quando non è ambigua: negativo prima di Cristo, senza anno zero (-586 = 586 a.C.). Le sezioni I-VIII sono avanti Cristo; nella IX l'èra cambia alla prima riga datata «d.C.»; «a.C.» o «d.C.» stampati prevalgono."@it ,
+                 "The first year of the date, when unambiguous: negative before Christ, no year zero (-586 = 586 BC). Sections I-VIII are BC; in IX the era changes at the first row dated «d.C.»; a printed «a.C.» or «d.C.» wins."@en .
+
+bj:annoFine a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:EventoCronologia ; rdfs:range xsd:integer ;
+    rdfs:label "anno finale"@it , "end year"@en ;
+    rdfs:comment "L'ultimo anno della datazione (uguale al primo per un anno solo), con la stessa convenzione di bj:annoInizio."@it ,
+                 "The last year of the date (equal to the first for a single year), with the convention of bj:annoInizio."@en .
+
+bj:circa a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:EventoCronologia ; rdfs:range xsd:boolean ;
+    rdfs:label "circa"@it , "approximately"@en ;
+    rdfs:comment "Vero se la data è approssimata («ca.», «verso»)."@it ,
+                 "True if the date is approximate («ca.», «verso»)."@en .
+
+bj:nomeMaiuscoletto a owl:DatatypeProperty ;
+    rdfs:domain bj:EventoCronologia ; rdfs:range xsd:string ;
+    rdfs:label "nome in maiuscoletto"@it , "name in small caps"@en ;
+    rdfs:comment "Un nome stampato in maiuscoletto (capi, governatori, re, sommi sacerdoti)."@it ,
+                 "A name printed in small caps (leaders, governors, kings, high priests)."@en .
+
+bj:nomeMaiuscolo a owl:DatatypeProperty ;
+    rdfs:domain bj:EventoCronologia ; rdfs:range xsd:string ;
+    rdfs:label "nome in maiuscolo"@it , "name in capitals"@en ;
+    rdfs:comment "Un nome stampato tutto maiuscolo (i più importanti)."@it ,
+                 "A name printed in full capitals (the more important ones)."@en .
+
+# ------------------------------------------------------------------ the dynasties
+
+bj:numeroTavola a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:PersonaStorica ; rdfs:range xsd:string ;
+    rdfs:label "numero nella tavola"@it , "number in the chart"@en ;
+    rdfs:comment "Il numero d'ordine stampato davanti al nome («11», «12a»)."@it ,
+                 "The order number printed before the name («11», «12a»)."@en .
+
+# ------------------------------------------------------------------ acrostic letters
+
+bj:haLetteraAcrostica a owl:ObjectProperty , owl:InverseFunctionalProperty ;
+    rdfs:domain bj:Versetto ; rdfs:range bj:LetteraAcrostica ;
+    rdfs:label "ha la lettera acrostica"@it , "has acrostic letter"@en ;
+    rdfs:comment "Una lettera acrostica stampata nel versetto, con il rigo che apre."@it ,
+                 "An acrostic letter printed in the verse, with the line it opens."@en .
+
+bj:letteraEbraica a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:LetteraAcrostica ; rdfs:range xsd:string ;
+    rdfs:label "lettera ebraica"@it , "Hebrew letter"@en ;
+    rdfs:comment "Il carattere ebraico della lettera («א»)."@it ,
+                 "The Hebrew character of the letter («א»)."@en .
+
+bj:posizioneAlfabeto a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:LetteraAcrostica ; rdfs:range xsd:integer ;
+    rdfs:label "posizione nell'alfabeto"@it , "place in the alphabet"@en ;
+    rdfs:comment "La posizione della lettera nell'alfabeto ebraico (1 Alef … 22 Tau)."@it ,
+                 "The letter's place in the Hebrew alphabet (1 Alef … 22 Tau)."@en .
+
+bj:rigo a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:LetteraAcrostica ; rdfs:range xsd:integer ;
+    rdfs:label "rigo"@it , "line"@en ;
+    rdfs:comment "Il rigo del versetto (da 1) che la lettera apre: il primo, o un rigo più avanti quando la strofa comincia dentro il versetto (Na 1,3)."@it ,
+                 "The line of the verse (from 1) the letter opens: the first, or a later line when the stanza begins inside the verse (Na 1,3)."@en .
+
+bj:mancanteNelTesto a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:LetteraAcrostica ; rdfs:range xsd:boolean ;
+    rdfs:label "mancante nel testo"@it , "missing in the text"@en ;
+    rdfs:comment "Vero se la lettera è stampata tra parentesi («(Mem)»): manca nel testo ebraico."@it ,
+                 "True if the letter is printed in parentheses («(Mem)»): it is missing in the Hebrew text."@en .
+
+# ------------------------------------------------------------------ SKOS: the columns of the chronology
+
+bj:colonneCronologia a skos:ConceptScheme ;
+    rdfs:label "Colonne della tavola cronologica"@it , "Columns of the chronological table"@en ;
+    rdfs:comment "Le colonne in cui la tavola cronologica dispone le sue voci."@it ,
+                 "The columns the chronological table sets its entries in."@en ;
+    skos:hasTopConcept bj:colonnaUniversale , bj:colonnaPalestina , bj:colonnaIsraele , bj:colonnaGiuda ,
+                       bj:colonnaEgitto , bj:colonnaLagidi , bj:colonnaSeleucidi .
+
+bj:colonnaUniversale a skos:Concept , bj:ColonnaCronologia ;
+    skos:inScheme bj:colonneCronologia ; skos:topConceptOf bj:colonneCronologia ; skos:notation "universale" ;
+    skos:prefLabel "Storia universale"@it , "World history"@en ;
+    rdfs:label "Storia universale"@it , "World history"@en ;
+    rdfs:comment "La colonna (o le colonne) di sinistra: la storia universale."@it ,
+                 "The left column (or columns): world history."@en .
+
+bj:colonnaPalestina a skos:Concept , bj:ColonnaCronologia ;
+    skos:inScheme bj:colonneCronologia ; skos:topConceptOf bj:colonneCronologia ; skos:notation "palestina" ;
+    skos:prefLabel "Storia palestinese e biblica"@it , "Palestinian and biblical history"@en ;
+    rdfs:label "Storia palestinese e biblica"@it , "Palestinian and biblical history"@en ;
+    rdfs:comment "La colonna di destra: la storia palestinese e biblica (prima del periodo romano i dati extra-biblici sono in corsivo)."@it ,
+                 "The right column: Palestinian and biblical history (before the Roman period extra-biblical data are in italics)."@en .
+
+bj:colonnaIsraele a skos:Concept , bj:ColonnaCronologia ;
+    skos:inScheme bj:colonneCronologia ; skos:topConceptOf bj:colonneCronologia ; skos:notation "israele" ;
+    skos:prefLabel "Regno di Israele"@it , "Kingdom of Israel"@en ;
+    rdfs:label "Regno di Israele"@it , "Kingdom of Israel"@en ;
+    rdfs:comment "Dal 931 al 721 la storia biblica in due colonne: il regno del nord."@it ,
+                 "From 931 to 721 biblical history in two columns: the northern kingdom."@en .
+
+bj:colonnaGiuda a skos:Concept , bj:ColonnaCronologia ;
+    skos:inScheme bj:colonneCronologia ; skos:topConceptOf bj:colonneCronologia ; skos:notation "giuda" ;
+    skos:prefLabel "Regno di Giuda"@it , "Kingdom of Judah"@en ;
+    rdfs:label "Regno di Giuda"@it , "Kingdom of Judah"@en ;
+    rdfs:comment "Il regno del sud (e la sua fine, 721-587)."@it ,
+                 "The southern kingdom (and its end, 721-587)."@en .
+
+bj:colonnaEgitto a skos:Concept , bj:ColonnaCronologia ;
+    skos:inScheme bj:colonneCronologia ; skos:topConceptOf bj:colonneCronologia ; skos:notation "egitto" ;
+    skos:prefLabel "Egitto"@it , "Egypt"@en ;
+    rdfs:label "Egitto"@it , "Egypt"@en ;
+    rdfs:comment "Una colonna della storia universale dedicata all'Egitto."@it ,
+                 "A column of world history devoted to Egypt."@en .
+
+bj:colonnaLagidi a skos:Concept , bj:ColonnaCronologia ;
+    skos:inScheme bj:colonneCronologia ; skos:topConceptOf bj:colonneCronologia ; skos:notation "lagidi" ;
+    skos:prefLabel "Lagidi (Tolomei)"@it , "Lagids (Ptolemies)"@en ;
+    rdfs:label "Lagidi (Tolomei)"@it , "Lagids (Ptolemies)"@en ;
+    rdfs:comment "Nell'epoca ellenistica: la dinastia dei Lagidi in Egitto."@it ,
+                 "In the Hellenistic period: the Lagid dynasty in Egypt."@en .
+
+bj:colonnaSeleucidi a skos:Concept , bj:ColonnaCronologia ;
+    skos:inScheme bj:colonneCronologia ; skos:topConceptOf bj:colonneCronologia ; skos:notation "seleucidi" ;
+    skos:prefLabel "Seleucidi"@it , "Seleucids"@en ;
+    rdfs:label "Seleucidi"@it , "Seleucids"@en ;
+    rdfs:comment "Nell'epoca ellenistica: la dinastia dei Seleucidi in Siria."@it ,
+                 "In the Hellenistic period: the Seleucid dynasty in Syria."@en .

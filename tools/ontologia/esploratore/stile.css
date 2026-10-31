@@ -211,14 +211,14 @@ main { min-width: 0; outline: none; }
 .volume h3 { font: 600 .74rem var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--tenue); margin: 0 0 .4rem; display: flex; gap: .5rem; align-items: baseline; }
 .volume h3 a { color: var(--tenue); font-weight: 500; text-transform: none; letter-spacing: 0; }
 .libri { display: grid; grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr)); gap: .3rem; }
-.libro {
+.libro, .apparato {
   display: flex; justify-content: space-between; align-items: baseline; gap: .4rem;
   padding: .4rem .6rem; border-radius: 6px; color: var(--inchiostro);
   border: 1px solid var(--linea); background: var(--foglio);
 }
-.libro:hover { border-color: var(--linea2); background: var(--sopra); text-decoration: none; }
-.libro b { font: 500 .95rem/1.25 var(--serif); overflow-wrap: anywhere; }
-.libro span { font-size: .72rem; color: var(--tenue); white-space: nowrap; }
+.libro:hover, .apparato:hover { border-color: var(--linea2); background: var(--sopra); text-decoration: none; }
+.libro b, .apparato b { font: 500 .95rem/1.25 var(--serif); overflow-wrap: anywhere; }
+.libro span, .apparato span { font-size: .72rem; color: var(--tenue); white-space: nowrap; }
 .numeri { display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; margin: .25rem 0 2rem; color: var(--secondo); font-size: .9rem; }
 .numeri b { color: var(--inchiostro); font-weight: 600; font-variant-numeric: tabular-nums; }
 .numeri small { color: var(--tenue); font-size: .8rem; }
@@ -734,3 +734,107 @@ a.vl::before { content: "*"; color: var(--r-diz); font: 600 .8em var(--sans); ma
 @media print {
   .barra, .pannello, .comandi { display: none !important; }
 }
+
+/* ---------------------------------------------------------------- the front matter and the appendices */
+/* acrostic letters: in the left margin, outside the margin signs, beside the line they open (the
+   print sets them in the poem's left indent); inline at the line start on narrower screens */
+.vp .r { position: relative; }
+.acr {
+  position: absolute; right: 100%; margin-right: 4.5rem; text-align: right; text-indent: 0;
+  font: 600 .68rem/1 var(--sans); color: var(--rubrica); letter-spacing: .02em; padding-top: .3em; user-select: none; white-space: nowrap;
+}
+.acr b { font: 400 1.05rem/1 var(--serif); vertical-align: -.1em; }
+.apparati { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .5rem; margin-bottom: 1rem; }
+.apparati .apparato span { white-space: normal; }
+.indice-an .dvl b { font-weight: 500; }
+.ix-corpo { max-width: 46rem; }
+.ix-riga { padding: .45rem 0 .5rem; border-top: 1px solid var(--linea); display: grid; grid-template-columns: minmax(0, 13rem) 1fr; gap: .2rem .9rem; align-items: baseline; }
+.ix-riga:not(.sv) { grid-template-columns: 1fr; }
+.ix-riga.sel { background: color-mix(in srgb, var(--sel) 50%, transparent); border-radius: 4px; }
+.ix-sv { font: 1rem/1.4 var(--serif); color: var(--inchiostro); }
+.voce-ix h1.st-maiuscoletto .sc, .sc { font-variant: small-caps; letter-spacing: .02em; }
+.nota-ix { font: 600 .74rem var(--sans); color: var(--richiamo); margin: 0 .35rem 0 -.1rem; white-space: nowrap; }
+.nota-ix.copre { color: var(--secondo); }
+.senza-nota { font-size: .72rem; color: var(--tenue); margin-right: .3rem; }
+.chip.refuso { text-decoration: line-through; text-decoration-thickness: 1px; }
+.chip.corretto { border-style: dashed; }
+.vedi { font: .9rem var(--serif); margin-right: .5rem; }
+.vedi.x { color: var(--tenue); }
+.sez.ix .frase.chips, .sez.ix .frase { display: block; }
+.xilo-nota { font-size: .82rem; color: var(--secondo); margin: .4rem 0 0; }
+.cron-intro { max-width: 46rem; font: .98rem/1.6 var(--serif); color: var(--secondo); }
+.cron-nav { display: flex; flex-wrap: wrap; gap: .25rem; margin: .8rem 0 1rem; }
+.cron-nav a { font: 600 .8rem var(--sans); padding: .3rem .55rem; border: 1px solid var(--linea); border-radius: 6px; background: var(--foglio); color: var(--secondo); }
+.cron-nav a[aria-current="page"] { background: var(--inchiostro); color: var(--carta); border-color: var(--inchiostro); }
+.cron-nav a:hover { text-decoration: none; background: var(--sopra); }
+.cron-nav a[aria-current="page"]:hover { background: var(--inchiostro); }
+.cron-sezioni { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .6rem; }
+.cron-sezioni .tessera { color: var(--inchiostro); }
+.cron-sezioni .tessera:hover { text-decoration: none; border-color: var(--linea2); background: var(--sopra); }
+.cron-sezioni .tessera span { display: block; font: .92rem/1.35 var(--serif); color: var(--inchiostro); margin-top: .15rem; }
+.pagina.larga { max-width: 78rem; }
+.cron-testata, .cron-riga { display: grid; grid-template-columns: 4.2rem repeat(var(--n), minmax(0, 1fr)); gap: 0 1rem; }
+.cron-testata { position: sticky; top: var(--barra); z-index: 4; background: var(--carta); font: 600 .74rem var(--sans); color: var(--secondo); letter-spacing: .04em; text-transform: uppercase; padding: .4rem 0; border-bottom: 1px solid var(--linea2); }
+.cron-riga { border-bottom: 1px solid var(--linea); padding: .5rem 0; position: relative; }
+.cron-anni { font: 600 .78rem/1.5 var(--sans); color: var(--rubrica); text-align: right; font-variant-numeric: tabular-nums; }
+.cron-anni .pg { position: static; display: block; color: var(--tenue); font-weight: 400; padding: 0; }
+.cron-cella p { margin: 0 0 .45rem; font: .9rem/1.5 var(--serif); }
+.cron-cella p.sel { background: var(--sel); box-shadow: 0 0 0 4px var(--sel); border-radius: 2px; }
+.dinastie, .dinastie ul { list-style: none; margin: 0; padding: 0; }
+.dinastie ul { padding-left: 1.4rem; border-left: 1px solid var(--linea2); margin-left: .4rem; }
+.dinastie li { margin: .3rem 0; font: 1rem/1.45 var(--serif); }
+.dinastie .num { font: 600 .8rem var(--sans); color: var(--rubrica); }
+.dinastie small { font: .78rem var(--sans); color: var(--secondo); }
+.dinastie .sposo { color: var(--rubrica); margin: 0 .15rem 0 .35rem; }
+.dinastie .madre { display: block; font: .72rem var(--sans); color: var(--tenue); }
+.dinastie .nota-din { display: block; font: italic .78rem var(--sans); color: var(--tenue); }
+.pre-testi { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; margin-bottom: .6rem; }
+.pre-testo { display: block; padding: .65rem .8rem; border: 1px solid var(--linea); border-radius: 9px; background: var(--foglio); color: var(--inchiostro); }
+.pre-testo:hover { text-decoration: none; background: var(--sopra); border-color: var(--linea2); }
+.pre-testo b { display: block; font: 600 1rem/1.3 var(--serif); }
+.pre-testo i { display: block; font: italic .88rem/1.3 var(--serif); color: var(--secondo); }
+.pre-testo span { display: block; font-size: .76rem; color: var(--tenue); margin-top: .2rem; }
+.colofone { font-size: .85rem; color: var(--secondo); margin: .2rem 0 1rem; }
+.colofone summary { cursor: pointer; font-weight: 600; }
+.firma-pre { text-align: right; margin: .2rem 0 1.4rem; max-width: 41rem; }
+.firma-pre b { display: block; font: italic 500 1.05rem var(--serif); }
+.firma-pre span { display: block; font-size: .8rem; color: var(--secondo); }
+.intro-testo.corsivo p { font-style: italic; }
+.intro-testo.corsivo em { font-style: normal; }
+.canone-box { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .4rem 2rem; max-width: 52rem; }
+.canone-tit { font: 600 .9rem var(--sans); margin: .6rem 0 .2rem; }
+.canone-gruppo.sotto .canone-tit { font-weight: 500; padding-left: .8rem; }
+.canone { list-style: none; margin: 0; padding: 0; font: .95rem/1.45 var(--serif); }
+.canone li { padding: .1rem 0; }
+.canone .cn { display: inline-block; min-width: 1.8rem; color: var(--tenue); font: .8rem var(--sans); }
+.canone li.apocrifo { color: var(--secondo); }
+.in-bibbia { font: .75rem var(--sans); color: var(--tenue); }
+.abbr-libri { display: grid; grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); gap: .15rem 1rem; font: .92rem/1.5 var(--serif); }
+.abbr-libri b { display: inline-block; min-width: 4.2rem; font: 600 .82rem var(--sans); }
+table.abbr { border-collapse: collapse; width: 100%; max-width: 52rem; font: .92rem/1.45 var(--serif); }
+table.abbr td { border-top: 1px solid var(--linea); padding: .25rem .5rem .25rem 0; vertical-align: top; }
+table.abbr .ab-f { width: 7rem; font: 600 .85rem var(--sans); white-space: nowrap; }
+.greg { color: var(--tenue); font: .75rem var(--sans); }
+.par-h2 .seg, .bpar .seg { color: var(--rubrica); margin-right: .3rem; }
+@media (max-width: 1240px) {
+  .acr { position: static; display: inline-block; padding: 0; margin: 0 .45em 0 0; font-size: .64rem; vertical-align: .12em; }
+  .acr b { font-size: .92rem; }
+}
+@media (max-width: 720px) {
+  .apparati { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cron-sezioni, .pre-testi, .canone-box { grid-template-columns: 1fr; }
+  .cron-testata { display: none; }
+  .cron-riga { grid-template-columns: 1fr; gap: .2rem; }
+  .cron-anni { text-align: left; }
+  .cron-anni .pg { display: inline; margin-right: .5rem; }
+  .cron-cella:not(:empty)::before { content: attr(data-col); display: block; font: 600 .68rem var(--sans); color: var(--secondo); text-transform: uppercase; letter-spacing: .04em; margin-top: .2rem; }
+  .cron-cella:empty { display: none; }
+  .ix-riga { grid-template-columns: 1fr; }
+  table.abbr .ab-f { width: 4.6rem; white-space: normal; }
+}
+.apparati .apparato { flex-direction: column; align-items: flex-start; }
+.ix-corpo .chips { align-items: center; }
+.ix-corpo .nota-ix { line-height: 1.6; }
+.ix-nota { margin: .45rem 0 .2rem; }
+.ix-nota summary .etichetta { white-space: nowrap; }
+.ix-riga > div { min-width: 0; }

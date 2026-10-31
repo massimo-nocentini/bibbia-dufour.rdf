@@ -10,11 +10,15 @@ the first stage whose checks fail.
   dufour.py             ../dufour/corpus (Dizionario di Teologia Biblica, read only) + bibbia.json
                         -> ontologia/build/dufour.json (entries, citations resolved to verses)
   test_dufour.py        the citations of the dictionary on real rows
-  rdf.py                the three JSON files (Bible, links, dictionary) -> ontologia/bj-dati.{ttl,nt}.gz,
-                        bj-contesto.jsonld, bj-void.ttl
+  paratesto.py          progetti/introduzione-generale + progetti/appendici (read only; the tables of
+                        progetti/appendici/tsv.py made again in ontologia/build/) + bibbia.json
+                        -> ontologia/build/paratesto.json (front matter, indices, chronology, dynasties)
+  test_paratesto.py     the front matter and the appendices on real rows
+  rdf.py                the four JSON files (Bible, links, dictionary, front matter and appendices)
+                        -> ontologia/bj-dati.{ttl,nt}.gz, bj-contesto.jsonld, bj-void.ttl
   verifica_rdf.py       parsers, OWL sanity, SPARQL integrity, SHACL (whole graph), JSON-LD
   interroga.py          every ontologia/query/*.rq; rows and timings in ontologia/build/query.md
-  esploratore.py        the three JSON files -> ontologia/esplora.html (offline explorer)
+  esploratore.py        the four JSON files -> ontologia/esplora.html (offline explorer)
 
 The headless browser test of the page, tools/ontologia/prova_esploratore.mjs, needs
 playwright-core outside the repository and is not run here (see the README).
@@ -34,6 +38,8 @@ PASSI = [
     ['test_riferimenti.py'],
     ['dufour.py', '-q'],
     ['test_dufour.py'],
+    ['paratesto.py', '-q'],
+    ['test_paratesto.py'],
     ['rdf.py', '-q'],
     ['verifica_rdf.py', '-q'],
     ['interroga.py', '--limite', '5', '--riepilogo', os.path.join(C, 'ontologia', 'build', 'query.md')] + QUERY,

@@ -130,6 +130,23 @@ def motivo(reason):
     return '; '.join(parti)
 
 
+# a citation read in the sense of the sentence (riferimenti.py, 'corrected'), in Italian
+CONTESTO = {'catena': 'letto nel libro del riferimento precedente: la catena continua',
+            'puntatore': 'versetto del capitolo appena nominato',
+            'capitolo': 'versetto del capitolo nominato nella frase',
+            'elenco': 'versetti del capitolo («vv 4,7,15»)',
+            'manuale': 'libro letto dal senso della frase',
+            'ester': 'la nota chiave è nell’altro testo di Ester',
+            'introduzione': 'letto nel libro della frase o della sezione',
+            'nudo': 'riferimento senza sigla dopo una preposizione',
+            'aggiunta': 'riferimento che la grammatica non legge, letto sulla pagina'}
+
+
+def perche(x):
+    """What the page says of a citation: why it is unresolved, or how it was read."""
+    return motivo(x['reason']) or lettura(x.get('inferred')) or CONTESTO.get(x.get('corrected'), '')
+
+
 def lettura(inferred):
     """How a citation without siglum was read (riferimenti.py, 'inferred'), in Italian."""
     for pat, rep in LETTURE:
@@ -225,7 +242,9 @@ def versetti(data):
              for v in V]
     return dict(id=[v['id'] for v in V], l=[v['label'] for v in V], h=[v['html'] for v in V],
                 f=flags, pg=[v['page'] for v in V],
-                ac={str(i): ' '.join(v['acrostic']) for i, v in enumerate(V) if v.get('acrostic')})
+                ac={str(i): [['(%s)' % a if p else a, n] for a, n, p in zip(
+                    v['acrostic'], v['acrostic_lines'], v.get('acrostic_brackets') or [False] * len(v['acrostic']))]
+                    for i, v in enumerate(V) if v.get('acrostic')})
 
 
 def payload(data, links, summary):
@@ -261,7 +280,7 @@ def payload(data, links, summary):
                 continue
             k = len(ncites)
             ncites.append([nix[x['source']], tgt(x), STATI.index(x['status']),
-                           motivo(x['reason']) or lettura(x.get('inferred')), x['raw']])
+                           perche(x), x['raw']])
             nspans[nix[x['source']]].append((x['html_offset'], x['html_end'], k))
         elif x['kind'] == 'intro-cites':
             intro, par = x['source'].rsplit('.', 1)
@@ -270,7 +289,7 @@ def payload(data, links, summary):
                 continue
             k = len(icites)
             icites.append([iix[intro], int(par), tgt(x), STATI.index(x['status']),
-                           motivo(x['reason']) or lettura(x.get('inferred')), x['raw']])
+                           perche(x), x['raw']])
             ispans.setdefault((intro, int(par)), []).append((x['html_offset'], x['html_end'], k))
 
     notes = []
@@ -303,6 +322,108 @@ def payload(data, links, summary):
     P = dict(meta=meta, vol=volumi(), libri=books, V=versetti(data), peri=peri, div=divs,
              note=notes, mref=mrefs, ml=mlinks, nc=ncites, ic=icites, intro=intros)
     return P, errors
+
+
+# ---------------------------------------------------------------- the front matter and the appendices
+
+NOTA_KIND = ['nota', 'copre', 'capitolo', 'rimandi', 'nessuna']
+ITEM_KIND = ['rif', 'libro', 'vedi', 'pagina']
+EBRAICO = {n: ch for n, ch in zip('Alef Bet Ghimel Dalet He Vau Zain Het Tet Iod Caf Lamed Mem Nun Samec Ain Pe Sade '
+                                  'Kof Res Sin Tau'.split(), 'אבגדהוזחטיכלמנסעפצקרשת')}
+EBRAICO.update(Iad=EBRAICO['Iod'], Śin=EBRAICO['Sin'])
+
+
+def paratesto(P, data, vix, errors):
+    """The front matter and the appendices in the payload (key 'par').
+
+    ed: the edition (title, publisher, ISBN, printings [label, date], colophon lines);
+    testi: [id, title, subtitle, page, signature, position lines, italic, kind, paragraphs
+    [[n, page, HTML with <a class="ci" data-p=k>]]]; pc: their citations [text, paragraph, runs,
+    status, reason, raw]; canoni: [id, groups [[n, title HTML, parent]], items [[n, group, HTML,
+    books, chapters, deuterocanonical, apocryphal]]]; abbr: [form, meaning, kind, page, books,
+    Gregory number]; xilo: [book, name, raw, runs]; indici: {note|temi: [[n, headword HTML, plain,
+    style, page, sub [[k, label, name]], items [[kind, sub, raw, page, cf, trailer, runs, status,
+    reason, notes, note match, correction [raw, runs, notes, why] or 0, cross-references or
+    introductions]]]]}; cron: intro, sections, columns, entries [[section, row, margin, page,
+    column, order, HTML with <a class="ci" data-t=k>, date, start, end, circa, plain]], cit
+    [entry, runs, status, reason, raw]; din: [id, number, name, italic, date, father, mother,
+    spouses, note]."""
+    bix = {b['osis']: k for k, b in enumerate(data['books'])}
+    nix = {n['id']: k for k, n in enumerate(data['notes'])}
+    iix = {x['id']: k for k, x in enumerate(data['intros'])}
+
+    def tgt(ids):
+        return runs(vix[t] for t in ids)
+    ti = {x['id']: k for k, x in enumerate(P['testi'])}
+    pc, pspans = [], {}
+    cron_cit, cspans = [], {}
+    for l in P['links']:
+        if l['kind'] == 'front-cites':
+            tid, n = l['source'].rsplit('.', 1)
+            k = len(pc)
+            pc.append([ti[tid], int(n), tgt(l['targets']), STATI.index(l['status']), motivo(l['reason']), l['raw']])
+            pspans.setdefault((tid, int(n)), []).append((l['html_offset'], l['html_end'], k))
+        else:
+            n = int(l['source'].split('.', 1)[1])
+            k = len(cron_cit)
+            cron_cit.append([n - 1, tgt(l['targets']), STATI.index(l['status']), motivo(l['reason']), l['raw']])
+            cspans.setdefault(n, []).append((l['html_offset'], l['html_end'], k))
+    testi = []
+    for x in P['testi']:
+        pars = [[p['n'], p['page'], avvolgi(p['html'], pspans.get((x['id'], p['n']), []), 'data-p', errors,
+                                            '%s.%d' % (x['id'], p['n']))] for p in x['paragraphs']]
+        testi.append([x['id'], x['title'], x['subtitle'] or '', x['page'], x['signature'] or '', x['qualifica'] or [],
+                      1 if x['italic'] else 0, x['kind'], pars])
+    canoni = [[c['id'], [[g['n'], g['html'], g['parent'] or 0] for g in c['groups']],
+               [[v['n'], v['group'], v['html'], [bix[b] for b in v['books']], v['chapters'],
+                 1 if v['deuterocanonical'] else 0, 1 if v['apocryphal'] else 0] for v in c['items']]]
+              for c in P['canoni']]
+    abbr = [[x['form'], x['meaning'], x['kind'], x['page'], [bix[b] for b in x['books']], x.get('gregory') or '']
+            for x in P['abbreviazioni']]
+    xilo = [[bix[x['book']], x['name'], x['raw'], runs(vix[t] for r in x['refs'] for t in r['targets'])]
+            for x in P['xilografie']]
+    indici = {}
+    for ix in P['indici']:
+        voci = []
+        for v in ix['voci']:
+            items = []
+            for it in v['items']:
+                l = it.get('link') or {}
+                fix = l.get('correction')
+                extra = it.get('to') or [iix[i] for i in it.get('intros', []) if i in iix]
+                if it['kind'] == 'libro':
+                    extra = [bix[l['target_book']]]
+                items.append([ITEM_KIND.index(it['kind']), it['sv'], it['raw'], it['page'], 1 if it['cf'] else 0,
+                              it['seguito'] or '', tgt(l.get('targets', [])), STATI.index(l['status']) if l else 0,
+                              motivo(l.get('reason')) if l else '', [nix[n] for n in l.get('notes', [])],
+                              NOTA_KIND.index(l['nota']) if l.get('nota') else -1,
+                              [fix['raw'], tgt(fix['targets']), [nix[n] for n in fix.get('notes', [])], fix['why']]
+                              if fix else 0, extra])
+            voci.append([v['n'], v['html'], v['lemma'], v['style'], v['page'],
+                         [[s['k'], s['label'], s['name']] for s in v['sub']], items])
+        indici[ix['id']] = voci
+    cr = P['cronologia']
+    col = [c['id'] for c in cr['columns']]
+    cvoci = []
+    for v in cr['voci']:
+        h = avvolgi(v['html'], cspans.get(v['n'], []), 'data-t', errors, 'cronologia.%d' % v['n'])
+        cvoci.append([v['section'], v['row'], v['margin'] or '', v['page'], col.index(v['column']), v['order'], h,
+                      v['date'] or '', v['start'], v['end'], 1 if v['circa'] else 0, v['text']])
+    cron = dict(intro=[p['html'] for p in cr['intro']], sez=[[x['n'], x['title']] for x in cr['sections']],
+                col=[[c['id'], c['it']] for c in cr['columns']], voci=cvoci, cit=cron_cit)
+    din = [[x['id'], x['number'] or '', x['name'], 1 if x['italic'] else 0, x['date'] or '', x['father'] or '',
+            x['mother'] or '', x['spouses'], x['note'] or ''] for x in P['dinastie']]
+    ed = P['edizione']
+    wrapped = sum(p[2].count('<a class="ci"') for x in testi for p in x[8]) + sum(v[6].count('<a class="ci"') for v in cvoci)
+    if wrapped != len(pc) + len(cron_cit):
+        errors.append('front matter and chronology: wrapped citations %d != %d' % (wrapped, len(pc) + len(cron_cit)))
+    s = P['meta']['summary']
+    meta = dict(note=s['index_note'], temi=s['index_temi'], cron=s['chronology_entries'], datate=s['chronology_dated'],
+                ccit=len(cron_cit), pcit=len(pc), corr=s['corrections'], persone=s['persons'])
+    return dict(meta=meta, ed=dict(t=ed['title'], pub=ed['publisher'], luogo=ed['place'], isbn=ed['isbn'],
+                                   stampe=[[x['label'], x['date']] for x in ed['printings']], colofone=ed['colophon']),
+                testi=testi, pc=pc, canoni=canoni, abbr=abbr, xilo=xilo, indici=indici, cron=cron, din=din,
+                ebr=EBRAICO)
 
 
 # ---------------------------------------------------------------- the dictionary (dufour.json)
@@ -497,8 +618,11 @@ def main(a):
     data = json.load(open(os.path.join(BUILD, 'bibbia.json'), encoding='utf-8'))
     coll = json.load(open(os.path.join(BUILD, 'collegamenti.json'), encoding='utf-8'))
     dz = json.load(open(os.path.join(BUILD, 'dufour.json'), encoding='utf-8'))
+    pt = json.load(open(os.path.join(BUILD, 'paratesto.json'), encoding='utf-8'))
     P, errors = payload(data, coll['links'], coll['meta']['summary'])
-    P['diz'] = dizionario(dz, {v['id']: i for i, v in enumerate(data['verses'])}, errors)
+    vix = {v['id']: i for i, v in enumerate(data['verses'])}
+    P['diz'] = dizionario(dz, vix, errors)
+    P['par'] = paratesto(pt, data, vix, errors)
     page, nraw, ngz, js = pagina(P)
     if '</script' in js.lower():
         errors.append('app.js contains "</script"')
@@ -512,6 +636,11 @@ def main(a):
         Z = P['diz']
         print('dictionary: entries %d, sections %d, paragraphs %d, citations %d'
               % (len(Z['voci']), sum(len(v[8]) for v in Z['voci']), sum(len(v[9]) for v in Z['voci']), len(Z['cit'])))
+        Q = P['par']
+        print('front matter and appendices: texts %d, citations %d; index of notes %d entries, themes %d; '
+              'chronology %d entries, %d citations' % (len(Q['testi']), len(Q['pc']), len(Q['indici']['note']),
+                                                       len(Q['indici']['temi']), len(Q['cron']['voci']),
+                                                       len(Q['cron']['cit'])))
         print('data: JSON %.1f MB, gzip %.1f MB; page %s %.1f MB'
               % (nraw / 1e6, ngz / 1e6, os.path.relpath(out, C), len(page.encode('utf-8')) / 1e6))
     for e in errors[:20]:

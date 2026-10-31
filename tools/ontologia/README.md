@@ -18,14 +18,16 @@ make ontologia          # the same: vendor/venv/bin/python -I tools/ontologia/co
 | `canone.py` | the 74 book sections: corpus id, OSIS code, CEI siglum, canonical order, verse ids |
 | `estrai.py` | stage 1: LaTeX volumes → `ontologia/build/bibbia.json` |
 | `riferimenti.py` | stage 2: reference parser and resolver → `ontologia/build/collegamenti.json` |
-| `test_riferimenti.py` | stage 2 tests: 112 cases on strings of the corpus (run by `costruisci.py`) |
+| `test_riferimenti.py` | stage 2 tests: 112 cases on strings of the corpus and 44 links read in the sense of the sentence (run by `costruisci.py`) |
 | `dufour.py` | stage 2b: the Dizionario di Teologia Biblica (`../dufour/corpus`, read only) → `ontologia/build/dufour.json` |
 | `test_dufour.py` | stage 2b tests: 98 citations of real rows, text, entries, links, numbering evidence, verse index (run by `costruisci.py`) |
-| `rdf.py` | stage 3: the three JSON files (Bible, links, dictionary) → `ontologia/bj-dati.ttl.gz`, `bj-dati.nt.gz`, `bj-contesto.jsonld`, `bj-void.ttl` |
+| `paratesto.py` | stage 2c: the front matter and the appendices (`progetti/introduzione-generale`, `progetti/appendici`, read only) → `ontologia/build/paratesto.json` |
+| `test_paratesto.py` | stage 2c tests: index references, misprints, dates of the chronology, woodcuts, canon, abbreviations, dynasties, acrostic letters (run by `costruisci.py`) |
+| `rdf.py` | stage 3: the four JSON files (Bible, links, dictionary, front matter and appendices) → `ontologia/bj-dati.ttl.gz`, `bj-dati.nt.gz`, `bj-contesto.jsonld`, `bj-void.ttl` |
 | `grafo.py` | loads `bj-dati.nt.gz` (and the ontology) into rdflib, fast |
 | `verifica_rdf.py` | stage 3 checks: parsers, OWL sanity, SPARQL integrity, SHACL, JSON-LD |
 | `interroga.py` | runs SPARQL queries (`ontologia/query/*.rq` or `-e`) and prints tables |
-| `esploratore.py` | stage 4: the three JSON files + `esploratore/` → `ontologia/esplora.html` |
+| `esploratore.py` | stage 4: the four JSON files + `esploratore/` → `ontologia/esplora.html` |
 | `esploratore/` | the page: `modello.html`, `stile.css`, `app.js` (inlined by `esploratore.py`) |
 | `prova_esploratore.mjs` | stage 4 test: the page in headless Chromium (not run by `costruisci.py`) |
 | `costruisci.py` | runs every stage in order, stops at the first failed check |
@@ -46,7 +48,7 @@ JSON file with one record per line. Top-level keys:
 | `books` | `osis`, `id` (corpus id), `siglum` (CEI), `title` (`\libro`), `title_long`, `volume`, `order`, `testament` (AT/NT), `file`, `chapters` [{`n`, `label`, `verses` [ids in numeric order]}] |
 | `divisions` | `\parte`: `id` (`div:Gen.1`), `book`, `title`, `title_html`, `short`, `level` (1 = I., 2 = 1., 3 = A.), `parent`, `first`, `last`, `page` |
 | `pericopes` | `\sezione`: `id` (`peri:<first verse>`), `book`, `title`, `title_html`, `short`, `opens_chapter`, `first`, `last`, `mid_verse`, `page` |
-| `verses` | `id`, `book`, `chapter`, `verse`, `suffix`, `label` (as printed), `text` (plain, `\n` at poetry line ends), `html` (`<em>`, `<br>`), `poetry`, `page`, `pericope`, `order` (canonical, 1-based); optional `omitted`, `bracketed`, `printed_in_chapter`, `superscription` (psalm title), `acrostic` (Hebrew letters) |
+| `verses` | `id`, `book`, `chapter`, `verse`, `suffix`, `label` (as printed), `text` (plain, `\n` at poetry line ends), `html` (`<em>`, `<br>`), `poetry`, `page`, `pericope`, `order` (canonical, 1-based); optional `omitted`, `bracketed`, `printed_in_chapter`, `superscription` (psalm title), `acrostic` (Hebrew letters as printed), `acrostic_lines` (the line of the verse each opens, from 1) |
 | `notes` | `id`, `label` (as printed), `sign` (`•`), `anchor`, `offset`/`html_offset` (call position in the anchor's `text`/`html`), `word` (word before the call), `page`, `scope` (`verses`/`chapter`/`book`), `targets` (verse ids), `target_chapters`, `target_book`, `unresolved`, `text`, `html`, `latex` |
 | `mrefs` | `id` (`mref:<anchor>_<position>`), `anchor`, `position`, `raw` (as printed, whitespace collapsed), `offset`, `html_offset`, `word`, `page`; `printed_in_verse` when the call stands in the text of the previous verse (below) |
 | `intros` | `id` (`intro-…`), `volume`, `title`, `heading`, `books` (OSIS of the books it introduces), `file`, `paragraphs` [{`n`, `page`, `titoletto`, `text`, `html`}] |
@@ -113,8 +115,12 @@ omitted by the CEI: Mt 17,21 …, `[44]` in brackets), `verse-bracketed` (EsthGr
 e.g. Gen 2,4b), `note-without-label` (Sirach's prologue note: a note on the whole
 prologue), `chapter-note-anchor` (Nm cc 26–30, anchored to 25,19, the first verse
 printed in chapter 26), `mref-before-verse` (1,250 margins anchored to the verse that
-begins on their line, above). Acrostic letters (Psalms, Pr 31) are taken out of the text
-into `acrostic` of the verse they head.
+begins on their line, above). Acrostic letters (`\acrostico{Bet}`; `\acrostico{(Mem)}` when
+printed in parentheses) are taken out of the text into `acrostic` of the verse they head (the
+name without parentheses), with the line they open in `acrostic_lines` (1 when printed before
+the verse; Na 1,3 Bet opens line 3) and, on a verse with a bracketed letter,
+`acrostic_brackets` (true for each bracketed one: the five of Ps 10,3.4.6.10 and 25,18):
+339 letters, in Psalms (174), Pr 31 (22), Lamentations (132) and Na 1 (11).
 
 ## Stage 2: `riferimenti.py`
 
@@ -240,11 +246,38 @@ of the stage 5 audit (margins before a verse, `Est 4,17rs`, `Is 25,8; =21,4`, `�
 order of Isa 10,18, siglum-less citations); `test_collegamenti_file` checks the written
 file (no null `raw`, targets in numeric order).
 
+**The sense of the sentence.** After all the links are made, `context_links()` reads the
+citations of the notes and introductions again where the sentence gives another book or
+chapter than the grammar (rules first written for the Tufte edition in `tools/tufte/contesto.py`,
+which now only maps their fields to its own names): `catena` (a chain the grammar broke goes on
+in the book of the reference before: «Dt 24 passim; 26,12», «Ger 23,5 = 33,15», «Ez 38–39, in
+particolare (cf. 38,22)»), `puntatore` («v N» right after a reference of another chapter: «Ger
+39,1–10 (con un’aggiunta nel v 3)» is Ger 39,3), `capitolo` («v N» in a note on several
+chapters: the chapter named last in the sentence, the next chapters of the label, or the next
+chapter), `elenco` («vv 4,7,15»), the table `CORREZIONI` (48 rows read in the notes, each with
+its reason: a «Giovanni» or «Marco» before the parentheses is a person, the symbolic acts of
+Ezekiel listed in a note on Ger 18, …; a row that matches no reference stops the stage),
+`ester` (also margins: a «+» to Esther goes to the text that has the key note) and `inizio`
+(also margins: a range with a misprinted end is linked to its first verse, status `partial`,
+the misprint kept as printed). It then adds two kinds of links: `introduzione` (the
+siglum-less references of the introductions to several books, in the book of their sentence
+or section), `nudo` (a bare «c,v» after a preposition in a note, «come in 11,7, o») and
+`aggiunta` (the table `AGGIUNTE`: references the grammar does not read at all, each read on the
+page image: «Nm 11,17 (Mosè); 25–26» is Nm 11,25–26, «ai cc 11, 27 e 31 del Deuteronomio» Dt 27
+and Dt 31, «Dt 5, soprattutto vv 4 e 22» Dt 5,22). Each such
+link has `corrected` (the rule), `corrected_from` (the former first verse) and `why`; they go
+to the graph as `bj:interpretazione` («rule: why»). Current volumes: 87 links corrected
+(manuale 48, inizio 16, catena 9, capitolo 8, puntatore 3, ester 2, elenco 1) and 821 added
+(introduzione 747, nudo 70, aggiunta 4). The Tufte edition gets exactly the same links as before the port:
+`genera.py` run on a scratch output wrote 95 byte-identical files and `test_genera.py` passes
+10/10.
+
 **Results** (current volumes): 18,455 margins → 28,669 links: 27,801 references, 99.95%
 resolved (related 25,098, parallel 1,533, quoted-later 659, doublet 511), 866 numbering,
-2 comments; 4,661 of them carry `+` (7,707 with the `+` of note and introduction citations). Notes: 10,762 label links and 25,363 citations in 6,467 notes,
-99.66% resolved (24 citations resolved through another reading, `inferred`); introductions: 1,942 citations,
-99.59% resolved. What stays unresolved
+2 comments; 4,661 of them carry `+` (7,712 with the `+` of note and introduction citations). Notes: 10,762 label links and 25,437 citations in 6,485 notes,
+99.71% resolved (before the sense of the sentence: 25,363 in 6,467 notes, 99.66%); introductions: 2,689 citations,
+99.70% resolved (before: 1,942, 99.59%). The margins are unchanged in number and share
+(6 of them now read again: 5 `partial`, 1 in the other Esther text). What stays unresolved
 (`unresolved` in the file, about 130 strings) is genuinely odd: misprints (`Fil 1,21–32`,
 `Col 5,2`, `Mt 4,18–29`, `Lc 20,45–57`, `Sal 23,31 (LXX)` for Pr 23,31, `‖Lc 23,2–5,13–25`,
 `1Re 4,38` for 2Re 4,38, `Est 10,31` probably for 10,3l), verse numbers of other editions
@@ -381,6 +414,82 @@ entry files agree row by row; every citation's offsets point at its raw text in 
 plain text and the HTML; every target is a verse id; resolved and partial citations have
 targets, unresolved ones a reason; every link target is an entry.
 
+## Stage 2c: `paratesto.py`, the front matter and the appendices
+
+```sh
+vendor/venv/bin/python -I tools/ontologia/paratesto.py [-q]
+vendor/venv/bin/python -I tools/ontologia/test_paratesto.py [-v]
+```
+
+Reads the two volumes of what the BJ prints before the Old Testament and after the
+Apocalypse (never written here) and `bibbia.json`, and writes `build/paratesto.json`:
+
+| Key | Content |
+|---|---|
+| `edizione` | imprint data (p. ii–iv): the 5 printings (`month` `2009-01` …), ISBN, publisher, sources, imprimatur, rights, printer, the colophon lines; the hand-made fields are checked against the printed text |
+| `testi` | the Presentazione, the three prefaces, the two divisions of the canon, the Avvertenze: `title`, `subtitle`, `page` (Roman), `author`, `signature` and `qualifica` as printed, `italic`, `paragraphs` [{`n`, `page`, `titoletto`, `text`, `html`}] (the `\textsc` of the volume as `<span class="sc">`) |
+| `canoni` | the Hebrew list (24 items in 3 parts) and the Greek one (Rahlfs): groups, items with the OSIS `books` (or `chapters`, `Dan.13`) they are in this Bible (`CANONE_EBRAICO`, `CANONE_GRECO`), `deuterocanonical` (printed in italics), `apocryphal` (in brackets) |
+| `abbreviazioni` | the 147 rows of `abbreviazioni.tsv`: form, meaning, kind, page, `books` through the sigla of `canone.py`, `gregory` (Gregory-Aland number of a codex or papyrus) |
+| `xilografie` | the 73 woodcuts of the Avvertenze: book, the passage(s) each illustrates |
+| `indici` | the two indices: entries [{`n`, `lemma`, `html`, `style`, `page`, `sub` [{`k`, `label` as printed, `name`}], `items` [{`kind` rif/libro/vedi/pagina, `sv`, `raw`, `page`, `cf`, `seguito`, `link` (a typed link, kind `index-cites`, with `nota`/`notes`, `implicit`, `correction`), `to` (entries of a «v.»), `intros`}]}] |
+| `cronologia` | `intro` (the paragraph before the table), `sections`, `columns`, `turn` (the row where section IX turns to d.C.), entries [{`n`, `section`, `row`, `margin`, `page`, `column`, `order`, `text`, `html`, `smallcaps`, `caps`, `date`, `start`, `end`, `circa`}] |
+| `dinastie` | the 34 persons of `dinastie.tsv`: number, name, italics, dates, father, mother, spouses, note |
+| `links` | the citations of the texts (`front-cites`) and of the chronology (`chrono-cites`), records of `riferimenti.record` with text and HTML offsets |
+
+**The tables of the appendices** come from `progetti/appendici/tsv.py`, imported and run
+with its output redirected to `ontologia/build/` (`cronologia.tsv`, `indice-note.tsv`,
+`indice-temi.tsv`); the files of the volume are only compared (a difference is a warning:
+they are stale). A shim in front of `riferimenti.py` keeps every reference `tsv.py`
+resolves, so each row of the index gets the full typed link (flags, key notes, reason) and
+its `nota` column (what the BJ has at the first verse: `nota` a note is called or starts
+there, `copre` inside a note's label, `capitolo`, `rimandi`, `nessuna`) and `note`.
+Misprints stay as printed; `CORREZIONI_INDICI` (16 rows, each with the evidence of
+`progetti/appendici/checklist-ocr.md`, in Italian) adds a `correction` (raw, targets, the
+notes there, why) where that log states the corrected reference: Caleb `Gb 14,6` → Gs 14,6,
+`Lc 22,60` → 66, `Gv 13,24` → 34, `Mt 5,11` → 17, `Is 7,10` → 14 in the index of notes;
+`Cr 28,9` → 1Cr, `Na 8,7–9` → Ne, `Sap 24,22` → Sir, `Gn 17,8` → Gen, `10.23` → Eb 10,23,
+`12,47` → Gv, three Isaiah and two Psalm references printed after another siglum in the
+themes. Each row must match one reference and resolve.
+
+**Dates of the chronology**: the date as printed is the start of the entry before «:»
+(«165», «Nov. 164», «164 inizio», «Estate o autunno 63», «Fra il 34 e il 45», «Primavera
+50-estate 51», «Dall’1/2 al 4 d.C.,», «19 agosto 14», «Verso il 738», «589/8» = 589–588,
+«Giugno-luglio 587 o 586», «141, giugno», «37 (o 38) ca.», «Tra 70 e 80 (?)») or, without it, the one span in parentheses («ASSARADDON
+(680–669)»; two different spans: no date). Years: sections I–VIII before Christ; section IX
+before Christ up to the first row whose entry starts with a «d.C.» date (row 122), after
+it; a printed «a.C.» / «d.C.» wins; a range whose ends do not follow the era's order is
+left without years. 387 of the 585 entries have a date, all with years (362 before stage 6b,
+which read the leading day-month dates: «19 agosto 14: morte di Augusto. TIBERIO imperatore
+(14–37)» is 14, not the reign 14–37). The conjectural dates printed in parentheses
+(«(458: missione di Esdra, se …»)) stay without years.
+
+**The woodcuts** are read from the two run-in paragraphs of the Avvertenze («Genesi (1,27);
+… 1 Samuele (9,27–10,1); … Salmi (51, 3–4)»): each book named in full (`XILO_NOMI`, the names
+of `riferimenti.LIBRI_NOMI` and a few more), its numbers read in that book.
+
+**Checks** (exit 1): the regenerated tables equal the volume's (else a warning); every
+index reference has a link, every target a verse id, every note id exists; every
+correction used once and resolved; every «v.» target an entry (a target is matched on the
+whole headword, then on its first words, «Presenza» → «Presenza di Dio», then by stem; the 3
+printed cross-references that match no headword, `v. Festa`, `v. Tentazione`, `v. Sorte`, go
+to `Feste d’Israele`, `Tentare`, `Sorti (tirare le)` by the table `RIMANDI` of tsv.py, with
+`why`; the two page numbers that are not pages of this edition, «cf. pp. 1032, 1376», have no
+introduction and a `why`, table `PAGINE_ESTRANEE`; a reference without siglum inside
+parentheses takes the book named last in them, «Os 6,6 (citato in Mt 9,13 e 12,7)»: Mt 12,7);
+the Hebrew canon has the 39 books of the Hebrew text once each and the Greek list every Old
+Testament book of this Bible; the book sigla of the abbreviations are those of `canone.py`;
+the parents and spouses of the dynasties exist and spouses are linked both ways; every
+citation's offsets point at its raw text in the text and the HTML (a reference printed in
+italics ends before the `</em>`). `test_paratesto.py`: 36 index, cross-reference and date cases, the texts,
+woodcuts, canon, abbreviations, edition, dynasties and acrostic letters (5 tests).
+
+**Results**: 7 texts (78 paragraphs, 51 Bible citations), 147 abbreviations (56 codices and
+papyri, 49 with a Gregory-Aland number), 73 woodcuts; index of notes 628 entries, 550
+sub-entries, 1,663 references (all resolved; 1,590 at a note's first verse, 48 inside a note,
+17 margin references only, 8 nothing), 247 «v.», 20 pages; themes 96, 1,238 sub-themes (one
+label printed twice in one theme), 3,285 references (3,259 resolved), 9 whole books;
+chronology 585 entries, 174 citations; 34 persons; 16 corrections.
+
 ## Stage 3: `rdf.py`, `verifica_rdf.py`, `interroga.py`
 
 ```sh
@@ -434,6 +543,22 @@ that the subsets add up to the graph. Literals gain `('y', '1976')` (`xsd:gYear`
 before the dictionary, one for one (sorted N-Triples compared at stage 2: 0 removed; the
 Bible subset still has 2,406,107 triples after the second audit).
 
+**The front matter and the appendices** (`paratesto`, after the dictionary, design in
+`ontologia/README.md`, *The front matter and the appendices*): `edizione_bj`,
+`testi_preliminari`, `canoni`, `abbreviazioni`, `xilografie`, `citazioni_par`, `indici`,
+`cronologia`, `dinastie`, counted as the part `paratesto` (a third VoID subset, with two
+linksets for `bj:indicaVersetto` / `bj:nellIndice`). `PaginePar` describes the printed pages
+once (`pagprel:<roman>`, `pagapp:<n>`); the citations of the texts, of the chronology and of
+the indices go through `riferimento`, like every other citation, and share the passages
+(`Passaggi`). New data namespaces: `testopre:` (id/testo/), `canone:`, `abbreviazione:`,
+`manoscritto:`, `xilografia:`, `indice:`, `cronologia:`, `dinastia:`, `acr:` (the acrostic
+letters, id/acrostico/; `testo` and `acrostico` are `bj:` terms, so they cannot be prefixes of
+the JSON-LD context), `pagprel:`, `pagapp:`, and `schema:`. A citation read in the sense of the
+sentence (stage 2, `corrected`) gets `bj:interpretazione` «rule: why». The acrostic letters of
+`bibbia.json` (`acrostic`, `acrostic_lines`) become `bj:LetteraAcrostica` resources of the
+Bible part. The counts of the checks include the new classes (`paratesto.json` against the
+graph), the passages of the corrected index references too.
+
 `grafo.carica()` loads the N-Triples with a reader that knows what `rdf.py` writes
 (about 30–45 s for 3.5 million triples into a `SimpleMemory` store; rdflib's parser takes
 about 2 minutes and a pickled store is no faster, so there is no cache). `verifica_rdf.py` loads the graph into a
@@ -454,6 +579,24 @@ on the whole graph (25 node shapes; pyshacl's `focus_nodes` option is quadratic,
 `interroga.py` loads the graph once, runs each query, prints the table and the timing,
 and a summary for several queries (`--riepilogo F` writes it as Markdown; `costruisci.py`
 writes `ontologia/build/query.md`); it exits 1 when a query returns nothing.
+
+`verifica_rdf.py` adds 34 integrity queries for the front matter and the appendices
+(`integrita_paratesto`: texts and paragraphs, the 39 books of the Hebrew canon, abbreviations
+naming books, manuscripts, one woodcut per book, entries and sub-entries of each index,
+references by status, every sub-entry under a top entry of its scheme, `skos:narrower` the
+inverse of `skos:broader`, the «v.» links of the JSON, `bj:indicaVersetto` equal to the JSON's
+(entry, verse) pairs and backed by a citation of that entry, `bj:nellIndice` its inverse, an
+entry's `bj:indicaNota` backed by a citation, the note a citation points to at a verse of its
+passage (2 exceptions, Esther: `Est 3,7` and `9,18` resolve to the Hebrew text, the BJ notes are
+on the Greek one), the corrections, the chronology's entries, years in order, citations and
+`bj:citaVersetto`, the persons and their links, the acrostic letters); with the rest, 76
+queries, about 3 minutes; the citation counts and `bj:citaVersetto` pairs include the new
+citations, `skos:related` is checked for the indices too. SHACL: 43 node shapes (18 new: the
+edition, printings, pages, texts, canon, groups and items, abbreviations, manuscripts,
+woodcuts, indices and entries, the chronological table, sections and entries, the
+genealogical chart and its persons, acrostic letters); the citation shape takes an index
+entry or a chronology entry as citing entity, and asks for text offsets only outside the
+indices; a paragraph may be part of a front-matter text; a verse has up to 3 acrostic letters.
 
 **Choices** (details in `ontologia/README.md`): the verse is the hub; notes are
 `oa:Annotation`s (`oa:hasTarget` the passage, chapter or book of the label, `oa:hasBody`
@@ -487,7 +630,8 @@ decompresses the data with `DecompressionStream` (Chrome 80, Firefox 113, Safari
 The output is byte-identical between runs.
 
 **Payload.** Verses are numbered by canonical order (`V.id[i]`, columns `l` label, `h`
-HTML, `f` flags poetry/omitted/bracketed, `pg` page, `ac` acrostic letters); every target
+HTML, `f` flags poetry/omitted/bracketed, `pg` page, `ac` acrostic letters with the line each
+opens); every target
 is a list of runs of consecutive indices `[a, b, a, b, …]`. `libri` has the printed
 chapters of each book as `[label, first, last]` (so Nm 25,19 sits at the top of Nm 26,
 where it is printed); `peri` and `div` the headings; `note` the notes (anchor, call
@@ -499,6 +643,15 @@ previous reference; a citation read in another book says how). Books carry a sho
 name (`n`: `1 Corinzi`, `Matteo`, `Ester greco`) for the index and the reference box. The citations of notes and introductions are wrapped at the
 offsets found by stage 2 in `<a class="ci" data-c|data-i>`; a citation printed across a
 tag (`<em>3 Esdra</em> 2,6`) is narrowed to its part after the tag.
+
+The front matter and the appendices are the key `par` (`paratesto()`, its docstring lists
+the columns): the edition, the texts with their citations wrapped in `<a class="ci"
+data-p="k">`, the canon lists, abbreviations, woodcuts, the two indices (entries, sub-entries,
+items with runs, status, reason, the notes pointed to, the correction), the chronology
+(entries with their citations as `<a class="ci" data-t="k">`, sections, columns), the
+dynasties and the Hebrew letters. The citations of notes and introductions now carry the
+reading of the sense of the sentence as their reason («letto nel libro del riferimento
+precedente: la catena continua», …).
 
 The dictionary is the key `diz`: `voci` (slug, name, full or redirect, letter, pages,
 authors and the part they signed, signatures and the paragraph they follow, targets of a
@@ -524,16 +677,19 @@ Font License (`esploratore/font/OFL-*.txt`); `esploratore.py` embeds them throug
 
 | View | Route | What |
 |---|---|---|
-| books | `#` | the books by testament and BJ volume, totals |
+| books | `#` | the books by testament and BJ volume, totals; four cards to the front matter, the two indices and the chronology |
 | book | `#Gen` | chapters, divisions and pericopes, introductions |
-| reader | `#Gen.1`, `#John.3.16`, `#Ps.23.1-4`, `#Deut.7.9?e=Deut.7.12` | the chapter as printed: headings, poetry lines, verse numbers, note calls (letters, buttons), margin signs (‖ ↗ = + •), page numbers; a plum `◊` beside the margin signs on the verses a dictionary citation names on their own or in a passage of at most 3 verses (12,175 verses; the tooltip and the verse's label give the entries and citations); heat (the flame) by in-degree or by the citations of at most 3 verses of the dictionary: the switch «Evidenzia: Rimandi BJ | Dizionario» above the text turns it on with that source (the pressed one turns it off), `d` switches the source; `e=` the other references of a list, highlighted and linked |
-| verse panel | (with a verse) | the notes called here and those whose label covers the verse; the margin references by relation, unresolved ones grey with the reason; incoming margin references, note and introduction citations; «Nel Dizionario di Teologia Biblica»: every entry citing the verse (all citations whose passage includes it, the most specific entry first), each citation with the section path and title, the passage when wider, the flags (`s`, `ss`, `par.`, `…`) and the sentence around it with the citation marked; a click opens the entry at that paragraph; the number of entries also in the header; previews on hover (tap on touch screens) |
+| reader | `#Gen.1`, `#John.3.16`, `#Ps.23.1-4`, `#Deut.7.9?e=Deut.7.12` | the chapter as printed: headings, poetry lines, verse numbers, note calls (letters, buttons), margin signs (‖ ↗ = + •), page numbers; a plum `◊` beside the margin signs on the verses a dictionary citation names on their own or in a passage of at most 3 verses (12,175 verses; the tooltip and the verse's label give the entries and citations); heat (the flame) by in-degree or by the citations of at most 3 verses of the dictionary: the switch «Evidenzia: Rimandi BJ | Dizionario» above the text turns it on with that source (the pressed one turns it off), `d` switches the source; `e=` the other references of a list, highlighted and linked; the Hebrew letters of the alphabetic poems (Psalms, Pr 31, Lamentations, Na 1) in the left margin beyond the margin signs, beside the line each one opens, with the Hebrew character (inline at the line start under 1240 px) |
+| verse panel | (with a verse) | the notes called here and those whose label covers the verse; the margin references by relation, unresolved ones grey with the reason; incoming margin references, note and introduction citations; «Nel Dizionario di Teologia Biblica»: every entry citing the verse (all citations whose passage includes it, the most specific entry first), each citation with the section path and title, the passage when wider, the flags (`s`, `ss`, `par.`, `…`) and the sentence around it with the citation marked; a click opens the entry at that paragraph; the number of entries also in the header; previews on hover (tap on touch screens); «Nell’indice delle note» and «Temi pastorali»: the (sub-)entries whose references name the verse (a corrected misprint by its corrected passage), most precise first, each reference as a chip with the BJ note it points to; «Nella tavola cronologica»: the entries citing it (most precise first) with their date, column and period, linked to the table; the woodcut that illustrates it, if any |
 | graph | `#grafo/John.3.16[?p=2&f=parallel,doublet,diz]` | a tree to explore, left to right: the verse is the root, its links hang from it grouped by relation and direction (`‖ Paralleli`, `Affini →`, `← Affini`, `§ Le sue note citano`, ..., `◊ Nel Dizionario`; `f`: the relations shown, `diz` the dictionary); an entry of the dictionary is a card on lavender paper (its name, the section, the sentence around the citation) whose `▸` grows the passages it cites (those of the same paragraph first, `◊ La voce cita`) and whose name opens the entry; the most specific first, 8 per group at the root and 4 further on (`+10 di N` shows more); every card holds the reference, the passage text and the BJ notes it calls as yellow slips (`continua` opens one whole), inside an SVG contour drawn twice with a wobbly hand (seeded by the verse, so it is stable); `▸` grows a card's own links in place (a passage already on the path from the root is left out, so there are no cycles), `Apri un livello` grows every leaf (up to about 260 cards), `p=2` opens the first level at once; the reference of a card makes it the root; drag to pan, the wheel scrolls, Ctrl + wheel or +/− zoom, ⌂ fits the whole tree; "nessun collegamento" on the root when there is none |
-| search | `#cerca?q=…&in=versetti\|note\|dizionario&t=AT\|NT&b=Gen` | verse texts, notes and the dictionary, accents and case ignored, whole words (`ira` is not in «apparirà»; `ira*` for the start of a word), all words required (or a "phrase"), grouped by book, highlighted; the dictionary is a group of its own on top (entry names as chips, then paragraphs, more in pages of 50; left out by the testament and book filters); Back returns to the rows shown and the scroll position |
-| overview | `#panoramica[/Gen/Matt]` | totals, margin references by relation (grouped as in the panel: they add up to the references), book × book matrix (click a cell: its references below, scrolled into view), the 50 most referenced verses; the dictionary: entries, citations, % recognised, verses cited, and the 20 verses it cites most, counting every citation or only those of at most 3 verses (the two rankings of `dufour.json`) |
+| search | `#cerca?q=…&in=versetti\|note\|dizionario\|apparati&t=AT\|NT&b=Gen` | verse texts, notes and the dictionary, accents and case ignored, whole words (`ira` is not in «apparirà»; `ira*` for the start of a word), all words required (or a "phrase"), grouped by book, highlighted; the dictionary is a group of its own on top (entry names as chips, then paragraphs, more in pages of 50; left out by the testament and book filters); Back returns to the rows shown and the scroll position; «Appendici» (`in=apparati`, also in «Tutto»): a group with the index entries and themes matching (headwords and sub-entries, as chips), the chronology entries and the paragraphs of the front matter |
+| overview | `#panoramica[/Gen/Matt]` | totals, margin references by relation (grouped as in the panel: they add up to the references), book × book matrix (click a cell: its references below, scrolled into view), the 50 most referenced verses; the dictionary: entries, citations, % recognised, verses cited, and the 20 verses it cites most, counting every citation or only those of at most 3 verses (the two rankings of `dufour.json`); four tiles of the appendices: entries of the index of notes, references to BJ notes with the share at a note's first line, themes, chronology entries |
 | introduction | `#intro/intro-pentateuco[.3]` | an introduction with its citations as links |
 | dictionary | `#dizionario[?q=spirito]` | the 849 entries by letter (letter buttons, disabled when the filter leaves the letter empty; a filter, kept in the address, and the scroll position, so Back returns to them): full entries with their number of citations, the 519 redirects in italics with the number of distinct entries they send to |
 | entry | `#voce/abele`, `#voce/abele/2`, `#voce/abele/1?v=Gen.4.5` | an entry as printed: name, authors, pages, the sections with their headings (`VT`, `I.`, `1.`, `a)`, «…»), the paragraphs with italics, page numbers and the signatures, `*words` linking the other entries, the citations as links to the passage with the preview of the chips (unresolved ones grey, reachable with `Tab`, their reason in the preview on hover, tap or focus); section headings as headings for screen readers; a section index beside the text (a link clicked again scrolls again); see-also list and the entries pointing here (the path `0` shown as `introd.`; a target that is itself a redirect shows where it leads); a redirect lists its entries (at the section printed) and counts the distinct ones; `/n` scrolls to paragraph n (with its headings) and highlights it, or says the entry has no such paragraph, `v=` also marks the citations naming that verse, outlined inside the highlighted paragraph; the slug is normalised (`#voce/AGNELLO-DI-DIO`, `#voce/agnello di dio`) |
+| front matter | `#introduzione-generale[/presentazione[.3]]`, `#introduzione-generale/abbreviazioni` | the edition (publisher, ISBN, printings, the colophon), the texts with their author, signature and position, printed in italics where the print is (the words in roman inside them upright), their citations as links; the two divisions of the canon with the list as printed and the books or chapters of this Bible each item is (an apocryphal one says it is not here); the Avvertenze and the 73 woodcuts as chips; the abbreviations and codices grouped as printed, book sigla linked, Gregory-Aland numbers |
+| index of notes, themes | `#indice-note[?q=]`, `#temi`, `#indice-note/91[.2]` | the entries by letter with a filter kept in the address (as `#dizionario`); an entry: headword as printed (small caps, italics), its sub-entries, each printed reference as a chip (preview, unresolved grey with the reason; a misprint struck through with the corrected chip «→ Gs 14,6» beside it), in the index of notes the BJ note each points to («nota 14,6», a link opening the verse with that note) and the notes themselves below, closed, to read in place; «v.» to other entries, page numbers to the introductions; `.k` highlights a sub-entry |
+| chronology | `#cronologia`, `#cronologia/6[?v=133]`, `#cronologia/dinastie` | the introduction of the table and its 9 periods (with the span of their years); a period as a table: the margin years and printed pages at the left, one column per column of the print (in print order), the entries with their italics and small caps, the citations as links, the date and years in the tooltip; `v=` highlights an entry; on phones the cells stack with the column name; the dynasties as a tree (children under the father, «da Mariamne I» when the wives are several, ∞ for marriages, numbers, italics and dates as printed) |
 
 The reference box takes CEI sigla (`Gv 3,16`, `Sal 23,1-4`, `Gen 1`, `1 Cor 13`, `Gd 3`,
 `Est 4,17a` → Greek Esther, `Sir prol 3`, `Sir prologo`), the forms printed in the BJ
@@ -597,8 +753,23 @@ dependency of the repository: install it anywhere (`npm install playwright-core@
 drives the cached `chromium_headless_shell-1248`); where the system lacks Chromium's
 libraries (libatk, libgbm, libXcomposite…), unpack their Ubuntu packages
 (`apt-get download`, `dpkg-deb -x`) into a folder and point `LD_LIBRARY_PATH` at it.
-Last run: 135/135, the page ready in about 0.6 s (data decoded in 0.31 s; before the
-dictionary 0.45 s and 0.2 s). The page was
+The front matter and the appendices added 35 checks: the four cards of the index, the
+22 letters of Lam 1 in the margin left of the margin signs and Bet on the third line of Na 1,3,
+the panel of Gs 14,6 (Caleb, «Gb 14,6» struck through, «→ Gs 14,6», the note), of Gv 1,14 (both
+indices, as many entries as the data) and its «nota» opening the note in the panel, of Gen 4,22
+(the chronology, the most precise entry first, opening highlighted), `#indice-note` (628 entries,
+the filter in the address), an entry, a «v.», `#temi` (96) and an entry with an unresolved
+reference and its reason, `#cronologia` (9 periods and the dynasties), a period (its columns,
+entries and linked citations equal to the data), the dynasties (Herod's children with their
+mothers), `#introduzione-generale`, the Presentazione (signature, italics, Sal 119,105 linked),
+the Hebrew canon (24 items, Samuele = 1Sam and 2Sam), the abbreviations (63 book sigla,
+Gregory-Aland), the 73 woodcuts, three searches (an index entry, the chronology, a phrase of the
+Presentazione), the overview tiles against the data, `Tab`/`Enter` on a theme, the contrast in
+the dark theme; on the phone six of the new pages without horizontal scrolling, an acrostic
+letter inside the screen and the panel section.
+Last run: 171/171 (stage 6b added Ps 10: 11 letters, «(Mem)» in parentheses with the
+Hebrew letter and «mancante nel testo ebraico»), the page ready in about 0.63 s (data decoded in 0.33 s; 8.8 MB, before the
+front matter and appendices 8.5 MB; before the dictionary 0.45 s and 0.2 s). The page was
 also opened in headless Firefox 157 (playwright's `firefox-1555`, with the GTK 3
 libraries unpacked the same way): reader, search, graph and overview, no console error.
 
@@ -657,3 +828,40 @@ verse index; the panel of 66 verses, the `◊ Nel Dizionario` group of the tree 
 the citation links of 43 entries (resolved ones linked, unresolved ones grey) agree with
 it too. `bj-dati.nt.gz` (25.6 MB) joined `.gitignore` as a regenerable file over 20 MB;
 an earlier commit still tracks it.
+
+## Stage 7: the front matter and the appendices
+
+The two volumes transcribed after the 14 (`progetti/introduzione-generale`,
+`progetti/appendici`) and the acrostic letters added to Lamentations, Nahum and Ps 111–112
+went into the ontology: the corrections of `tools/tufte/contesto.py` moved into
+`riferimenti.py` (stage 2, *The sense of the sentence*: 87 corrected and 817 added links;
+note citations 25,433, 99.71% resolved, introductions 2,689, 99.70%; the Tufte edition
+regenerated byte-identical, `test_genera.py` 10/10), the new stage 2c (`paratesto.py`,
+`test_paratesto.py`), the third part of the graph (vocabulary, 18 shapes, VoID subset, 33
+integrity queries, 8 example queries), the explorer (panel sections, `#indice-note`,
+`#temi`, `#cronologia`, `#introduzione-generale`, the letters in the margin, the search,
+the overview; 35 browser checks). `make ontologia`: 13 minutes, every check green; 3,718,396
+triples (3,527,956 before). Compared triple by triple with the previous build, the Bible part
+lost 847 triples, all of the 87 citations read again (their former passages and statuses, the
+`bj:citaVersetto` to the wrong verses), and gained the corrected and added citations, the
+acrostic letters and the verse → index shortcuts.
+
+## Stage 6b: fixes after the audit of the front matter and the appendices
+
+- `riferimenti.py`: the table `AGGIUNTE` (rule `aggiunta`, 4 links the grammar does not read, each
+  read on the page image: Nm 11,25–26 in the note on Is 11,2, Dt 27 and Dt 31 in the note on Gs
+  8,30, Dt 5,22 in the note on Es 20,1); `test_riferimenti.py` 48 context cases. Links 67,553 →
+  67,557; note citations 25,433 → 25,437. The Tufte edition already linked the last three (its
+  own reading of the chain); only the note on Is 11,2 changed there.
+- `progetti/appendici/tsv.py`: «v.» matched on whole words before the stem (Šekina → «Presenza
+  di Dio», Peccato → «Confessione dei peccati»; the other 245 unchanged), the table `RIMANDI`
+  (Festa, Tentazione, Sorte), `PAGINE_ESTRANEE` («cf. pp. 1032, 1376»), the class `Libro` (a bare
+  reference in parentheses takes the book named last in them: Mt 12,7; no other reference of
+  the indices or the chronology changed its book).
+- `paratesto.py`: the leading dates of the chronology (387 dated, was 362; entry 423 is 14, not
+  14–37), `why` on the «v.» and page items, `CORREZIONI_PROSA` for the Tufte edition.
+- Acrostics: all `\acrostico{…}` (`estrai.py` reads only that macro), the name without
+  parentheses and `acrostic_brackets` (5 letters) → `bj:mancanteNelTesto`; SHACL patterns on
+  `bj:testo` and `bj:acrostico`; one more integrity query (77). `make ontologia` green
+  (13 min); 3,718,625 triples (+229).
+

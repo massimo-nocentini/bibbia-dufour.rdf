@@ -1,0 +1,26 @@
+# Le voci dell'indice alfabetico delle note più importanti che indicano un versetto (Gv 1,14),
+# con il riferimento come stampato, la nota della BJ a cui l'indice manda e come le corrisponde.
+# The entries of the index of the most important notes pointing to a verse, with the reference
+# as printed, the BJ note the index sends to and how it matches.
+PREFIX bj: <https://massimo-nocentini.github.io/bibbia-gerusalemme/ontologia#>
+PREFIX verso: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/verso/>
+PREFIX libro: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/libro/>
+PREFIX indice: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/indice/>
+PREFIX cronologia: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/cronologia/>
+PREFIX dinastia: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/dinastia/>
+PREFIX canone: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/canone/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX schema: <https://schema.org/>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+
+SELECT ?voce ?riferimento ?nota ?corrispondenza WHERE {
+  verso:John.1.14 bj:nellIndice ?x .
+  ?x skos:inScheme indice:note ; skos:prefLabel ?voce .
+  ?c bj:daVoceIndice ?x ; bj:testo ?riferimento ; bj:aPassaggio/bj:comprende verso:John.1.14 .
+  OPTIONAL { ?c bj:indicaNota ?n . ?n rdfs:label ?nota }
+  OPTIONAL { ?c bj:corrispondenzaNota ?corrispondenza }
+}
+ORDER BY ?voce

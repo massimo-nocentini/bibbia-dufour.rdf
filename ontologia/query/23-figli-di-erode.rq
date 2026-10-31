@@ -1,0 +1,26 @@
+# La tavola delle dinastie: i figli di Erode il Grande, ciascuno con la madre, e i loro coniugi
+# (schema:parent, schema:spouse).
+# The dynasties chart: the children of Herod the Great, each with the mother, and their spouses.
+PREFIX bj: <https://massimo-nocentini.github.io/bibbia-gerusalemme/ontologia#>
+PREFIX verso: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/verso/>
+PREFIX libro: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/libro/>
+PREFIX indice: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/indice/>
+PREFIX cronologia: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/cronologia/>
+PREFIX dinastia: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/dinastia/>
+PREFIX canone: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/canone/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX schema: <https://schema.org/>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+
+SELECT ?figlio ?madre (GROUP_CONCAT(DISTINCT ?c; separator=" | ") AS ?coniugi) WHERE {
+  ?erode a bj:PersonaStorica ; foaf:name "Erode il Grande" ; schema:children ?f .
+  ?f rdfs:label ?figlio ; schema:parent ?m .
+  ?m foaf:name ?madre FILTER (?m != ?erode)
+  OPTIONAL { ?f schema:spouse/foaf:name ?c0 }
+  BIND (COALESCE(?c0, "—") AS ?c)
+}
+GROUP BY ?figlio ?madre
+ORDER BY ?madre ?figlio

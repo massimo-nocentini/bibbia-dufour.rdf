@@ -33,34 +33,70 @@
   "persona": "https://massimo-nocentini.github.io/bibbia-gerusalemme/id/persona/",
   "pagdiz": "https://massimo-nocentini.github.io/bibbia-gerusalemme/id/dizionario/pagina/",
   "foaf": "http://xmlns.com/foaf/0.1/",
+  "testopre": "https://massimo-nocentini.github.io/bibbia-gerusalemme/id/testo/",
+  "canone": "https://massimo-nocentini.github.io/bibbia-gerusalemme/id/canone/",
+  "abbreviazione": "https://massimo-nocentini.github.io/bibbia-gerusalemme/id/abbreviazione/",
+  "manoscritto": "https://massimo-nocentini.github.io/bibbia-gerusalemme/id/manoscritto/",
+  "xilografia": "https://massimo-nocentini.github.io/bibbia-gerusalemme/id/xilografia/",
+  "indice": "https://massimo-nocentini.github.io/bibbia-gerusalemme/id/indice/",
+  "cronologia": "https://massimo-nocentini.github.io/bibbia-gerusalemme/id/cronologia/",
+  "dinastia": "https://massimo-nocentini.github.io/bibbia-gerusalemme/id/dinastia/",
+  "acr": "https://massimo-nocentini.github.io/bibbia-gerusalemme/id/acrostico/",
+  "pagprel": "https://massimo-nocentini.github.io/bibbia-gerusalemme/id/preliminari/pagina/",
+  "pagapp": "https://massimo-nocentini.github.io/bibbia-gerusalemme/id/appendici/pagina/",
+  "schema": "https://schema.org/",
+  "Abbreviazione": "bj:Abbreviazione",
   "Ambito": "bj:Ambito",
   "Bibbia": "bj:Bibbia",
+  "Canone": "bj:Canone",
   "Capitolo": "bj:Capitolo",
   "Citazione": "bj:Citazione",
   "CollegamentoVoce": "bj:CollegamentoVoce",
+  "ColonnaCronologia": "bj:ColonnaCronologia",
   "Divisione": "bj:Divisione",
   "Dizionario": "bj:Dizionario",
+  "Edizione": "bj:Edizione",
+  "EventoCronologia": "bj:EventoCronologia",
+  "GruppoCanone": "bj:GruppoCanone",
+  "Indice": "bj:Indice",
   "Introduzione": "bj:Introduzione",
+  "LetteraAcrostica": "bj:LetteraAcrostica",
   "Libro": "bj:Libro",
+  "Manoscritto": "bj:Manoscritto",
   "Margine": "bj:Margine",
   "Nota": "bj:Nota",
   "Pagina": "bj:Pagina",
+  "PaginaAppendice": "bj:PaginaAppendice",
   "PaginaDizionario": "bj:PaginaDizionario",
+  "PaginaPreliminare": "bj:PaginaPreliminare",
   "Paragrafo": "bj:Paragrafo",
   "ParagrafoVoce": "bj:ParagrafoVoce",
   "Passaggio": "bj:Passaggio",
   "Pericope": "bj:Pericope",
+  "PersonaStorica": "bj:PersonaStorica",
   "Relazione": "bj:Relazione",
   "Rimando": "bj:Rimando",
+  "SezioneCronologia": "bj:SezioneCronologia",
   "SezioneVoce": "bj:SezioneVoce",
+  "Stampa": "bj:Stampa",
   "Stato": "bj:Stato",
+  "TavolaCronologica": "bj:TavolaCronologica",
+  "TavolaGenealogica": "bj:TavolaGenealogica",
   "Testamento": "bj:Testamento",
+  "TestoPreliminare": "bj:TestoPreliminare",
   "TipoCollegamento": "bj:TipoCollegamento",
   "Versetto": "bj:Versetto",
   "Voce": "bj:Voce",
+  "VoceCanone": "bj:VoceCanone",
+  "VoceIndice": "bj:VoceIndice",
   "VoceRinvio": "bj:VoceRinvio",
+  "Xilografia": "bj:Xilografia",
   "aPassaggio": {
    "@id": "bj:aPassaggio",
+   "@type": "@id"
+  },
+  "aPassaggioCorretto": {
+   "@id": "bj:aPassaggioCorretto",
    "@type": "@id"
   },
   "aSezione": {
@@ -69,6 +105,14 @@
   },
   "aVoce": {
    "@id": "bj:aVoce",
+   "@type": "@id"
+  },
+  "abbreviaLibro": {
+   "@id": "bj:abbreviaLibro",
+   "@type": "@id"
+  },
+  "abbreviaManoscritto": {
+   "@id": "bj:abbreviaManoscritto",
    "@type": "@id"
   },
   "accantoA": {
@@ -84,9 +128,31 @@
   "ambitoCapitolo": "bj:ambitoCapitolo",
   "ambitoLibro": "bj:ambitoLibro",
   "ambitoVersetti": "bj:ambitoVersetti",
+  "anniMargine": "bj:anniMargine",
+  "annoFine": {
+   "@id": "bj:annoFine",
+   "@type": "xsd:integer"
+  },
+  "annoInizio": {
+   "@id": "bj:annoInizio",
+   "@type": "xsd:integer"
+  },
+  "apocrifo": {
+   "@id": "bj:apocrifo",
+   "@type": "xsd:boolean"
+  },
   "apreCapitolo": {
    "@id": "bj:apreCapitolo",
    "@type": "xsd:integer"
+  },
+  "apreLibro": {
+   "@id": "bj:apreLibro",
+   "@type": "@id"
+  },
+  "categoriaManoscritto": "bj:categoriaManoscritto",
+  "circa": {
+   "@id": "bj:circa",
+   "@type": "xsd:boolean"
   },
   "citaVersetto": {
    "@id": "bj:citaVersetto",
@@ -105,6 +171,18 @@
   "collegamentoAsterisco": "bj:collegamentoAsterisco",
   "collegamentoRinvio": "bj:collegamentoRinvio",
   "collegamentoVediAnche": "bj:collegamentoVediAnche",
+  "colonna": {
+   "@id": "bj:colonna",
+   "@type": "@id"
+  },
+  "colonnaEgitto": "bj:colonnaEgitto",
+  "colonnaGiuda": "bj:colonnaGiuda",
+  "colonnaIsraele": "bj:colonnaIsraele",
+  "colonnaLagidi": "bj:colonnaLagidi",
+  "colonnaPalestina": "bj:colonnaPalestina",
+  "colonnaSeleucidi": "bj:colonnaSeleucidi",
+  "colonnaUniversale": "bj:colonnaUniversale",
+  "colonneCronologia": "bj:colonneCronologia",
   "commenta": {
    "@id": "bj:commenta",
    "@type": "@id"
@@ -112,6 +190,14 @@
   "commento": "bj:commento",
   "comprende": {
    "@id": "bj:comprende",
+   "@type": "@id"
+  },
+  "comprendeCapitolo": {
+   "@id": "bj:comprendeCapitolo",
+   "@type": "@id"
+  },
+  "comprendeLibro": {
+   "@id": "bj:comprendeLibro",
    "@type": "@id"
   },
   "conCf": {
@@ -124,8 +210,18 @@
   },
   "conversione": "bj:conversione",
   "correlato": "bj:correlato",
+  "correzione": "bj:correzione",
+  "corrispondenzaNota": "bj:corrispondenzaNota",
+  "corsivo": {
+   "@id": "bj:corsivo",
+   "@type": "xsd:boolean"
+  },
   "curatore": {
    "@id": "bj:curatore",
+   "@type": "@id"
+  },
+  "daEvento": {
+   "@id": "bj:daEvento",
    "@type": "@id"
   },
   "daNota": {
@@ -148,9 +244,24 @@
    "@id": "bj:daVoce",
    "@type": "@id"
   },
+  "daVoceIndice": {
+   "@id": "bj:daVoceIndice",
+   "@type": "@id"
+  },
+  "dataStampata": "bj:dataStampata",
+  "datazione": "bj:datazione",
   "dentroVersetto": {
    "@id": "bj:dentroVersetto",
    "@type": "xsd:boolean"
+  },
+  "descrizione": "bj:descrizione",
+  "deuterocanonico": {
+   "@id": "bj:deuterocanonico",
+   "@type": "xsd:boolean"
+  },
+  "direzioneEditoriale": {
+   "@id": "bj:direzioneEditoriale",
+   "@type": "@id"
   },
   "doppione": "bj:doppione",
   "doppioneDelRimando": {
@@ -166,6 +277,10 @@
    "@type": "xsd:boolean"
   },
   "edizione": "bj:edizione",
+  "edizioneDi": {
+   "@id": "bj:edizioneDi",
+   "@type": "@id"
+  },
   "esitoPercorso": "bj:esitoPercorso",
   "estensione": "bj:estensione",
   "etichetta": "bj:etichetta",
@@ -179,10 +294,23 @@
   },
   "firma": "bj:firma",
   "forma": "bj:forma",
+  "haLetteraAcrostica": {
+   "@id": "bj:haLetteraAcrostica",
+   "@type": "@id"
+  },
   "haNota": {
    "@id": "bj:haNota",
    "@type": "@id"
   },
+  "illustra": {
+   "@id": "bj:illustra",
+   "@type": "@id"
+  },
+  "illustraVersetto": {
+   "@id": "bj:illustraVersetto",
+   "@type": "@id"
+  },
+  "imprimatur": "bj:imprimatur",
   "inDivisione": {
    "@id": "bj:inDivisione",
    "@type": "@id"
@@ -193,6 +321,14 @@
   },
   "inPericope": {
    "@id": "bj:inPericope",
+   "@type": "@id"
+  },
+  "indicaNota": {
+   "@id": "bj:indicaNota",
+   "@type": "@id"
+  },
+  "indicaVersetto": {
+   "@id": "bj:indicaVersetto",
    "@type": "@id"
   },
   "inizio": {
@@ -206,7 +342,9 @@
    "@type": "@id"
   },
   "irrisolto": "bj:irrisolto",
+  "isbn": "bj:isbn",
   "lettera": "bj:lettera",
+  "letteraEbraica": "bj:letteraEbraica",
   "libroCitato": {
    "@id": "bj:libroCitato",
    "@type": "@id"
@@ -223,6 +361,11 @@
    "@id": "bj:lunghezza",
    "@type": "xsd:integer"
   },
+  "luogo": "bj:luogo",
+  "mancanteNelTesto": {
+   "@id": "bj:mancanteNelTesto",
+   "@type": "xsd:boolean"
+  },
   "mandaAMargine": {
    "@id": "bj:mandaAMargine",
    "@type": "@id"
@@ -237,10 +380,16 @@
    "@id": "bj:nelMargine",
    "@type": "@id"
   },
+  "nellIndice": {
+   "@id": "bj:nellIndice",
+   "@type": "@id"
+  },
   "nellaVoce": {
    "@id": "bj:nellaVoce",
    "@type": "@id"
   },
+  "nomeMaiuscoletto": "bj:nomeMaiuscoletto",
+  "nomeMaiuscolo": "bj:nomeMaiuscolo",
   "nonRiferimento": "bj:nonRiferimento",
   "notaChiave": {
    "@id": "bj:notaChiave",
@@ -256,10 +405,12 @@
    "@id": "bj:numeroCapitolo",
    "@type": "xsd:integer"
   },
+  "numeroGregoryAland": "bj:numeroGregoryAland",
   "numeroParole": {
    "@id": "bj:numeroParole",
    "@type": "xsd:integer"
   },
+  "numeroTavola": "bj:numeroTavola",
   "omesso": {
    "@id": "bj:omesso",
    "@type": "xsd:boolean"
@@ -297,6 +448,10 @@
    "@id": "bj:posizione",
    "@type": "xsd:integer"
   },
+  "posizioneAlfabeto": {
+   "@id": "bj:posizioneAlfabeto",
+   "@type": "xsd:integer"
+  },
   "posizioneHtml": {
    "@id": "bj:posizioneHtml",
    "@type": "xsd:integer"
@@ -310,6 +465,7 @@
    "@type": "@id"
   },
   "proprietaDiretta": "bj:proprietaDiretta",
+  "qualifica": "bj:qualifica",
   "qualificatore": "bj:qualificatore",
   "relazione": {
    "@id": "bj:relazione",
@@ -324,8 +480,20 @@
    "@id": "bj:richiamataDa",
    "@type": "@id"
   },
+  "riga": {
+   "@id": "bj:riga",
+   "@type": "xsd:integer"
+  },
+  "rigo": {
+   "@id": "bj:rigo",
+   "@type": "xsd:integer"
+  },
   "rimandaA": {
    "@id": "bj:rimandaA",
+   "@type": "@id"
+  },
+  "rinviaAIntroduzione": {
+   "@id": "bj:rinviaAIntroduzione",
    "@type": "@id"
   },
   "rinviaANotaChiave": {
@@ -343,7 +511,14 @@
    "@id": "bj:segue",
    "@type": "@id"
   },
+  "seguito": "bj:seguito",
   "sigla": "bj:sigla",
+  "significato": "bj:significato",
+  "sottotitolo": "bj:sottotitolo",
+  "stampaDi": {
+   "@id": "bj:stampaDi",
+   "@type": "@id"
+  },
   "stampatoNelCapitolo": {
    "@id": "bj:stampatoNelCapitolo",
    "@type": "xsd:integer"
@@ -352,17 +527,21 @@
    "@id": "bj:stampatoNelVersetto",
    "@type": "@id"
   },
+  "stampatore": "bj:stampatore",
   "stati": "bj:stati",
   "stato": {
    "@id": "bj:stato",
    "@type": "@id"
   },
   "statoFonte": "bj:statoFonte",
+  "stile": "bj:stile",
   "suffisso": "bj:suffisso",
   "testo": "bj:testo",
+  "testoCorretto": "bj:testoCorretto",
   "testoHtml": "bj:testoHtml",
   "testoRinvii": "bj:testoRinvii",
   "tipiCollegamento": "bj:tipiCollegamento",
+  "tipoAbbreviazione": "bj:tipoAbbreviazione",
   "tipoCollegamento": {
    "@id": "bj:tipoCollegamento",
    "@type": "@id"
@@ -391,6 +570,10 @@
   },
   "vediAncheVoce": {
    "@id": "bj:vediAncheVoce",
+   "@type": "@id"
+  },
+  "vediVoce": {
+   "@id": "bj:vediVoce",
    "@type": "@id"
   },
   "voceCitaVersetto": {
@@ -450,6 +633,26 @@
    "@id": "skos:hasTopConcept",
    "@type": "@id"
   },
+  "broader": {
+   "@id": "skos:broader",
+   "@type": "@id"
+  },
+  "narrower": {
+   "@id": "skos:narrower",
+   "@type": "@id"
+  },
+  "parent": {
+   "@id": "schema:parent",
+   "@type": "@id"
+  },
+  "children": {
+   "@id": "schema:children",
+   "@type": "@id"
+  },
+  "spouse": {
+   "@id": "schema:spouse",
+   "@type": "@id"
+  },
   "label": "rdfs:label",
   "title": "dcterms:title",
   "identifier": "dcterms:identifier",
@@ -458,6 +661,8 @@
   "language": "dc:language",
   "prefLabel": "skos:prefLabel",
   "altLabel": "skos:altLabel",
-  "name": "foaf:name"
+  "name": "foaf:name",
+  "notation": "skos:notation",
+  "date": "dcterms:date"
  }
 }

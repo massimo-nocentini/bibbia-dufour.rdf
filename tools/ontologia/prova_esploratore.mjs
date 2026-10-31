@@ -9,7 +9,10 @@
 // accents, the graph, the matrix, the dark theme, the keyboard and a 390px viewport; the
 // Dizionario di Teologia Biblica: the panel section, the ◊ marker and its heat, an entry
 // (#voce) with its paragraph highlighted, the index (#dizionario), the search, the entry
-// cards of the tree, the overview.
+// cards of the tree, the overview; the front matter and the appendices: the acrostic letters in
+// the margin, the panel sections (index of notes, pastoral themes, chronology), #indice-note,
+// #temi, #cronologia (sections, dynasties), #introduzione-generale (texts, canon, abbreviations,
+// woodcuts), the search and the overview tiles.
 // With --foto, screenshots are written there. Exit status 1 if any check fails.
 import { createRequire } from 'node:module';
 import { dirname, join, resolve } from 'node:path';
@@ -550,6 +553,160 @@ try {
   await p.keyboard.press('Escape');
   verifica('Esc chiude la guida', await p.$eval('#guida', x => x.hidden));
 
+  // ------------------------------------------------ the front matter and the appendices
+  // the books index: four cards to the new views
+  await p.evaluate(() => { location.hash = '#'; });
+  await p.waitForSelector('.apparati');
+  verifica('indice: le pagine iniziali e le appendici', (await p.$$('.apparati .apparato')).length === 4 && (await p.$$('.libro')).length === 74);
+  // the reader: acrostic letters in the right margin, at the line each one opens
+  await p.evaluate(() => { location.hash = '#Lam.1'; });
+  await p.waitForSelector('.testo .v');
+  const lam = await p.evaluate(() => {
+    const a = [...document.querySelectorAll('.testo .acr')], t = document.querySelector('.testo').getBoundingClientRect();
+    const segni = [...document.querySelectorAll('.testo .mm')].map(x => x.getBoundingClientRect().left);
+    return { n: a.length, primo: a[0]?.textContent, fuori: a.every(x => x.getBoundingClientRect().right <= Math.min(t.left, ...segni) - 2 && x.getBoundingClientRect().left >= 0), larghezza: document.documentElement.scrollWidth };
+  });
+  verifica('Lam 1: 22 lettere acrostiche nel margine', lam.n === 22 && lam.primo.includes('א') && lam.primo.includes('Alef') && lam.fuori && lam.larghezza <= 1366, JSON.stringify(lam));
+  await foto(p, '40-lam-acrostico');
+  await p.evaluate(() => { location.hash = '#Nah.1'; });
+  await p.waitForSelector('.testo .v');
+  const nah = await p.evaluate(() => { const v = document.querySelector('#v' + S.vix.get('Nah.1.3')); const r = [...v.querySelectorAll('.r')]; return r.map(x => x.querySelector('.acr')?.textContent || '').join('|'); });
+  verifica('Na 1,3: Bet nel margine del terzo rigo', /^\|\|.*Bet/.test(nah), nah);
+  // Ps 10: 11 letters, the bracketed ones as printed, «(Mem)», with the Hebrew letter and the title
+  await p.evaluate(() => { location.hash = '#Ps.10'; });
+  await p.waitForSelector('.testo .v');
+  const sal10 = await p.evaluate(() => { const a = [...document.querySelectorAll('.testo .acr')];
+    const m = a.find(x => x.textContent.includes('(Mem)')); return { n: a.length, mem: m?.textContent, titolo: m?.title }; });
+  verifica('Sal 10: 11 lettere acrostiche, «(Mem)» tra parentesi', sal10.n === 11 && sal10.mem?.includes('מ') && /mancante/.test(sal10.titolo || ''), JSON.stringify(sal10));
+  // the verse panel: the index of notes (a misprint corrected), the themes, the chronology
+  await p.evaluate(() => { location.hash = '#Josh.14.6'; });
+  await p.waitForSelector('#pannello:not([hidden]) .sez.ix');
+  const gs = await p.$eval('#pannello .sez.ix', x => ({ h: x.querySelector('h3').textContent, voce: x.textContent.includes('Caleb'),
+    refuso: x.querySelector('.chip.refuso')?.textContent, corretto: x.querySelector('.chip.corretto')?.textContent, nota: x.querySelector('.nota-ix')?.dataset.nota }));
+  const notaGs = await p.evaluate(() => D.note.findIndex(n => n[0] === S.vix.get('Josh.14.6')));
+  verifica('pannello di Gs 14,6: «Nell’indice delle note», Caleb, refuso corretto e nota', gs.h.startsWith('Nell’indice delle note') && gs.voce && gs.refuso === 'Gb 14,6' && gs.corretto.includes('Gs 14,6') && +gs.nota === notaGs, JSON.stringify(gs));
+  await foto(p, '41-pannello-indice-note');
+  await p.evaluate(() => { location.hash = '#John.1.14'; });
+  await p.waitForSelector('#pannello:not([hidden]) .sez.ix');
+  const gv = await p.$$eval('#pannello .sez.ix', xs => xs.map(x => [x.querySelector('h3').textContent, x.querySelectorAll('li').length]));
+  const attese114 = await p.evaluate(() => [indiceDi('note', S.vix.get('John.1.14')).length, indiceDi('temi', S.vix.get('John.1.14')).length]);
+  verifica('pannello di Gv 1,14: indice delle note e temi pastorali', gv.length === 2 && gv[0][0].startsWith('Nell’indice') && gv[1][0].startsWith('Temi pastorali') && gv[0][1] === attese114[0] && gv[1][1] === attese114[1], JSON.stringify(gv) + ' ' + attese114);
+  await p.click('#pannello .sez.ix .nota-ix');
+  await p.waitForSelector('#pannello .nota.lampo[open]');
+  verifica('«nota» dell’indice apre la nota della BJ nel pannello', (await hash(p)).startsWith('#John.1.14'), await hash(p));
+  await p.evaluate(() => { location.hash = '#Gen.4.22'; });
+  await p.waitForSelector('#pannello:not([hidden]) .sez.cron');
+  const gen = await p.$eval('#pannello .sez.cron', x => [x.textContent.includes('Tubal-Kain'), x.querySelector('a').getAttribute('href')]);
+  verifica('pannello di Gen 4,22: nella tavola cronologica, la voce più puntuale prima', gen[0] && gen[1] === '#cronologia/1?v=10', gen.join(' '));
+  await p.click('#pannello .sez.cron li a');
+  await p.waitForSelector('.cron-cella p.sel');
+  verifica('la voce della cronologia si apre evidenziata', (await p.$eval('.cron-cella p.sel', x => x.id)) === 'cv10');
+  // the index of notes: the list, the filter in the address, an entry, «v.»
+  await p.evaluate(() => { location.hash = '#indice-note'; });
+  await p.waitForSelector('.indice-an .dvl');
+  const nIx = await p.$$eval('.indice-an .dvl', xs => xs.length);
+  await p.fill('#dq', 'caleb');
+  await p.waitForTimeout(100);
+  const visibili = await p.$$eval('.indice-an .dvl', xs => xs.filter(x => !x.hidden).map(x => x.textContent));
+  verifica('#indice-note: 628 voci, il filtro nell’indirizzo', nIx === 628 && visibili.length === 1 && visibili[0].startsWith('Caleb') && (await hash(p)) === '#indice-note?q=caleb', `${nIx}, ${visibili.join()}, ${await hash(p)}`);
+  await foto(p, '42-indice-note');
+  await p.click('.indice-an .dvl:not([hidden])');
+  await p.waitForSelector('.voce-ix h1');
+  verifica('#indice-note/91: Caleb, «Gb 14,6» stampato e «→ Gs 14,6»', (await hash(p)) === '#indice-note/91' && (await p.$eval('.voce-ix h1', x => x.textContent)) === 'Caleb' && (await p.$eval('.ix-corpo .chip.corretto', x => x.getAttribute('href'))) === '#Josh.14.6');
+  await p.evaluate(() => { location.hash = '#indice-note/2'; });
+  await p.waitForSelector('.voce-ix a.vedi');
+  await p.click('.voce-ix a.vedi');
+  await p.waitForFunction(() => location.hash === '#indice-note/186' && document.querySelector('.voce-ix h1')?.textContent === 'Ebiatàr');
+  verifica('«v. Ebiatàr» apre la voce', (await p.$eval('.voce-ix h1', x => x.textContent)) === 'Ebiatàr');
+  await foto(p, '43-voce-indice');
+  // the pastoral themes
+  await p.evaluate(() => { location.hash = '#temi'; });
+  await p.waitForSelector('.indice-an .dvl');
+  verifica('#temi: 96 temi', (await p.$$('.indice-an .dvl')).length === 96);
+  await p.evaluate(() => { location.hash = '#temi/1'; });
+  await p.waitForSelector('.ix-riga.sv');
+  const ad = await p.evaluate(() => ({ sv: document.querySelectorAll('.ix-riga.sv').length, x: [...document.querySelectorAll('.ix-corpo .chip.x')].map(x => [x.textContent, x.title]) }));
+  verifica('#temi/1 Adorazione: 5 sottotemi, «Gv 2,38» irrisolto con il motivo', ad.sv === 5 && ad.x.some(([t, m]) => t === 'Gv 2,38' && /versetto inesistente/.test(m)), JSON.stringify(ad));
+  await foto(p, '44-tema');
+  // the chronology: sections, the table of a section with its columns, citations linked, the dynasties
+  await p.evaluate(() => { location.hash = '#cronologia'; });
+  await p.waitForSelector('.cron-sezioni');
+  verifica('#cronologia: 9 periodi e le dinastie', (await p.$$('.cron-sezioni .tessera')).length === 10);
+  await p.evaluate(() => { location.hash = '#cronologia/6'; });
+  await p.waitForSelector('.cron-tavola');
+  const cr = await p.evaluate(() => ({ col: [...document.querySelectorAll('.cron-testata div')].map(x => x.textContent).filter(Boolean),
+    righe: document.querySelectorAll('.cron-riga').length, voci: document.querySelectorAll('.cron-cella p').length,
+    link: [...document.querySelectorAll('.cron-tavola a.ci[href]')].length, attese: A.cron.voci.filter(v => v[0] === 6).length,
+    cit: A.cron.cit.filter(c => A.cron.voci[c[0]][0] === 6 && c[1].length).length, sez: document.querySelector('.cron-nav [aria-current]').textContent }));
+  verifica('#cronologia/6: colonne, voci, riferimenti come collegamenti', cr.col.length >= 2 && cr.voci === cr.attese && cr.link === cr.cit && cr.sez === 'VI', JSON.stringify(cr));
+  await foto(p, '45-cronologia');
+  await p.evaluate(() => { location.hash = '#cronologia/dinastie'; });
+  await p.waitForSelector('.dinastie');
+  const din = await p.evaluate(() => ({ n: document.querySelectorAll('.dinastie .persona').length, erode: [...document.querySelectorAll('#din-P15 > ul > li .madre')].map(x => x.textContent) }));
+  // 34 persons, 8 of them printed only as a spouse (∞), beside their husband or wife
+  verifica('dinastie: 34 persone, i figli di Erode con la madre', din.n === 34 - 8 && JSON.stringify(din.erode) === JSON.stringify(['da Mariamne I', 'da Mariamne II', 'da Maltace', 'da Maltace', 'da Cleopatra']), JSON.stringify(din));
+  // the front matter
+  await p.evaluate(() => { location.hash = '#introduzione-generale'; });
+  await p.waitForSelector('.pre-testi');
+  verifica('#introduzione-generale: edizione e testi', (await p.$$('.pre-testo')).length === 11 && (await p.$eval('.preliminari .sotto', x => x.textContent)).includes('978-88-10-82031-5'));
+  await p.click('.pre-testo[href="#introduzione-generale/presentazione"]');
+  await p.waitForSelector('.intro-testo.corsivo');
+  const pres = await p.evaluate(() => ({ firma: document.querySelector('.firma-pre b').textContent, rif: document.querySelector('.intro-testo a.ci')?.getAttribute('href'), corsivo: getComputedStyle(document.querySelector('.intro-testo p')).fontStyle }));
+  verifica('Presentazione: firma, corsivo, Sal 119,105 collegato', pres.firma.includes('Ravasi') && pres.rif === '#Ps.119.105' && pres.corsivo === 'italic', JSON.stringify(pres));
+  await foto(p, '46-presentazione');
+  await p.evaluate(() => { location.hash = '#introduzione-generale/divisione-ebraica'; });
+  await p.waitForSelector('.canone');
+  const can = await p.evaluate(() => ({ n: document.querySelectorAll('.canone li').length, sam: [...document.querySelectorAll('.canone li')][7].querySelectorAll('.in-bibbia a').length }));
+  verifica('Divisione della Bibbia ebraica: 24 libri, Samuele = 1Sam e 2Sam', can.n === 24 && can.sam === 2, JSON.stringify(can));
+  await p.evaluate(() => { location.hash = '#introduzione-generale/abbreviazioni'; });
+  await p.waitForSelector('table.abbr');
+  const ab = await p.evaluate(() => ({ libri: document.querySelectorAll('.abbr-libri span').length, greg: document.body.textContent.includes('Gregory-Aland 01') }));
+  verifica('Abbreviazioni e codici: sigle dei libri, codici con il numero Gregory-Aland', ab.libri === 63 && ab.greg, JSON.stringify(ab));
+  await p.evaluate(() => { location.hash = '#introduzione-generale/avvertenze'; });
+  await p.waitForSelector('.chips.xilo');
+  verifica('Avvertenze: le 73 xilografie con i loro versetti', (await p.$$('.chips.xilo .chip')).length === 73);
+  // the search reaches the indices, the chronology and the texts
+  await p.evaluate(() => { location.hash = '#cerca?q=caleb'; });
+  await p.waitForSelector('#esito b');
+  const cb = await p.evaluate(() => [...document.querySelectorAll('.bpar .chip')].map(x => x.getAttribute('href')));
+  verifica('cerca «caleb»: la voce dell’indice delle note', cb.includes('#indice-note/91'), cb.join());
+  await p.evaluate(() => { location.hash = '#cerca?q=hammurabi&in=apparati'; });
+  await p.waitForSelector('#esito b');
+  const hm = await p.evaluate(() => ({ righe: document.querySelectorAll('.bpar .r').length, mark: document.querySelectorAll('.bpar .r mark').length, link: document.querySelector('.bpar .r a')?.getAttribute('href') }));
+  verifica('cerca «hammurabi» nelle appendici: la tavola cronologica', hm.righe >= 1 && hm.mark >= hm.righe && /^#cronologia\/\d\?v=\d+$/.test(hm.link), JSON.stringify(hm));
+  await p.evaluate(() => { location.hash = '#cerca?q="lampada per i miei passi"&in=apparati'; });
+  await p.waitForSelector('#esito b');
+  verifica('cerca una frase della Presentazione', await p.evaluate(() => [...document.querySelectorAll('.bpar .r a')].some(a => a.getAttribute('href').startsWith('#introduzione-generale/presentazione'))));
+  // the overview: four tiles with the numbers of the payload
+  await p.evaluate(() => { location.hash = '#panoramica'; });
+  await p.waitForSelector('.tessere-par');
+  const tp = await p.evaluate(() => [[...document.querySelectorAll('.tessere-par .tessera b')].map(x => x.textContent), [A.meta.note.entries, A.meta.note.references, A.meta.temi.entries, A.meta.cron].map(num)]);
+  verifica('panoramica: tessere delle appendici', JSON.stringify(tp[0]) === JSON.stringify(tp[1]), tp[0].join(' · '));
+  // keyboard: Tab from the filter reaches the first entry, Enter opens it
+  await p.evaluate(() => { location.hash = '#temi'; });
+  await p.waitForSelector('#dq');
+  await p.focus('#dq');
+  for (let k = 0; k < 30 && !(await p.evaluate(() => document.activeElement.classList.contains('dvl'))); k++) await p.keyboard.press('Tab');
+  await p.keyboard.press('Enter');
+  await p.waitForFunction(() => location.hash.startsWith('#temi/'));
+  verifica('tastiera: Tab e Invio aprono un tema', (await hash(p)) === '#temi/1', await hash(p));
+  // dark theme: the chronology and an index entry
+  await p.click('#tema');
+  await p.evaluate(() => { location.hash = '#cronologia/9'; });
+  await p.waitForSelector('.cron-tavola');
+  await foto(p, '47-cronologia-scuro');
+  const scuroPar = await p.evaluate(() => {
+    const rgb = c => { const d = document.createElement('i'); d.style.color = c; document.body.appendChild(d); const v = getComputedStyle(d).color.match(/\d+/g).map(Number); d.remove(); return v; };
+    const L = c => { const [r, g, b] = rgb(c).map(x => { x /= 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+    const cr = (a, b) => { const [x, y] = [L(a), L(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
+    return [cr('var(--rubrica)', 'var(--carta)'), cr('var(--richiamo)', 'var(--foglio)'), cr('var(--secondo)', 'var(--carta)')].map(x => x.toFixed(2));
+  });
+  verifica('tema scuro: anni, «nota» e colonne leggibili (≥ 4,5)', scuroPar.every(x => +x >= 4.5), scuroPar.join(', '));
+  await p.evaluate(() => { location.hash = '#indice-note/33'; });
+  await p.waitForSelector('.voce-ix h1');
+  await foto(p, '48-indice-scuro');
+  await p.click('#tema');
+
   // dark theme
   await p.evaluate(() => { location.hash = '#John.3.16'; });
   await p.waitForSelector('#pannello:not([hidden])');
@@ -655,6 +812,24 @@ try {
   const md390 = await m.p.evaluate(() => { const r = document.querySelector('#v' + S.vix.get('John.1.14') + ' .md').getBoundingClientRect(); return [Math.round(r.left), document.documentElement.scrollWidth]; });
   verifica('390 px: ◊ nel margine, sezione del Dizionario nel pannello', md390[0] >= 8 && md390[1] <= 390, md390.join(', '));
   await foto(m.p, '37-telefono-pannello-diz');
+  // the front matter and the appendices on the phone: no horizontal scrolling, the letters inline
+  for (const [h, sel, n] of [['#cronologia/9', '.cron-tavola', '50-telefono-cronologia'], ['#indice-note/91', '.voce-ix h1', '51-telefono-voce-indice'],
+    ['#temi', '.indice-an .dvl', '52-telefono-temi'], ['#introduzione-generale/abbreviazioni', 'table.abbr', '53-telefono-abbreviazioni'],
+    ['#introduzione-generale/presentazione', '.intro-testo', '54-telefono-presentazione'], ['#cronologia/dinastie', '.dinastie', '55-telefono-dinastie']]) {
+    await m.p.evaluate(x => { location.hash = x; }, h);
+    await m.p.waitForSelector(sel);
+    verifica(`390 px: ${h} senza scorrimento orizzontale`, await m.p.evaluate(() => document.documentElement.scrollWidth) <= 390);
+    await foto(m.p, n);
+  }
+  await m.p.evaluate(() => { location.hash = '#Lam.3.1'; });
+  await m.p.waitForSelector('#pannello:not([hidden])');
+  const acr390 = await m.p.evaluate(() => { const a = document.querySelector('#v' + S.vix.get('Lam.3.1') + ' .acr').getBoundingClientRect(); return [Math.round(a.left), Math.round(a.right), document.documentElement.scrollWidth]; });
+  verifica('390 px: lettera acrostica nel rigo, dentro lo schermo', acr390[0] >= 16 && acr390[1] <= 390 - 16 && acr390[2] <= 390, acr390.join(', '));
+  await m.p.evaluate(() => { location.hash = '#Josh.14.6'; });
+  await m.p.waitForSelector('#pannello:not([hidden]) .sez.ix');
+  await m.p.evaluate(() => document.querySelector('#pannello .sez.ix').scrollIntoView());
+  verifica('390 px: «Nell’indice delle note» nel pannello', await m.p.evaluate(() => document.documentElement.scrollWidth) <= 390);
+  await foto(m.p, '56-telefono-pannello-indice');
   verifica('nessun errore in console (390 px)', m.errori.length === 0, m.errori.slice(0, 5).join(' | '));
   await tel.close();
 } finally {

@@ -1,0 +1,29 @@
+# I componimenti alfabetici: per ogni libro e capitolo, quante lettere acrostiche, il rigo dove
+# comincia la strofa di Bet (2) e le lettere che mancano nel testo ebraico.
+# The alphabetic poems: for each book and chapter, how many acrostic letters, the line where the
+# Bet (2) stanza begins and the letters missing in the Hebrew text.
+PREFIX bj: <https://massimo-nocentini.github.io/bibbia-gerusalemme/ontologia#>
+PREFIX verso: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/verso/>
+PREFIX libro: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/libro/>
+PREFIX indice: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/indice/>
+PREFIX cronologia: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/cronologia/>
+PREFIX dinastia: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/dinastia/>
+PREFIX canone: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/canone/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX schema: <https://schema.org/>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+
+SELECT ?capitolo (COUNT(DISTINCT ?a) AS ?lettere) (MAX(?bet) AS ?strofa_di_bet) (GROUP_CONCAT(DISTINCT ?manca; separator=" ") AS ?mancanti) WHERE {
+  ?v bj:haLetteraAcrostica ?a ; dcterms:isPartOf ?k .
+  ?k rdfs:label ?capitolo ; bj:numero ?n ; bj:inLibro/bj:ordine ?ol .
+  ?a bj:posizioneAlfabeto ?pos ; bj:rigo ?r ; bj:testo ?t .
+  ?v rdfs:label ?lv .
+  BIND (IF(?pos = 2, CONCAT(?lv, ", rigo ", STR(?r)), "") AS ?bet)
+  OPTIONAL { ?a bj:mancanteNelTesto ?m0 }
+  BIND (IF(BOUND(?m0), ?t, "") AS ?manca)
+}
+GROUP BY ?capitolo ?ol ?n
+ORDER BY ?ol ?n

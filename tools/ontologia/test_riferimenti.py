@@ -8,7 +8,9 @@ collegamenti.json (riferimenti.py). Each case gives the string, where it is prin
 references must resolve to; only the keys given are compared. Margin cases use
 printed(), which takes the real \\mref beside that verse, so they cannot test a string
 the corpus does not print; the few strings that are not printed are under "probes"
-and use margin(). The cases marked F1-F12 are the regressions of the stage 5 audit.
+and use margin(). The cases marked F1-F12 are the regressions of the stage 5 audit;
+CONTEXT checks the links read in the sense of the sentence (one or more per rule, a sample of
+the table CORREZIONI) in the written collegamenti.json.
 Plain asserts, so it also runs under pytest. Exit status 1 if a case fails.
 """
 import json
@@ -342,6 +344,118 @@ def test_collegamenti_file():
     assert label['raw'] == '' and label['status'] == 'resolved'
 
 
+# ---- the sense of the sentence (riferimenti.context_links, run after all the links are made;
+# the cases of the Tufte content audit, tools/tufte/test_genera.py CONTESTO): (source, reference as
+# printed, n-th so printed or 0 for the first, the first verse it must link to, the rule that read it
+# (None: left as the grammar reads it), the status)
+CONTEXT = [
+    # catena: the chain goes on in the book of the reference before
+    ('note:Exod.12.48', '26,12', 0, 'Deut.26.12', 'catena', 'resolved'),          # "Dt 24 passim; 26,12"
+    ('note:Prov.8.22', '24,1–29', 0, 'Sir.24.1', 'catena', 'resolved'),           # ", e soprattutto 24,1–29"
+    ('note:Isa.4.2', '33,15', 0, 'Jer.33.15', 'catena', 'resolved'),              # "Ger 23,5 = 33,15"
+    ('note:Prov.30.15', '11,2', 0, 'Eccl.11.2', 'catena', 'resolved'),            # "Qo 4,12 [?]; 11,2"
+    ('note:Sir.49.9', 'cf. 38,22', 0, 'Ezek.38.22', 'catena', 'resolved'),        # "Ez 38–39, in particolare (cf."
+    # puntatore: "v N" of the chapter just named
+    ('note:2Kgs.24.18', 'v 3', 0, 'Jer.39.3', 'puntatore', 'resolved'),           # "(con un’aggiunta nel v 3)"
+    ('note:John.19.36', 'v 21', 0, 'Ps.34.21', 'puntatore', 'resolved'),          # "un v del Sal 34 (il v 21)"
+    ('note:Sir.14.21', 'vv 15.23.148', 0, 'Ps.119.15', 'puntatore', 'resolved'),
+    # capitolo: a note on several chapters, or a verse the chapter does not have
+    ('note:Judg.13.1', 'v 20', 0, 'Judg.15.20', 'capitolo', 'resolved'),
+    ('note:Judg.13.1', 'v 31', 0, 'Judg.16.31', 'capitolo', 'resolved'),
+    ('note:Num.13.1', 'vv 39–45', 0, 'Num.14.39', 'capitolo', 'resolved'),
+    ('note:1Sam.16.14', 'v 31', 0, '1Sam.17.31', 'capitolo', 'resolved'),
+    ('note:Isa.15.1', 'vv 13–14', 0, 'Isa.16.13', 'capitolo', 'resolved'),
+    ('note:Jdt.15.14', 'vv 13–16', 0, 'Jdt.16.13', 'capitolo', 'resolved'),       # the next chapter
+    # elenco: "Dopo i vv 4,7,15"
+    ('note:Ps.66.4', 'vv 4,7', 0, 'Ps.66.4', 'elenco', 'resolved'),
+    # ester: the key note is in the Greek text
+    ('note:Jdt.5.4', 'cf. Est 3,8+', 0, 'EsthGr.3.8', 'ester', 'resolved'),
+    ('mref:Dan.6.9_1', 'Est 1,19+', 0, 'EsthGr.1.19', 'ester', 'resolved'),
+    # inizio: a misprinted end, linked to the first verse
+    ('note:Sir.7.33', '2Mac 12,38–46', 0, '2Macc.12.38', 'inizio', 'partial'),
+    ('mref:Luke.5.1_1', '‖Mt 4,18–29', 0, 'Matt.4.18', 'inizio', 'partial'),
+    ('mref:2Cor.5.8_1', 'Fil 1,21–32', 0, 'Phil.1.21', 'inizio', 'partial'),
+    # manuale: rows of the table CORREZIONI
+    ('note:Luke.1.43', 'Marco (7,13', 0, 'Luke.7.13', 'manuale', 'resolved'),
+    ('note:Luke.7.11', 'Giovanni (7,22', 0, 'Luke.7.22', 'manuale', 'resolved'),
+    ('note:Rev.10.8', 'Giovanni (1,1–2.9–20', 0, 'Rev.1.1', 'manuale', 'resolved'),
+    ('note:1Macc.1.16', 'v 28', 0, 'Dan.11.28', 'manuale', 'resolved'),
+    ('note:1Macc.1.16', 'vv 31–39', 0, 'Dan.11.31', 'manuale', 'resolved'),
+    ('note:Jer.5.11', '8,14', 0, 'Isa.8.14', 'manuale', 'resolved'),
+    ('note:Jer.18.1', 'c 5', 0, 'Ezek.5.1', 'manuale', 'resolved'),
+    ('note:1Pet.1.23', '1,25', 1, 'Jas.1.25', 'manuale', 'resolved'),
+    ('note:1Pet.1.23', '1,25', 2, '1Pet.1.25', None, 'resolved'),                 # only the first one
+    ('note:Exod.20.1', 'v 9', 0, 'Jer.7.9', 'manuale', 'resolved'),
+    ('note:1Cor.12.31', 'v 13', 0, '1Cor.13.13', 'manuale', 'resolved'),
+    ('note:Josh.8.30', 'cc 11', 0, 'Deut.11.1', 'manuale', 'resolved'),
+    ('note:Matt.8.3', '8,1–4,5', 0, 'Matt.8.1', 'manuale', 'partial'),            # a misprint: its first verse
+    ('intro-atti.8', '15,22ss', 0, 'Rom.15.22', 'manuale', 'resolved'),
+    ('intro-apocalisse.2', 'Giovanni (1,9', 0, 'Rev.1.9', 'manuale', 'resolved'),
+    # introduzione: introductions to several books
+    ('intro-pentateuco.6', '1,1–15,21', 0, 'Exod.1.1', 'introduzione', 'resolved'),
+    ('intro-storici.11', '13,1–6', 0, 'Josh.13.1', 'introduzione', 'resolved'),
+    ('intro-profeti.51', '4,20', 0, 'Lam.4.20', 'introduzione', 'resolved'),
+    ('intro-sinottici.25', '1,32–34', 0, 'Mark.1.32', 'introduzione', 'resolved'),
+    ('intro-sinottici.18', '3,2', 0, 'Matt.3.2', 'introduzione', 'resolved'),
+    # nudo: "come in 11,7, o"
+    ('note:Gen.1.26', '11,7', 0, 'Gen.11.7', 'nudo', 'resolved'),
+    ('note:John.2.4', '19,26', 0, 'John.19.26', 'nudo', 'resolved'),
+    # aggiunta: rows of the table AGGIUNTE (the grammar does not read them)
+    ('note:Isa.11.2', '25–26', 0, 'Num.11.25', 'aggiunta', 'resolved'),          # "Nm 11,17 (Mosè); 25–26"
+    ('note:Josh.8.30', '27', 0, 'Deut.27.1', 'aggiunta', 'resolved'),             # "ai cc 11, 27 e 31 del Dt"
+    ('note:Josh.8.30', '31', 0, 'Deut.31.1', 'aggiunta', 'resolved'),
+    ('note:Exod.20.1', '22', 0, 'Deut.5.22', 'aggiunta', 'resolved'),             # "Dt 5, soprattutto vv 4 e 22"
+    # left as the grammar reads them (the current book is right)
+    ('note:Gen.1.1_2', '22,1a', 0, 'Gen.22.1', None, 'resolved'),
+    ('note:Deut.14.21', '5,14', 0, 'Deut.5.14', None, 'resolved'),
+]
+
+
+def test_contesto():
+    """The links of collegamenti.json read in the sense of the sentence (CONTEXT), the record of
+    each correction, and the table: every row used, every row with its reason."""
+    links = json.load(open(R.OUT, encoding='utf-8'))['links']
+    by = {}
+    for x in links:
+        by.setdefault((x['source'], x['raw']), []).append(x)
+    bad = []
+    for src, raw, nth, want, rule, status in CONTEXT:
+        lns = sorted(by.get((src, raw), []), key=lambda x: (x.get('offset', 0), x['id']))
+        if len(lns) < max(nth, 1):
+            bad.append('%s %r: no such link' % (src, raw))
+            continue
+        x = lns[max(nth, 1) - 1]
+        got = (R.first_target(x), x.get('corrected'), x['status'])
+        if got != (want, rule, status):
+            bad.append('%s %r: %s, expected %s' % (src, raw, got, (want, rule, status)))
+        if rule and not x.get('why'):
+            bad.append('%s %r: no reason' % (src, raw))
+        if rule and rule not in R.AGGIUNTI and x.get('corrected_from') == want:
+            bad.append('%s %r: corrected_from is the new target' % (src, raw))
+    first = next(x for x in links if x['id'] == 'note:Exod.12.48#c16')
+    if first.get('corrected_from') != 'Exod.26.12':
+        bad.append('note:Exod.12.48#c16: corrected_from %r, expected Exod.26.12' % first.get('corrected_from'))
+    rows = [r for r in R.CORREZIONI if not (r[0] and r[1] and r[3] in R.SIGLA and r[5])]
+    if rows:
+        bad.append('table rows without source, reference, siglum or reason: %s' % rows)
+    manual = sum(1 for x in links if x.get('corrected') == 'manuale')
+    if manual != len(R.CORREZIONI):
+        bad.append('%d links corrected by the table, %d rows' % (manual, len(R.CORREZIONI)))
+    if sum(1 for x in links if x.get('corrected') == 'aggiunta') != len(R.AGGIUNTE):
+        bad.append('the table AGGIUNTE: %d rows, %d links' % (
+            len(R.AGGIUNTE), sum(1 for x in links if x.get('corrected') == 'aggiunta')))
+    added = [x for x in links if x.get('corrected') in R.AGGIUNTI]
+    spans = {}
+    for x in links:
+        if x['kind'].endswith('-cites') and not x.get('corrected') in R.AGGIUNTI:
+            spans.setdefault(x['source'], []).append((x['offset'], x['offset'] + x['length']))
+    over = [x['id'] for x in added if any(a < x['offset'] + x['length'] and x['offset'] < b
+                                          for a, b in spans.get(x['source'], []))]
+    if over:
+        bad.append('added links overlapping a link of the grammar: %s' % over[:5])
+    assert not bad, '\n'.join(bad)
+
+
 def main(a):
     verbose = '-v' in a
     failed = 0
@@ -352,14 +466,14 @@ def main(a):
             print('FAIL %s%r\n     %s' % (fn.__name__, args, '\n     '.join(problems)))
         elif verbose:
             print('ok   %s%r' % (fn.__name__, args))
-    for test in (test_parse_structure, test_collegamenti_file):
+    for test in (test_parse_structure, test_collegamenti_file, test_contesto):
         try:
             test()
         except AssertionError as e:
             failed += 1
             print('FAIL %s: %s' % (test.__name__, e))
-    print('%d cases + parse structure + collegamenti.json: %s' % (
-        len(CASES), 'ok' if not failed else '%d failed' % failed))
+    print('%d cases + parse structure + collegamenti.json + %d read in the sense of the sentence: %s' % (
+        len(CASES), len(CONTEXT), 'ok' if not failed else '%d failed' % failed))
     return 1 if failed else 0
 
 

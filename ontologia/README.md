@@ -6,7 +6,12 @@ proofread LaTeX volumes in `progetti/`. Every verse is linked to the notes calle
 it, the notes commenting on it, the references printed in its margin, and every citation
 of it in a note or an introduction. The entries of X. Léon-Dufour's *Dizionario di
 Teologia Biblica* (1976) are in the same graph: every verse is also linked to the entries
-(and their sections and paragraphs) that cite it.
+(and their sections and paragraphs) that cite it. So is what the volume prints before the
+Old Testament and after the Apocalypse: the edition, the presentation and prefaces, the
+two lists of the canon, the abbreviations and codices, the woodcuts, the index of the most
+important notes (each reference linked to the BJ note it points to), the index of
+pastoral themes, the chronological table and the Hasmonean and Herodian dynasties; and the
+acrostic letters of the alphabetic poems, beside the line each one opens.
 
 Both texts are copyrighted (EDB, Marietti): everything here is for local use only (see
 *Licence* below for the dictionary). The IRIs live under
@@ -15,23 +20,24 @@ there; they are names, not links to follow.
 
 | File | What | Made by |
 |---|---|---|
-| `bj-ontologia.ttl` | OWL 2 vocabulary, prefix `bj:` (the dictionary in its last section) | hand-written |
+| `bj-ontologia.ttl` | OWL 2 vocabulary, prefix `bj:` (the dictionary, then the front matter and appendices, in its last sections) | hand-written |
 | `bj-forme.ttl` | SHACL shapes for the data | hand-written |
-| `query/*.rq` | 18 SPARQL examples (13–18 on the dictionary) | hand-written |
-| `bj-dati.ttl.gz` | the data graph, Turtle: the Bible and the dictionary | `tools/ontologia/rdf.py` |
+| `query/*.rq` | 26 SPARQL examples (13–18 on the dictionary, 19–26 on the front matter, appendices and acrostics) | hand-written |
+| `bj-dati.ttl.gz` | the data graph, Turtle: the Bible, the dictionary, the front matter and appendices | `tools/ontologia/rdf.py` |
 | `bj-dati.nt.gz` | the same triples, N-Triples (for bulk loaders) | `tools/ontologia/rdf.py` |
 | `bj-contesto.jsonld` | JSON-LD context: `bj:` terms by local name, data prefixes (pages are `pag:`) | `tools/ontologia/rdf.py` |
-| `bj-void.ttl` | VoID description of the data: title, rights, source, dumps, vocabularies, triples per class and per property, a subset for the Bible and one for the dictionary, two entry ↔ verse linksets | `tools/ontologia/rdf.py` |
+| `bj-void.ttl` | VoID description of the data: title, rights, source, dumps, vocabularies, triples per class and per property, a subset each for the Bible, the dictionary and the front matter and appendices, four entry ↔ verse linksets | `tools/ontologia/rdf.py` |
 | `build/bibbia.json`, `build/collegamenti.json` | intermediate JSON (stages 1 and 2) | `estrai.py`, `riferimenti.py` |
 | `build/dufour.json` | the entries of the *Dizionario di Teologia Biblica* (Léon-Dufour, 1976; read from `../dufour/corpus`) and their 30,257 Bible citations resolved to verses | `dufour.py` |
+| `build/paratesto.json` | the front matter and the appendices (`progetti/introduzione-generale`, `progetti/appendici`), their references resolved; `build/cronologia.tsv`, `indice-note.tsv`, `indice-temi.tsv` made again by `progetti/appendici/tsv.py` | `paratesto.py` |
 | `build/query.md` | rows and timings of the example queries at the last build | `interroga.py` |
 | `esplora.html` | the offline explorer: one page, data embedded (the Bible and the dictionary), opens from disk | `tools/ontologia/esploratore.py` |
 
 `build/` (about 92 MB) is listed in `.gitignore`, like `bj-dati.nt` unpacked for a triple
 store (about 750 MB): `make ontologia` rebuilds them. With the dictionary `bj-dati.nt.gz`
-is 25.6 MB (17.6 MB before), over the 20 MB above which a regenerable file is not kept in
+is 26.7 MB (25.6 MB before the front matter and appendices, 17.6 MB before the dictionary), over the 20 MB above which a regenerable file is not kept in
 git, so it is listed in `.gitignore` too (an earlier commit tracks it: `git rm --cached
-ontologia/bj-dati.nt.gz` stops that; `bj-dati.ttl.gz`, 13.9 MB, holds the same triples).
+ontologia/bj-dati.nt.gz` stops that; `bj-dati.ttl.gz`, 14.5 MB, holds the same triples).
 The other generated files are under 9 MB. The dumps and the page now also hold the
 dictionary's text, which its own corpus calls private: see *Licence* before committing
 them.
@@ -44,9 +50,9 @@ vendor/venv/bin/python -I tools/ontologia/costruisci.py
 ```
 
 The script runs every stage in order and stops at the first failed check: `estrai.py`
-(LaTeX to JSON), `riferimenti.py` (references to typed links), `test_riferimenti.py`, `dufour.py` and `test_dufour.py` (the citations of the Dizionario di Teologia Biblica),
+(LaTeX to JSON), `riferimenti.py` (references to typed links), `test_riferimenti.py`, `dufour.py` and `test_dufour.py` (the citations of the Dizionario di Teologia Biblica), `paratesto.py` and `test_paratesto.py` (the front matter and the appendices),
 `rdf.py` (JSON to RDF and the VoID description), `verifica_rdf.py` (checks of the graph), `interroga.py` on
-every query and `esploratore.py` (the explorer page). It takes about 11½ minutes; every generated file comes out byte-identical on every
+every query and `esploratore.py` (the explorer page). It takes about 13 minutes; every generated file comes out byte-identical on every
 run (two rebuilds from an empty `ontologia/`, same md5). The code is in `tools/ontologia/` (see its README).
 
 ## Explore
@@ -63,7 +69,13 @@ at that paragraph), the reader marks with `◊` the verses an entry names on the
 a passage of at most 3 verses (and its heat can show them), `#voce/<slug>[/<paragraph>]`
 shows an entry as printed with its citations as links, `#dizionario` lists the entries, the
 search finds them, the tree hangs entry cards from a verse (and the passages an entry cites
-from it), the overview counts them. The text is set in Literata and the interface in Inter, both embedded (SIL Open
+from it), the overview counts them. The front matter and the appendices too: the panel
+lists the entries of the index of notes and of the pastoral themes naming the verse (with
+the BJ note the index points to) and the chronology entries citing it; `#indice-note`,
+`#temi` (entry pages with every reference as a link and the notes to read in place),
+`#cronologia` (the table by period, and the dynasties), `#introduzione-generale` (the
+edition, the texts, the canon, the abbreviations and codices, the woodcuts); the reader
+shows the acrostic letters in the margin; the search finds them. The text is set in Literata and the interface in Inter, both embedded (SIL Open
 Font License, `tools/ontologia/esploratore/font/`). The reference box reads the forms printed in the BJ (`Gen 2,4b`, `Mt 5,3ss`,
 `Dt 7,9.12`, `Gen 1,1; 2,4`, `Sir prologo`). Ids in its addresses are those of the graph (`#John.3.16`), so a verse found
 there is `verso:John.3.16` here. Details in `tools/ontologia/README.md`, stage 4.
@@ -361,6 +373,117 @@ n-th bare reference the source did not link, recovered from the text), links
 `dufour.json` (`abele`, `abele.3`, `abele#2`) or, for sections and links, the IRI's local
 part. These IRIs hold `/` after the prefix, so the Turtle writes them in full.
 
+### The front matter and the appendices
+
+What the volume prints before the Old Testament (`progetti/introduzione-generale`) and
+after the Apocalypse (`progetti/appendici`) is the third part of the graph (VoID subset
+`vp:paratesto`), read by `tools/ontologia/paratesto.py` into `build/paratesto.json`. Its
+pages have their own numbering: `bj:PaginaPreliminare` (`pagprel:xxii`, Roman, PDF = n + 5)
+and `bj:PaginaAppendice` (`pagapp:3`, PDF = n + 3001), both `bj:Pagina`; every resource has
+`bj:pagina` and `prov:wasDerivedFrom` its page, as the Bible's.
+
+```
+id:edizione (bj:Edizione) ─bj:edizioneDi→ id:bibbia        ←bj:stampaDi─ bj:Stampa (5 printings)
+testopre:presentazione (bj:TestoPreliminare) ─dcterms:creator→ persona:gianfranco-ravasi
+    ←dcterms:isPartOf─ paragrafo:presentazione.1 (bj:Paragrafo) ←bj:daParagrafo─ bj:Citazione ─bj:aPassaggio→ …
+canone:ebraico (bj:Canone) ←isPartOf─ canone:ebraico/gruppo/3 ←isPartOf─ canone:ebraico/voce/8 ─bj:comprendeLibro→ libro:1Sam, libro:2Sam
+abbreviazione:9 (bj:Abbreviazione, skos:notation "1 2 Cor") ─bj:abbreviaLibro→ libro:1Cor, libro:2Cor
+abbreviazione:92 ─bj:abbreviaManoscritto→ manoscritto:01 (bj:Manoscritto, bj:numeroGregoryAland "01")
+xilografia:Gen (bj:Xilografia) ─bj:apreLibro→ libro:Gen ; ─bj:illustra→ passaggio:Gen.1.27 ; ─bj:illustraVersetto→ verso:Gen.1.27
+```
+
+- **The edition**: imprint data as printed (publisher, place, ISBN, the three sources of
+  text, notes and woodcuts as `dcterms:source`, the two imprimatur, three rights, the
+  printer, the colophon as `bj:testo`), the editorial direction (`bj:direzioneEditoriale`)
+  and the editor (`bj:curatore`), five printings with the printed date and the month
+  (`dcterms:date`, `xsd:gYearMonth`).
+- **Texts**: the Presentazione, the three prefaces (author as `foaf:Person`, `bj:firma`
+  and `bj:qualifica` as printed, `bj:corsivo` when the text is printed in italics), the
+  two divisions of the canon and the Avvertenze, with their paragraphs as `bj:Paragrafo`
+  and their Bible references as `bj:Citazione` (read like those of an introduction, no
+  current book) and the shortcut `bj:citaVersetto`.
+- **The canon**: the two lists as printed (`bj:Canone` → `bj:GruppoCanone` → `bj:VoceCanone`),
+  each item with the books (`bj:comprendeLibro`) or chapters (`bj:comprendeCapitolo`:
+  Susanna = Dn 13) of this Bible; the Greek list says `bj:deuterocanonico` (printed in
+  italics) and `bj:apocrifo` (in brackets: no book here).
+- **Abbreviations and codices**: each row of the lists (`skos:notation`, `bj:significato`,
+  `bj:tipoAbbreviazione`); a book siglum names its books through the CEI sigla of
+  `canone.py` («Est» both texts of Esther), a codex or papyrus row a `bj:Manoscritto` with
+  its Gregory-Aland number when it has one (`01`, `P46`, `066`; not the vetus latina).
+- **Woodcuts**: the Avvertenze list the passage the woodcut opening each book illustrates.
+
+```
+indice:note (bj:Indice, skos:ConceptScheme) ─skos:hasTopConcept→ indice:note/voce/91 (bj:VoceIndice «Caleb»)
+indice:note/voce/5/1 (sub-entry «Abitazione di Dio») ─skos:broader→ indice:note/voce/5
+citazione:indice-note.91-c1 (bj:Citazione «Gb 14,6») ─bj:daVoceIndice→ indice:note/voce/91
+    ─bj:aPassaggio→ passaggio:Job.14.6 (as printed) ; ─bj:aPassaggioCorretto→ passaggio:Josh.14.6 ;
+    ─bj:indicaNota→ nota:Josh.14.6 ; bj:testoCorretto "Gs 14,6" ; bj:correzione "…" ; bj:corrispondenzaNota
+indice:note/voce/91 ─bj:indicaVersetto→ verso:Josh.14.6 ─bj:nellIndice→ indice:note/voce/91 ; ─bj:indicaNota→ nota:Josh.14.6
+indice:note/voce/2 ─bj:vediVoce, skos:related→ indice:note/voce/186 («v. Ebiatàr») ; ─bj:rinviaAIntroduzione→ introduzione:…
+```
+
+- **The two indices** are SKOS concept schemes. Entries are top concepts (`skos:prefLabel`
+  as printed, `bj:stile` maiuscoletto / corsivo / tondo / grassetto); sub-entries are
+  `skos:broader` the entry (`skos:narrower` back), labelled with the dash replaced by the
+  headword («Abitazione di Dio») and `bj:etichetta` as printed («- di Dio»). «v.» is
+  `bj:vediVoce` (the printed direction) under `skos:related` (both directions); page numbers
+  of the edition are `bj:rinviaAIntroduzione` (the introduction printed there).
+- **Each printed reference** is a `bj:Citazione` from its (sub-)entry, made by the same
+  resolver (`bj:libroImplicito` 1 when its book is inherited from the chain, 2 when only the
+  text names it, `bj:seguito` «e par», «ecc.»). In the index of the notes it also points to
+  the BJ note at its first verse (`bj:indicaNota`), with `bj:corrispondenzaNota`: `nota` (a
+  note is called or starts there), `copre` (the verse is inside a note's label),
+  `capitolo`, `rimandi` (margin references only), `nessuna`: the index exists to point to
+  notes. The shortcuts `bj:indicaVersetto` / `bj:nellIndice` and `bj:indicaNota` hang from the
+  most specific (sub-)entry.
+- **Misprints** stay as printed (`bj:testo`, `bj:aPassaggio` the verse printed, or no passage
+  when it does not exist). Where the volume's log of doubts (`progetti/appendici/checklist-ocr.md`)
+  states the correction and its evidence (5 in the index of notes: Caleb `Gb 14,6` → Gs 14,6,
+  Lc 22,60 → 66, Gv 13,24 → 34, Mt 5,11 → 17, Is 7,10 → 14; 11 in the themes: `Cr 28,9` → 1Cr,
+  `Na 8,7–9` → Ne, the Isaiah and Psalm references printed after another siglum, …) the
+  citation adds `bj:aPassaggioCorretto`, `bj:testoCorretto`, `bj:correzione`, the note there,
+  and the shortcuts use the corrected passage only. Misprints the log does not correct
+  (`Gv 2,38`, `Rm 11–7`, Ester `4,18ss`, …) keep only their reason.
+
+```
+cronologia:tavola (bj:TavolaCronologica) ←isPartOf─ cronologia:sezione/6 ←isPartOf─ cronologia:voce/133 (bj:EventoCronologia)
+cronologia:voce/133 bj:testo "ASSARADDON (680–669). …" ; bj:datazione "680–669" ; bj:annoInizio -680 ; bj:annoFine -669 ;
+    bj:colonna bj:colonnaUniversale ; bj:riga 44 ; bj:ordine 1 ; bj:nomeMaiuscolo "ASSARADDON" ; bj:citaVersetto …
+dinastia:P15 (bj:PersonaStorica, schema:Person «11. Erode il Grande») ─schema:spouse→ dinastia:P16 ; ─schema:children→ …
+verso:Nah.1.3 ─bj:haLetteraAcrostica→ acr:Nah.1.3.1 (bj:LetteraAcrostica «Bet», "ב", bj:posizioneAlfabeto 2, bj:rigo 3)
+```
+
+- **The chronological table**: 9 sections, its 585 entries as `bj:EventoCronologia` (a
+  `schema:Event`) with the text as printed (`bj:testoHtml` keeps italics and small caps), the
+  column (a SKOS concept of `bj:colonneCronologia`: world history, Palestinian and biblical
+  history, the kingdoms of Israel and Judah, Egypt, Lagids, Seleucids), the row of the print
+  and the order in its cell, the years of the margin scale as printed (`bj:anniMargine`), the
+  date as printed (`bj:datazione`: at the start of the entry, «Nov. 164», «Fra il 34 e il
+  45», or the one span in parentheses, «(51–30)») and, when it is unambiguous, the years
+  `bj:annoInizio` / `bj:annoFine` (integers, negative before Christ, no year zero; sections
+  I–VIII are before Christ, section IX turns at the first row dated «d.C.»; `bj:circa` for
+  «ca.», «verso»), the names in small caps and capitals, and its Bible references as
+  `bj:Citazione` (`bj:daEvento`, offsets in the entry text) with `bj:citaVersetto`.
+  Integers and not `xsd:gYear`: XSD 1.0 and 1.1 disagree on the year before 1, and the
+  print counts years, it does not give dates.
+- **The dynasties** (Hasmonean and Herodian): the 34 persons of `dinastie.tsv` as
+  `bj:PersonaStorica` (also `schema:Person`) in `dinastia:tavola`, with the order number,
+  the dates and the italics as printed, and the family links as **schema.org**
+  `schema:parent`, `schema:children` (its inverse, materialised) and `schema:spouse` (both
+  directions). schema.org is used because these three properties say exactly what the chart
+  draws and nothing more; FOAF has no kinship, and BIO models a family through birth and
+  marriage events the chart does not print. The persons are not `foaf:Person` (whose shape
+  asks for a family name: these are historical persons, not authors).
+- **Acrostic letters**: besides the `bj:acrostico` literals (now up to three on a verse:
+  Sal 111,9), each letter is a `bj:LetteraAcrostica` with the name as printed but without the
+  parentheses (`bj:testo` «Mem», as `bj:acrostico`; SHACL: a name, no brackets), the Hebrew
+  character, its place in the alphabet, the line of the verse it opens (`bj:rigo`: Na 1,3 Bet
+  is on the third line, where the stanza begins) and `bj:mancanteNelTesto` true for the five
+  printed in parentheses, «(Mem)» (Sal 10,3.4.6.10; 25,18). All the letters are
+  `\acrostico{…}` in the volumes since stage 6b (`\acrostico{(Mem)}` for the bracketed ones).
+  Stage 1 records the line (`acrostic_lines`); 339 letters in Psalms, Pr 31, Lamentations
+  (132, added in stage 3 of this work) and Na 1 (11).
+
 ### Alignments
 
 Only where the meaning matches: `dcterms:isPartOf`, `dcterms:title`, `dcterms:identifier`;
@@ -372,8 +495,11 @@ scopes, and for the dictionary's entries (`skos:Concept`, `skos:ConceptScheme`,
 `skos:prefLabel`, `skos:altLabel`, `skos:related`); FOAF for its authors (`foaf:Person`,
 `foaf:name`); `dcterms:creator`, `dcterms:contributor` (super-property of `bj:curatore`,
 `bj:traduttore`), `dcterms:issued`, `dcterms:alternative`, `dcterms:bibliographicCitation`
-for the work; `cito:isCitedBy` above `bj:citatoNellaVoce`. schema.org adds nothing here
-that these do not say, so it is not used.
+for the work; `cito:isCitedBy` above `bj:citatoNellaVoce` and `bj:nellIndice`; SKOS
+`skos:broader`, `skos:narrower`, `skos:notation` for the indices and the abbreviations;
+schema.org only for what nothing above says: `schema:Event` (superclass of
+`bj:EventoCronologia`), `schema:Person` with `schema:parent`, `schema:children`,
+`schema:spouse` for the dynasties.
 The ontology carries `vann:preferredNamespacePrefix "bj"`; the dataset is described in
 VoID (`bj-void.ttl`: `void:Dataset` with title, rights, source, dumps, vocabularies,
 `void:exampleResource`, and one class and property partition each, with counts).
@@ -385,16 +511,17 @@ Every `bj:` term has `rdfs:label` and `rdfs:comment` in Italian and English.
 have IRIs and datatype properties literals of their range, no IRI is dangling, the
 counts equal the JSON (the dictionary's against `dufour.json`: 849 entries, 519
 redirects, 3,022 sections, 4,149 paragraphs, 18,207 links, 30,257 citations, 72 people),
-the passages of each link and citation hold exactly its targets; it writes
+the passages of each link and citation hold exactly its targets (the corrected passages of
+the indices too), the front matter and appendices against `paratesto.json`; it writes
 `bj-void.ttl` and parses it back (`void:triples` equal to the graph, and to the sum of the
-two subsets).
+three subsets).
 `verifica_rdf.py` then checks the written files:
 
 - rdflib's N-Triples and Turtle parsers and the fast reader of `grafo.py` give the same
-  3,527,956 triples;
-- OWL sanity: each `bj:` term is declared with one kind; all 2.6 million triples with a
+  3,718,625 triples;
+- OWL sanity: each `bj:` term is declared with one kind; all 2.7 million triples with a
   `bj:` property have subject and object of its `rdfs:domain` and `rdfs:range`;
-- 43 SPARQL integrity queries on the whole graph, about 3 minutes (counts against the JSON, exactly one
+- 77 SPARQL integrity queries on the whole graph, about 3 minutes (counts against the JSON, exactly one
   text and chapter per verse, `bj:precede` goes to order + 1, inverses and symmetric and
   subproperty closures complete, every shortcut edge backed by a printed reference or
   citation, resolved references have passages); 20 of them on the dictionary: its counts
@@ -404,11 +531,23 @@ two subsets).
   an entry and every target section belongs to it, sections and paragraphs lie in their
   entry, `bj:voceCitaVersetto` holds exactly the 119,506 (entry, verse) pairs of the JSON,
   each backed by a citation, `bj:citatoNellaVoce` is its exact inverse, the entry shortcuts
-  are backed by a printed link and `skos:related` is symmetric;
-- SHACL (`bj-forme.ttl`, pyshacl) on the **whole graph**: 25 node shapes (8 for the
-  dictionary: work, people, pages, entries, redirects, sections, paragraphs, links; the
-  citation shape also takes a dictionary paragraph or section title as citing entity),
-  234,807 typed resources, about 4.5 minutes; it conforms;
+  are backed by a printed link and `skos:related` is symmetric; 33 on the front matter and
+  appendices: counts against `paratesto.json` (texts, paragraphs, manuscripts, woodcuts,
+  entries and sub-entries of each index, references by status, chronology entries, years and
+  citations, persons, acrostic letters), the 39 books of the Hebrew canon, every sub-entry
+  under a top entry of its scheme and `skos:narrower` the inverse of `skos:broader`,
+  `bj:indicaVersetto` equal to the (entry, verse) pairs of the JSON and backed by a citation of
+  the entry, `bj:nellIndice` its inverse, the notes an entry points to backed by its citations
+  and lying at a verse of the citation's passage (two exceptions, both in Esther, counted),
+  the corrections, `schema:spouse` symmetric and `schema:children` the inverse of
+  `schema:parent`;
+- SHACL (`bj-forme.ttl`, pyshacl) on the **whole graph**: 43 node shapes (8 for the
+  dictionary: work, people, pages, entries, redirects, sections, paragraphs, links; 18 for
+  the front matter and appendices: edition, printings, pages, texts, canon, groups, items,
+  abbreviations, manuscripts, woodcuts, indices, entries, the chronological table, its
+  sections and entries, the genealogical chart, its persons, acrostic letters; the citation
+  shape also takes a dictionary paragraph or section title, an index entry or a chronology
+  entry as citing entity), 245,638 typed resources, about 6 minutes; it conforms;
 - the JSON-LD context: John 3,16 with its notes, margins and passages, and the entry ABELE
   with its sections, paragraphs, citations and links, serialised with
   `bj-contesto.jsonld` (compact terms and prefixes) and parsed back, gives the same triples.
@@ -466,46 +605,78 @@ Rows and rdflib timings at the last build (`build/query.md`); the graph loads on
 | `06-note-che-citano.rq` | notes and introductions citing Gen 15,6 | 7 | 0.04 |
 | `07-note-chiave.rq` | key-note hubs: notes most often sent to by «+» | 25 | 0.59 |
 | `08-due-passi.rq` | two-hop paths Gen 22,2 → ? → Rm 8,32 along `bj:rimandaA` | 1 | 0.02 |
-| `09-matrice-libri.rq` | book × book matrix of margin references | 2372 | 3.66 |
+| `09-matrice-libri.rq` | book × book matrix of margin references | 2373 | 3.58 |
 | `10-pericope.rq` | the verses of the pericope holding Lc 15,11, with their note counts | 22 | 0.02 |
 | `11-salmi-nel-nt.rq` | Psalms quoted in the NT, by NT book | 16 | 0.14 |
-| `12-irrisolti.rq` | unresolved references with their reason (BJ 101, dictionary 93) | 194 | 0.17 |
+| `12-irrisolti.rq` | unresolved references with their reason (BJ 95, dictionary 93) | 188 | 0.16 |
 | `13-voci-che-citano.rq` | the dictionary entries citing Gv 1,14, with section, paragraph, citation as printed, page (a paragraph before the first heading has no section) | 39 | 0.03 |
 | `14-piu-citati-dal-dizionario.rq` | the 25 verses most cited by the dictionary (citations, entries; Is 53,12 first) | 25 | 17.34 |
 | `15-voci-con-versetti-comuni.rq` | the entries sharing the most cited verses with AGNELLO DI DIO, and whether they are linked (the all-pairs form is in the file: about 2 minutes in rdflib) | 25 | 0.14 |
 | `16-voce-e-note-bj.rq` | for the entry ABELE: its verses, the BJ notes commenting on them and those citing them | 16 | 1.58 |
 | `17-dizionario-e-margini.rq` | pairs of verses a paragraph of AGNELLO DI DIO cites together that the BJ margins also link, with the margin references | 57 | 0.49 |
-| `18-autori-e-libri.rq` | the 70 authors: citations in the entries they signed, books cited, the most cited book (Grelot: Salmi, 483) | 70 | 3.53 |
+| `18-autori-e-libri.rq` | the 70 authors: citations in the entries they signed, books cited, the most cited book (Grelot: Salmi, 483) | 70 | 3.51 |
+| `19-indice-note-di-un-versetto.rq` | the entries of the index of notes pointing to Gv 1,14, the note they send to and how it matches | 5 | 0.02 |
+| `20-voce-indice-e-note.rq` | the entry ALLEANZA of the index of notes: sub-entries, references, the start of the notes they send to | 21 | 4.28 |
+| `21-temi-pastorali-di-un-libro.rq` | the pastoral themes pointing to most verses of Tobia, with their sub-themes | 4 | 2.59 |
+| `22-cronologia-esilio.rq` | the chronological table between 600 and 530 BC: printed date, years, column, text, references | 22 | 0.27 |
+| `23-figli-di-erode.rq` | the children of Herod the Great with their mothers and spouses (`schema:`) | 5 | 0.02 |
+| `24-refusi-degli-indici.rq` | the misprints of the indices with the corrected reference, why, and the note it sends to | 17 | 0.05 |
+| `25-acrostici.rq` | the alphabetic poems by chapter: letters, the line where the Bet stanza begins, letters missing in the Hebrew text | 15 | 0.44 |
+| `26-canone-greco.rq` | the deuterocanonical books of the Greek list and the books or chapters of this Bible they are | 9 | 0.01 |
 
 ## Size
 
-`bj-dati.ttl.gz` 13.9 MB, `bj-dati.nt.gz` 25.6 MB (3,527,956 triples about 234,807
-resources; uncompressed N-Triples 747 MB); `bj-ontologia.ttl` 1,392 triples, 149 `bj:`
-terms; `bj-forme.ttl` 25 node shapes. The dictionary added 1,121,849 triples (the VoID
-subset `vp:dizionario`); the Bible's 2,406,107 are unchanged, triple for triple.
+`bj-dati.ttl.gz` 14.5 MB, `bj-dati.nt.gz` 26.7 MB (3,718,625 triples about 245,638
+resources); `bj-ontologia.ttl` 2,046 triples, 230 `bj:` terms; `bj-forme.ttl` 43 node shapes.
+Three VoID subsets: the Bible 2,439,195 triples (2,406,107 before this stage: +32,962), the
+dictionary 1,120,756 (−1,093: passages now described first by the Bible's new links), the
+front matter and appendices 158,674. Compared with the previous build, triple by triple
+(both dumps sorted as rdflib N-Triples), 847 triples are gone, all from the 87 citations
+the sense of the sentence reads again (their former passages, statuses, reasons and the
+`bj:citaVersetto` of the wrong verses: 301 of a note, 1 of an introduction; 26 passages no
+longer named; 6 margin references now partial or in the other Esther text), and 191,287 are
+new: the 817 added citations and the corrected ones (84,395 triples about citations, with
+their passages), the front matter and appendices, `bj:nellIndice` on 16,449 verse–entry
+pairs, 187 acrostic letters and 339 `bj:LetteraAcrostica`.
+
+The fixes of stage 6b (the audit of the front matter and the appendices) changed 271 triples of
+that build: 250 new, 21 gone (the two dumps compared sorted). Gone: the bracketed acrostic names
+(«(Mem)» … now «Mem», 10 literals), the «v.» of Šekina to «Presentazione (gesto di)» and of
+Peccato to «Confessioni di Geremia» (6), the temi citation of «12,7» to Os 12,7 (3), the date of
+chronology entry 423 («14–37»). New: the four citations of the table `AGGIUNTE` with their
+passages and verses (Nm 11,25–26, Dt 27, Dt 31, Dt 5,22: 58 `bj:citaVersetto`), 25 chronology
+dates read from the leading day-month forms (`bj:datazione`, `bj:annoInizio`, `bj:annoFine`,
+`bj:circa`), the three «v.» of the table `RIMANDI` (`bj:vediVoce` and `skos:related` both ways),
+Mt 12,7 in the index of the themes, the names without parentheses.
 
 | Resources | | Triples by property (largest) | |
 |---|---:|---|---:|
-| `bj:Citazione` (BJ, dictionary) | 57,562 (27,305, 30,257) | `rdf:type` | 236,465 |
-| `bj:Passaggio` | 36,931 | `rdfs:label` | 224,347 |
-| `bj:Versetto` | 35,762 | `dcterms:identifier` | 220,331 |
-| `bj:Rimando` | 28,669 | `bj:comprende` | 183,000 |
-| `bj:Margine` | 18,455 | `bj:testo` | 145,144 |
-| `bj:CollegamentoVoce` | 18,207 | `bj:citaVersetto` | 130,079 |
+| `bj:Citazione` (BJ, dictionary, front matter and appendices) | 63,561 (28,122, 30,257, 5,182) | `rdf:type` | 247,038 |
+| `bj:Passaggio` | 37,759 | `rdfs:label` | 234,875 |
+| `bj:Versetto` | 35,762 | `dcterms:identifier` | 229,799 |
+| `bj:Rimando` | 28,669 | `bj:comprende` | 196,221 |
+| `bj:Margine` | 18,455 | `bj:testo` | 152,279 |
+| `bj:CollegamentoVoce` | 18,207 | `bj:citaVersetto` | 140,121 |
 | `bj:Nota`, `oa:TextualBody` | 10,762 each | `bj:voceCitaVersetto`, `bj:citatoNellaVoce` | 119,506 each |
-| `bj:ParagrafoVoce` | 4,149 | `bj:stato` | 104,438 |
-| `bj:Pericope` | 3,455 | `bj:aPassaggio` | 88,350 |
-| `bj:SezioneVoce` | 3,022 | `bj:rimandaA` | 83,952 |
-| `bj:Pagina` | 2,935 | `prov:wasDerivedFrom`, `bj:pagina` | 78,180, 77,453 |
-| `bj:Capitolo` | 1,339 | `bj:nellaVoce` | 55,635 |
-| `bj:Voce` (`skos:Concept`), of which `bj:VoceRinvio` | 849, 519 | `bj:commenta` | 38,939 |
-| `bj:PaginaDizionario` | 778 | `skos:related` | 19,222 |
-| `bj:Paragrafo` | 547 | `bj:paralleloA` | 14,926 |
-| `bj:Divisione` | 452 | `bj:haNota`, `bj:richiamataDa` | 10,762 each |
-| `bj:Libro` | 74 | `bj:richiamaVoce`, `bj:vediAncheVoce`, `bj:rinviaAVoce` | 8,242, 4,646, 2,142 |
-| `foaf:Person` | 72 | `bj:rinviaANotaChiave` | 4,663 |
-| `bj:Introduzione` | 21 | `bj:doppioneDi`, `bj:citatoIn` | 1,848, 1,370 |
-| `bj:Testamento`, `bj:Bibbia`, `bj:Dizionario` | 2, 1, 1 | `skos:altLabel` | 60 |
+| `bj:ParagrafoVoce` | 4,149 | `bj:stato` | 110,437 |
+| `bj:Pericope` | 3,455 | `bj:aPassaggio` | 94,760 |
+| `bj:SezioneVoce` | 3,022 | `prov:wasDerivedFrom`, `bj:pagina` | 86,478, 85,751 |
+| `bj:Pagina` (+ 24 front-matter, 52 appendix pages) | 2,935 | `bj:rimandaA` | 83,956 |
+| `bj:VoceIndice` (628 + 550 notes, 96 + 1,238 themes) | 2,512 | `bj:nellaVoce` | 55,635 |
+| `bj:Capitolo` | 1,339 | `bj:commenta` | 38,939 |
+| `bj:Voce` (`skos:Concept`), of which `bj:VoceRinvio` | 849, 519 | `bj:indicaVersetto`, `bj:nellIndice` | 16,449 each |
+| `bj:PaginaDizionario` | 778 | `bj:paralleloA` | 14,926 |
+| `bj:Paragrafo` (547 introductions, 78 front matter) | 625 | `bj:haNota`, `bj:richiamataDa` | 10,762 each |
+| `bj:EventoCronologia` | 585 | `bj:daVoceIndice` | 4,957 |
+| `bj:Divisione` | 452 | `bj:rinviaANotaChiave` | 4,663 |
+| `bj:LetteraAcrostica` | 339 | `bj:indicaNota` | 3,646 |
+| `bj:Abbreviazione`, `bj:Manoscritto` | 147, 56 | `bj:annoInizio`, `bj:annoFine` | 387 each |
+| `foaf:Person` (70 + 2 of the dictionary, 5 of the edition) | 77 | `bj:vediVoce` | 247 |
+| `bj:Libro`, `bj:Xilografia`, `bj:VoceCanone` | 74, 73, 59 | `bj:acrostico` | 339 |
+| `bj:PersonaStorica` (`schema:Person`) | 34 | `schema:parent` (and `schema:children`), `schema:spouse` | 32, 24 |
+| `bj:Introduzione`, `bj:SezioneCronologia`, `bj:TestoPreliminare`, `bj:GruppoCanone` | 21, 9, 7, 7 | `bj:doppioneDi`, `bj:citatoIn` | 1,848, 1,370 |
+| `bj:Stampa`, `bj:Testamento`, `bj:Canone`, `bj:Indice` | 5, 2, 2, 2 | `bj:testoCorretto`, `bj:aPassaggioCorretto` | 16 each |
+| `bj:Bibbia`, `bj:Dizionario`, `bj:Edizione`, `bj:TavolaCronologica`, `bj:TavolaGenealogica` | 1 each | `skos:altLabel` | 60 |
 
 ## Known limits
 
@@ -518,9 +689,30 @@ subset `vp:dizionario`); the Bible's 2,406,107 are unchanged, triple for triple.
   see `tools/ontologia/README.md`, stage 2.
 - A margin reference is tied to the verse of its printed line; one pushed down a crowded
   margin column stays with the line it is printed beside.
-- Unresolved references (101 in the BJ, 93 in the dictionary, `query/12-irrisolti.rq`)
+- Unresolved references (95 in the BJ, 93 in the dictionary, `query/12-irrisolti.rq`)
   are kept with their reason and no passage; misprints are never corrected in the BJ
-  (in the dictionary a few are, by hand and with their reason in `bj:conversione`).
+  (a range with a misprinted end is linked to its first verse, `bj:parziale`; in the
+  dictionary a few are corrected by hand, with their reason in `bj:conversione`; in the
+  indices 16, where the volume's log of doubts states the correction, as
+  `bj:aPassaggioCorretto` beside the printed passage).
+- The sense of the sentence (stage 2) reads again 87 citations and adds 817 by rules and a
+  table of 48 rows written after an audit of the Tufte edition; other citations whose book
+  is given only by the prose may still be read in the book in force.
+- Indices: a reference names the passage printed; the note it «points to» is the one at the
+  first verse (or covering it), as `tsv.py` decides: two Esther references resolve in the
+  Hebrew text while their BJ note is on the Greek one; 3 «v.» match no headword
+  (`v. Festa`, `v. Tentazione`, `v. Sorte`): they point to the obvious entries (`Feste
+  d’Israele`, `Tentare`, `Sorti (tirare le)`) by a table of `tsv.py`, with the reason in the
+  item (`why`); «cf. pp. 1032, 1376» (Sapienza) are not pages of this edition and point to no
+  introduction; a sub-entry printed twice in one theme is two sub-entries.
+- Chronology: years only where the date is unambiguous (387 of 585 entries); the margin
+  years are a scale of the print, kept as printed, not a date of the entry; names in small
+  caps or capitals are strings, not persons; the dynasties are not linked to the index or
+  the chronology. The calendar, the feasts, the measures and coins and the maps of the
+  appendices are not in the graph.
+- Front matter: the Bible references of the texts are read without a current book, so
+  «Esodo (2,2–3)» in a running text is a reference only where the book is named in a form
+  the resolver knows (the woodcut list is read on its own, all 73 resolved).
 - `bj:rimandaA` expands ranges verse by verse, so wide references (`Gb 38–39`) weigh as
   much as many narrow ones in path and degree queries; count `bj:Rimando` resources for
   printed references.
