@@ -2,11 +2,11 @@
 
 usage: from grafo import carica; g = carica()
 
-rdflib's own N-Triples parser needs about 65 s for the 2.4 million triples; this
+rdflib's own N-Triples parser needs about 2 minutes for the 3.5 million triples; this
 reader knows the subset rdf.py writes (one triple per line, IRIs in <>, literals with
 only \\\\ \\" \\n \\r escaped, @it/@en or ^^<datatype>) and builds the terms itself, each
 once, into a SimpleMemory store (no named graphs, half the insertion cost of Memory):
-about 20 s. A pickled store is no faster to load (about 47 s, 650 MB), so there is
+about 45 s. A pickled store is no faster to load (about 47 s, 650 MB), so there is
 no cache. verifica_rdf.py checks that this reader and rdflib's parser give the same
 graph.
 """

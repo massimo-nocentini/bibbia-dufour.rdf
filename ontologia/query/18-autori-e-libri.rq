@@ -1,0 +1,38 @@
+# Gli autori del dizionario: citazioni bibliche risolte nelle voci che hanno firmato (una
+# voce firmata da due autori conta per entrambi), libri citati e il libro citato di più.
+# The authors of the dictionary: resolved Bible citations in the entries they signed,
+# books cited and their most cited book (the largest "count name" string per author: one
+# subquery, no join, which rdflib evaluates in seconds).
+PREFIX bj: <https://massimo-nocentini.github.io/bibbia-gerusalemme/ontologia#>
+PREFIX verso: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/verso/>
+PREFIX libro: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/libro/>
+PREFIX voce: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/voce/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX oa: <http://www.w3.org/ns/oa#>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+
+SELECT ?autore ?citazioni ?libri ?libro_piu_citato ?volte WHERE {
+  {
+    SELECT ?a (SUM(?k) AS ?citazioni) (COUNT(?l) AS ?libri)
+           (MAX(CONCAT(SUBSTR(STR(100000 + ?k), 2), " ", ?nome)) AS ?primo) WHERE {
+      {
+        SELECT ?a ?l ?nome (COUNT(DISTINCT ?c) AS ?k) WHERE {
+          ?x dcterms:creator ?a .
+          ?c bj:nellaVoce ?x ; bj:aPassaggio ?p .
+          ?p oa:hasSource ?l .
+          ?l rdfs:label ?nome .
+        }
+        GROUP BY ?a ?l ?nome
+      }
+    }
+    GROUP BY ?a
+  }
+  ?a foaf:name ?autore .
+  BIND (STRAFTER(?primo, " ") AS ?libro_piu_citato)
+  BIND (xsd:integer(STRBEFORE(?primo, " ")) AS ?volte)
+}
+ORDER BY DESC(?citazioni) ?autore

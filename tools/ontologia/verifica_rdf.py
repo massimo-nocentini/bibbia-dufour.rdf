@@ -10,9 +10,14 @@ bj-contesto.jsonld:
             kind only (class, object / datatype / annotation property, concept); every
             subject and object of a bj: property is of its rdfs:domain / rdfs:range
   SPARQL    integrity queries on the whole graph: cardinalities, inverse and symmetric
-            closures, shortcuts backed by the reified links, counts equal to the JSON
-  SHACL     pyshacl with bj-forme.ttl on the whole graph (about 2.5 minutes)
-  JSON-LD   a few resources serialised with the context and parsed back unchanged
+            closures, shortcuts backed by the reified links, counts equal to the JSON; for
+            the dictionary: counts equal to dufour.json (entries, sections, paragraphs,
+            links, citations by status, verses cited), every citation target a declared
+            verse, every entry link resolved to an entry (and its section to that entry),
+            the entry <-> verse and entry <-> entry shortcuts backed and closed
+  SHACL     pyshacl with bj-forme.ttl on the whole graph (about 4.5 minutes)
+  JSON-LD   a few resources (John 3,16, the entry ABELE) serialised with the context and
+            parsed back unchanged
 Exit status 1 if any check fails.
 """
 import gzip
@@ -26,7 +31,7 @@ from multiprocessing import Pool
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-from rdf import BJ, BIBBIA, COLLEGAMENTI, CONTESTO, NT, ONTOLOGIA, PREFISSI, TTL  # noqa: E402
+from rdf import BJ, BIBBIA, COLLEGAMENTI, CONTESTO, DUFOUR, NT, ONTOLOGIA, PREFISSI, TTL  # noqa: E402
 import grafo  # noqa: E402
 
 FORME = os.path.join(os.path.dirname(ONTOLOGIA), 'bj-forme.ttl')
@@ -109,11 +114,11 @@ def conta(classe, sopra=''):
     return 'SELECT (COUNT(?x) AS ?n) WHERE { ?x a %s %s}' % (classe, sopra)
 
 
-def integrita(data, coll):
+def integrita(data, coll, dz):
     """(name, query, expected value of the single result ?n)."""
     links = coll['links']
     nmref = sum(1 for l in links if l['kind'] == 'mref')
-    ncit = sum(1 for l in links if l['kind'].endswith('-cites'))
+    ncit = sum(1 for l in links if l['kind'].endswith('-cites')) + len(dz['citations'])
     cited = set((l['source'].rsplit('.', 1)[0] if l['kind'] == 'intro-cites' else l['source'], t)
                 for l in links if l['kind'].endswith('-cites') and l['status'] in ('resolved', 'partial')
                 for t in l['targets'])
@@ -124,8 +129,8 @@ def integrita(data, coll):
         ('margin references', conta('bj:Rimando'), nmref),
         ('citations', conta('bj:Citazione'), ncit),
         ('pericopes', conta('bj:Pericope'), len(data['pericopes'])),
-        ('unresolved references', conta('?c', '; bj:stato bj:irrisolto '),
-         sum(1 for l in links if l['status'] == 'unresolved' and l['kind'] != 'note-label')),
+        ('unresolved references and citations', conta('?c', '; bj:stato bj:irrisolto ; a ?k FILTER (?k != bj:CollegamentoVoce) '),
+         sum(1 for l in links + dz['citations'] if l['status'] == 'unresolved' and l.get('kind') != 'note-label')),
         ('verses without exactly one text',
          'SELECT (COUNT(?v) AS ?n) WHERE { { SELECT ?v WHERE { ?v a bj:Versetto . OPTIONAL { ?v bj:testo ?t } }'
          ' GROUP BY ?v HAVING (COUNT(?t) != 1) } }', 0),
@@ -148,9 +153,9 @@ def integrita(data, coll):
         ('margin references without verse, margin or relation',
          'SELECT (COUNT(?x) AS ?n) WHERE { ?x a bj:Rimando FILTER (NOT EXISTS { ?x bj:daVersetto ?v }'
          ' || NOT EXISTS { ?x bj:relazione ?r } || NOT EXISTS { ?x bj:nelMargine ?m }) }', 0),
-        ('resolved references without a passage or a book',
+        ('resolved references without a passage or a book (links: an entry)',
          'SELECT (COUNT(?x) AS ?n) WHERE { ?x bj:stato ?s VALUES ?s { bj:risolto bj:parziale }'
-         ' FILTER NOT EXISTS { ?x bj:aPassaggio|bj:libroCitato ?p } }', 0),
+         ' FILTER NOT EXISTS { ?x bj:aPassaggio|bj:libroCitato|bj:aVoce ?p } }', 0),
         ('passages include their ends',
          'SELECT (COUNT(?p) AS ?n) WHERE { ?p bj:inizio|bj:fine ?v ; a bj:Passaggio'
          ' FILTER NOT EXISTS { ?p bj:comprende ?v } }', 0),
@@ -175,12 +180,61 @@ def integrita(data, coll):
          'SELECT (COUNT(?r) AS ?n) WHERE { ?r bj:relazione bj:citatoDopo ; bj:stato bj:risolto ;'
          ' bj:daVersetto ?a ; bj:aPassaggio/bj:comprende ?b FILTER (?a != ?b)'
          ' FILTER NOT EXISTS { ?a bj:citatoIn ?b } }', 0),
+    ] + integrita_dizionario(dz)
+
+
+def integrita_dizionario(dz):
+    """The dictionary: counts of stage 2b, targets, links and shortcuts."""
+    stato = lambda k: sum(1 for c in dz['citations'] if c['status'] == k)  # noqa: E731
+    coppie = set((c['voce'], t) for c in dz['citations'] if c['status'] in ('resolved', 'partial')
+                 for t in c['targets'])
+    corte = 'bj:richiamaVoce|bj:vediAncheVoce|bj:rinviaAVoce'
+    return [
+        ('dictionary: entries', conta('bj:Voce'), len(dz['voci'])),
+        ('dictionary: redirect entries', conta('bj:VoceRinvio'), sum(1 for v in dz['voci'] if v['kind'] == 'redirect')),
+        ('dictionary: sections', conta('bj:SezioneVoce'), sum(len(v.get('sections', [])) for v in dz['voci'])),
+        ('dictionary: paragraphs', conta('bj:ParagrafoVoce'), sum(len(v.get('paragraphs', [])) for v in dz['voci'])),
+        ('dictionary: links between entries', conta('bj:CollegamentoVoce'), len(dz['links'])),
+        ('dictionary: unresolved links', conta('bj:CollegamentoVoce', '; bj:stato bj:irrisolto '),
+         sum(1 for l in dz['links'] if not l['target'])),
+        ('dictionary: citations', conta('bj:Citazione', '; bj:nellaVoce ?v '), len(dz['citations'])),
+        ('dictionary: resolved citations', conta('bj:Citazione', '; bj:nellaVoce ?v ; bj:stato bj:risolto '),
+         stato('resolved')),
+        ('dictionary: partial citations', conta('bj:Citazione', '; bj:nellaVoce ?v ; bj:stato bj:parziale '),
+         stato('partial')),
+        ('dictionary: unresolved citations', conta('bj:Citazione', '; bj:nellaVoce ?v ; bj:stato bj:irrisolto '),
+         stato('unresolved')),
+        ('dictionary: citation targets that are not declared verses',
+         'SELECT (COUNT(*) AS ?n) WHERE { ?c bj:nellaVoce ?x ; bj:aPassaggio ?p . ?p bj:comprende ?v'
+         ' FILTER NOT EXISTS { ?v a bj:Versetto } }', 0),
+        ('dictionary: link targets that are not entries',
+         'SELECT (COUNT(*) AS ?n) WHERE { ?l bj:aVoce ?t FILTER NOT EXISTS { ?t a bj:Voce } }', 0),
+        ('dictionary: target sections outside their target entry',
+         'SELECT (COUNT(*) AS ?n) WHERE { ?l bj:aSezione ?s FILTER NOT EXISTS { ?l bj:aVoce ?t . ?s bj:nellaVoce ?t } }', 0),
+        ('dictionary: parts outside their entry',
+         'SELECT (COUNT(*) AS ?n) WHERE { ?p bj:nellaVoce ?x ; dcterms:isPartOf ?s FILTER (?s != ?x)'
+         ' FILTER NOT EXISTS { ?s bj:nellaVoce ?x } }', 0),
+        ('dictionary: entry shortcuts backed by a printed link',
+         'SELECT (COUNT(*) AS ?n) WHERE { ?a %s ?b FILTER NOT EXISTS { ?l bj:daVoce ?a ; bj:aVoce ?b } }' % corte, 0),
+        ('dictionary: skos:related symmetric and backed by a shortcut',
+         'SELECT (COUNT(*) AS ?n) WHERE { ?a skos:related ?b FILTER (NOT EXISTS { ?b skos:related ?a }'
+         ' || NOT EXISTS { { ?a %s ?b } UNION { ?b %s ?a } }) }' % (corte, corte), 0),
+        ('dictionary: voceCitaVersetto = (entry, verse) pairs of the JSON',
+         'SELECT (COUNT(*) AS ?n) WHERE { ?x bj:voceCitaVersetto ?v }', len(coppie)),
+        ('dictionary: voceCitaVersetto backed by a citation of the entry',
+         'SELECT (COUNT(*) AS ?n) WHERE { SELECT DISTINCT ?x ?v WHERE { ?c bj:nellaVoce ?x ;'
+         ' bj:aPassaggio/bj:comprende ?v . ?x bj:voceCitaVersetto ?v } }', len(coppie)),
+        ('dictionary: citatoNellaVoce is the inverse of voceCitaVersetto',
+         'SELECT (COUNT(*) AS ?n) WHERE { { ?x bj:voceCitaVersetto ?v FILTER NOT EXISTS { ?v bj:citatoNellaVoce ?x } }'
+         ' UNION { ?v bj:citatoNellaVoce ?x FILTER NOT EXISTS { ?x bj:voceCitaVersetto ?v } } }', 0),
+        ('dictionary: verses cited (verse index of dufour.json)',
+         'SELECT (COUNT(DISTINCT ?v) AS ?n) WHERE { ?v bj:citatoNellaVoce ?x }', len(dz['verses'])),
     ]
 
 
-def sparql(g, data, coll, quiet):
+def sparql(g, data, coll, dz, quiet):
     err, rows = [], []
-    for name, q, atteso in integrita(data, coll):
+    for name, q, atteso in integrita(data, coll, dz):
         t = time.time()
         n = int(list(g.query(PREFIX + q))[0][0])
         dt = time.time() - t
@@ -198,7 +252,7 @@ def sparql(g, data, coll, quiet):
 def shacl(g):
     """pyshacl on the whole graph. (Its focus_nodes option compares each target with the
     whole focus list: about 36 ms a node, an hour for the graph; plain validation of
-    every target takes about 2.5 minutes.)"""
+    every target takes about 4.5 minutes.)"""
     from pyshacl import validate
     from rdflib import Graph, RDF
     from rdflib.namespace import SH
@@ -218,15 +272,18 @@ def shacl(g):
 
 def jsonld(g):
     """John 3,16 with its notes, their bodies, its margin entries and references and their
-    passages: serialised with the context, parsed back, compared."""
+    passages, and the entry ABELE with its sections, paragraphs, citations and links:
+    serialised with the context, parsed back, compared."""
     from rdflib import Graph, URIRef
     ctx = json.load(open(CONTESTO, encoding='utf-8'))['@context']
     B = lambda x: URIRef(BJ + x)  # noqa: E731
     v = URIRef(PREFISSI['verso'] + 'John.3.16')
     note = list(g.objects(v, B('haNota')))
     rimandi = list(g.subjects(B('daVersetto'), v))
+    voce = URIRef(PREFISSI['voce'] + 'abele')
     risorse = [v] + note + [g.value(n, URIRef(PREFISSI['oa'] + 'hasBody')) for n in note] + rimandi + \
-        list(g.subjects(B('accantoA'), v)) + [p for r in rimandi for p in g.objects(r, B('aPassaggio'))]
+        list(g.subjects(B('accantoA'), v)) + [p for r in rimandi for p in g.objects(r, B('aPassaggio'))] + \
+        [voce] + list(g.subjects(B('nellaVoce'), voce))
     sub = Graph()
     for x in risorse:
         for t in g.triples((x, None, None)):
@@ -234,7 +291,8 @@ def jsonld(g):
     doc = sub.serialize(format='json-ld', context=ctx, auto_compact=True)
     back = Graph().parse(data=doc, format='json-ld')
     usa_termini = all(k in doc for k in ('"testoIt"', '"rimandaA"', '"haNota"', '"aPassaggio"', '"hasBody"',
-                                         '"pagina"', '"pag:', '"verso:John.3.16"'))
+                                         '"pagina"', '"pag:', '"verso:John.3.16"', '"citatoNellaVoce"',
+                                         '"voce:abele"', '"prefLabel"', '"nellaVoce"', '"pagdiz:'))
     return set(sub) == set(back) and len(sub) > 0 and usa_termini, len(sub)
 
 
@@ -253,12 +311,13 @@ def main(a):
             g.bind(k, v, override=True)
         data = json.load(open(BIBBIA, encoding='utf-8'))
         coll = json.load(open(COLLEGAMENTI, encoding='utf-8'))
+        dz = json.load(open(DUFOUR, encoding='utf-8'))
         e, ndecl, nchecked = owl(g, ont)
         err += e
         print('OWL: ontology %d triples, %d bj: terms declared; domain/range of %d triples checked: %s'
               % (len(ont), ndecl, nchecked, 'ok' if not e else '%d errors' % len(e)), flush=True)
         print('SPARQL integrity (whole graph):', flush=True)
-        e, _ = sparql(g, data, coll, quiet)
+        e, _ = sparql(g, data, coll, dz, quiet)
         err += e
         mio = digest(g)
         for fmt, dg, dt in lavori.get():

@@ -8,12 +8,13 @@ const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 const ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
 const esc = s => String(s).replace(/[&<>"']/g, c => ESC[c]);
 const num = n => n.toLocaleString('it-IT');
+const quanti = (n, uno, tanti) => `${num(n)} ${n === 1 ? uno : tanti}`;
 const memo = {
   get(k) { try { return localStorage.getItem('esplora.' + k); } catch (e) { return null; } },
   set(k, v) { try { localStorage.setItem('esplora.' + k, v); } catch (e) { /* private mode */ } },
 };
 
-let D, V;          // payload and its verse columns
+let D, V, Z;       // payload, its verse columns, the dictionary
 const S = {};      // derived indices and UI state
 
 // relations of the margin references, in display order; 'keynote' is a "+" reference
@@ -25,8 +26,11 @@ const REL = {
   related: { nome: 'Affini', seg: '·', col: '--r-related', txt: '--secondo', entr: 'Affini', dash: [] },
   cites: { nome: 'Citazioni nelle note', seg: '§', col: '--r-cites', txt: '--secondo', entr: 'Citato nelle note', dash: [5, 4] },
   numbering: { nome: 'Altra numerazione', seg: '#', col: '--r-related', txt: '--secondo', entr: '', dash: [] },
+  // the entries of the Dizionario di Teologia Biblica (X. Léon-Dufour) citing the verse
+  diz: { nome: 'Nel Dizionario', seg: '◊', col: '--r-diz', entr: 'Nel Dizionario', dash: [1, 3] },
 };
-const ORDINE_REL = ['parallel', 'quoted-later', 'doublet', 'keynote', 'related', 'cites'];
+const ORDINE_REL = ['parallel', 'quoted-later', 'doublet', 'keynote', 'related', 'cites', 'diz'];
+const STRETTA = 3;   // a citation of at most 3 verses names the verse "on its own" (marker, heat)
 
 // ---------------------------------------------------------------- data
 
@@ -79,6 +83,27 @@ function indici() {
   let c = 0;
   for (let i = 0; i < n; i++) { c += diff[i]; S.indeg[i] = c; }
   S.ultimoAT = D.libri.findIndex(b => b.T === 'NT') - 1;
+  indiciDizionario();
+}
+function indiciDizionario() {
+  // per verse: the citations of the dictionary naming a passage that includes it (all, and those
+  // of at most STRETTA verses); per entry: its citations; entries by slug
+  Z = D.diz;
+  const n = S.n, tutte = new Int32Array(n + 1), strette = new Int32Array(n + 1);
+  S.citDi = Z.voci.map(() => []);
+  Z.cit.forEach((c, k) => {
+    S.citDi[c[0]].push(k);
+    const r = c[3], stretta = ampiezza(r) <= STRETTA;
+    for (let j = 0; j < r.length; j += 2) {
+      tutte[r[j]]++; tutte[r[j + 1] + 1]--;
+      if (stretta) { strette[r[j]]++; strette[r[j + 1] + 1]--; }
+    }
+  });
+  S.dizN = new Int32Array(n);
+  S.dizS = new Int32Array(n);
+  let a = 0, b = 0;
+  for (let i = 0; i < n; i++) { a += tutte[i]; b += strette[i]; S.dizN[i] = a; S.dizS[i] = b; }
+  S.voceSlug = new Map(Z.voci.map((v, k) => [v[0], k]));
 }
 
 const relNome = l => (l[4] ? 'keynote' : D.meta.relazioni[l[1]]);
@@ -315,9 +340,23 @@ function indiceRicerca() {
   S.cerca.ms = performance.now() - t;
   return S.cerca;
 }
+function indiceDiz(I) {
+  // the dictionary, normalised on the first search that includes it: names and paragraphs
+  if (I.dp) return;
+  const t = performance.now();
+  I.dk = [];
+  I.dp = [];
+  Z.voci.forEach((v, k) => v[9].forEach((p, j) => { I.dk.push([k, j]); I.dp.push(testoPar(k, j)); }));
+  I.dpn = I.dp.map(normalizza);
+  I.dnomi = Z.voci.map(v => normalizza(v[1]));
+  I.ms += performance.now() - t;
+}
 function evidenzia(testo, norm, termini, max = 220) {
   const segni = [];
-  for (const t of termini) for (const m of norm.matchAll(t.g)) segni.push([m.index, m.index + m[0].length]);
+  for (const t of termini) {
+    t.g.lastIndex = 0;               // matchAll copies lastIndex, which a test() elsewhere may have moved
+    for (const m of norm.matchAll(t.g)) segni.push([m.index, m.index + m[0].length]);
+  }
   segni.sort((x, y) => x[0] - y[0]);
   const fusi = [];
   for (const s of segni) {
@@ -339,6 +378,302 @@ function evidenzia(testo, norm, termini, max = 220) {
   }
   o += esc(testo.slice(p, a)) + (a < testo.length ? '…' : '');
   return o;
+}
+
+// ---------------------------------------------------------------- the dictionary: helpers
+
+// Z.voci: [slug, name, kind 0 full / 1 redirect, letter, pages, authors [[k, part]], signatures
+// [[text, after paragraph j]], targets [[entry, path, paragraph n, form]], sections [[path, label,
+// title HTML, depth, kind]], paragraphs [[n, section, page, HTML]]]; Z.cit: [entry, paragraph
+// index (-1 a section title), section index (-1 before the first heading), runs, status, flags,
+// printed text, reason]. Citations are <a class="cd" data-d="k k2"> in the HTML.
+const FLAG_DIZ = {
+  s: ['s', 'e il versetto seguente'], ss: ['ss', 'e seguenti (fino alla fine della pericope)'],
+  p: ['par.', 'e i passi paralleli (non elencati)'], '…': ['…', 'e altrove'],
+};
+const nomeVoce = k => Z.voci[k][1];
+const rinvio = k => Z.voci[k][2] === 1;
+function hashVoce(k, n = 0, verso = null) {
+  return `#voce/${Z.voci[k][0]}${n ? '/' + n : ''}${verso !== null && verso !== undefined ? '?v=' + V.id[verso] : ''}`;
+}
+const sezioneDi = (k, s) => (s < 0 ? null : Z.voci[k][8][s]);
+function etichettaSez(x) {
+  // a heading as printed: "Antico Testamento", "A. L'IRA DELL'UOMO", "I. DIO È PRIMO", "1. El",
+  // "a) La vita intera", «Segno di benedizione», "INTRODUZIONE"
+  const [, lab, tit, , kind] = x;
+  if (kind === 'testament') return tit === lab ? esc(lab) : tit;
+  if (kind === 'alpha') return `${esc(lab)}) ${tit}`;
+  if (kind === 'runin') return `«${tit}»`;
+  if (kind === 'caps' || !lab) return tit;
+  return `${esc(lab)}. ${tit}`;
+}
+function primoParDi(k, s) {
+  // the first paragraph of section s or after it (a citation in a section title opens there)
+  const ps = Z.voci[k][9];
+  const j = ps.findIndex(p => p[1] >= s);
+  return j < 0 ? 0 : ps[j][0];
+}
+function testoPar(k, j) {
+  const p = Z.voci[k][9][j];
+  if (p[4] === undefined) p[4] = testoPiano(p[3]);
+  return p[4];
+}
+function htmlCit(k) {
+  const c = Z.cit[k];
+  return c[1] >= 0 ? Z.voci[c[0]][9][c[1]][3] : Z.voci[c[0]][8][c[2]][2];
+}
+function fraseCit(k, max = 200) {
+  // the paragraph around citation k, from a word start, the citation marked
+  const h = htmlCit(k);
+  const m = new RegExp(`<a class="cd" data-d="(?:\\d+ )*${k}(?: \\d+)*">([^<]*)</a>`).exec(h);
+  const testo = testoPiano(h);
+  if (!m) return esc(testo.slice(0, max));
+  return contestoA(testo, testoPiano(h.slice(0, m.index)).length, m[1].length, max);
+}
+function flagsDiz(f) {
+  return f ? f.split(' ').map(x => `<span class="fl" title="${esc(FLAG_DIZ[x][1])}">${esc(FLAG_DIZ[x][0])}</span>`).join('') : '';
+}
+function dizDi(i) {
+  // the entries citing verse i, with their citations: the most specific first, then by name
+  const per = new Map();
+  Z.cit.forEach((c, k) => {
+    if (!contiene(c[3], i)) return;
+    if (!per.has(c[0])) per.set(c[0], []);
+    per.get(c[0]).push(k);
+  });
+  const largo = ks => Math.min(...ks.map(k => ampiezza(Z.cit[k][3])));
+  return [...per].sort((x, y) => largo(x[1]) - largo(y[1]) || nomeVoce(x[0]).localeCompare(nomeVoce(y[0]), 'it'));
+}
+function vociCapitolo(s, e) {
+  // verse -> the entries citing it (all citations), for the verses s..e of a chapter
+  const out = new Map();
+  Z.cit.forEach(c => {
+    const r = c[3];
+    for (let j = 0; j < r.length; j += 2) {
+      for (let i = Math.max(s, r[j]); i <= Math.min(e, r[j + 1]); i++) {
+        if (!out.has(i)) out.set(i, new Set());
+        out.get(i).add(c[0]);
+      }
+    }
+  });
+  return out;
+}
+function segnoDiz(i, voci) {
+  // ◊ in the margin: a citation of the dictionary names this verse on its own or in a passage
+  // of at most STRETTA verses
+  if (!S.dizS[i]) return '';
+  const nv = voci ? voci.size : 0;
+  return `<span class="md" title="Nel Dizionario di Teologia Biblica: ${nv} ${nv === 1 ? 'voce' : 'voci'}, ${S.dizN[i]} ${S.dizN[i] === 1 ? 'citazione' : 'citazioni'}">◊</span>`;
+}
+const caloreDiz = d => (d >= 10 ? 5 : d >= 5 ? 4 : d >= 3 ? 3 : d >= 2 ? 2 : d >= 1 ? 1 : 0);
+function collegaDiz(radice, verso = null) {
+  // the <a class="cd" data-d> citations of the dictionary get their target (the whole passage
+  // when it is one run) and the preview; unresolved ones are grey with their reason
+  $$('a.cd', radice).forEach(a => {
+    const r = [], motivi = [];
+    for (const k of a.dataset.d.split(' ').map(Number)) {
+      r.push(...Z.cit[k][3]);
+      if (Z.cit[k][7] && !motivi.includes(Z.cit[k][7])) motivi.push(Z.cit[k][7]);
+    }
+    if (!r.length) {
+      // unresolved: no target; the reason is shown in the preview (hover, tap, keyboard focus)
+      const perche = motivi.join('; ') || 'riferimento non risolto';
+      a.classList.add('x');
+      a.dataset.x = perche;
+      a.tabIndex = 0;
+      a.setAttribute('role', 'button');
+      a.setAttribute('aria-label', `${a.textContent}: riferimento non risolto, ${perche}`);
+      return;
+    }
+    a.href = r.length === 2 ? hashVerso(r[0], r[1]) : hashVerso(r[0]);
+    a.dataset.r = runsAttr(r);
+    if (motivi.length) a.title = motivi.join('; ');
+    if (verso !== null && contiene(r, verso)) a.classList.add('sel');
+  });
+}
+function rigaCitDiz(k, i) {
+  // one citation of verse i in the panel: section of the entry, the passage when wider, flags,
+  // the sentence around it
+  const c = Z.cit[k], s = sezioneDi(c[0], c[2]);
+  const n = c[1] >= 0 ? Z.voci[c[0]][9][c[1]][0] : primoParDi(c[0], c[2]);
+  const sez = s ? `<span class="percorso">${esc(s[0])}</span>${esc(testoPiano(s[2]))}` : '<span class="percorso">introd.</span>';
+  const largo = ampiezza(c[3]) > 1 ? `<small class="passo">${esc(rifRuns(c[3]))}</small>` : '';
+  return `<li><a class="dsez" href="${hashVoce(c[0], n, i)}">${sez}</a>${largo}${flagsDiz(c[5])}<span class="frase">${fraseCit(k)}</span></li>`;
+}
+function sezioneDiz(i, DZ) {
+  const n = DZ.reduce((t, x) => t + x[1].length, 0);
+  let h = `<section class="sez diz"><h3>Nel Dizionario di Teologia Biblica <span class="n">${DZ.length}</span></h3>`;
+  if (!DZ.length) return h + '<p class="vuoto">Nessuna voce del Dizionario cita questo versetto.</p></section>';
+  h += `<p class="diz-sotto">${DZ.length} ${DZ.length === 1 ? 'voce' : 'voci'}, ${n} ${n === 1 ? 'citazione' : 'citazioni'}; prima le più puntuali. Clic su una sezione per leggerla nella voce.</p>`;
+  const blocco = ([v, ks]) => `<div class="dvoce"><h4><span class="seg">◊</span><a href="${hashVoce(v)}">${esc(nomeVoce(v))}</a><span class="n">${ks.length}</span></h4><ul class="elenco">${ks.map(k => rigaCitDiz(k, i)).join('')}</ul></div>`;
+  const primi = 8;
+  h += DZ.slice(0, primi).map(blocco).join('');
+  if (DZ.length > primi) h += `<details class="altri"><summary class="altro">mostra altre ${DZ.length - primi} voci</summary>${DZ.slice(primi).map(blocco).join('')}</details>`;
+  return h + '</section>';
+}
+
+// ---------------------------------------------------------------- the dictionary: an entry
+
+function entrantiVoce(k) {
+  // the entries pointing here: a *word in their text, a see-also or a redirect (memoised)
+  if (!S.entrantiVoci) {
+    S.entrantiVoci = Z.voci.map(() => new Set());
+    Z.voci.forEach((v, j) => {
+      for (const t of v[7]) if (t[0] >= 0 && t[0] !== j) S.entrantiVoci[t[0]].add(j);
+      for (const p of v[9]) for (const m of p[3].matchAll(/href="#voce\/([^"]+)"/g)) {
+        const t = S.voceSlug.get(m[1]);
+        if (t !== undefined && t !== j) S.entrantiVoci[t].add(j);
+      }
+    });
+  }
+  return [...S.entrantiVoci[k]].sort((a, b) => nomeVoce(a).localeCompare(nomeVoce(b), 'it'));
+}
+function linkVoce(k, testo = nomeVoce(k)) {
+  return `<a class="vl${rinvio(k) ? ' rinvio' : ''}" href="${hashVoce(k)}">${esc(testo)}</a>`;
+}
+const percorsoStampato = p => (p === '0' ? 'introd.' : p);
+const vociDistinte = v => new Set(v[7].filter(t => t[0] >= 0).map(t => t[0])).size;
+function bersagliVoce(v) {
+  // targets of a redirect or a see-also list: the entry, the section path as printed ('0':
+  // the paragraphs before the first heading); a target that is itself a redirect shows where
+  // it leads
+  return v[7].map(([t, path, n, form]) => {
+    const p = path ? ` <small>${esc(percorsoStampato(path))}</small>` : '';
+    if (t < 0) return `<li><span class="vl-x" title="voce non trovata nel Dizionario">${esc(form)}</span>${p}</li>`;
+    const oltre = rinvio(t) ? ` <small class="oltre">→ ${[...new Set(Z.voci[t][7].filter(x => x[0] >= 0).map(x => x[0]))]
+      .map(j => linkVoce(j)).join(', ')}</small>` : '';
+    return `<li>${linkVoce(t).replace(`href="${hashVoce(t)}"`, `href="${hashVoce(t, n)}"`)}${p}${oltre}</li>`;
+  }).join('');
+}
+function slugVoce(s) {
+  // 'AGNELLO-DI-DIO', 'agnello di dio', 'Agnello di Dio' -> 'agnello-di-dio'
+  return normalizza(s).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+function mostraVoce(arg, par = {}) {
+  const [slug0, nn] = arg.split('/');
+  let slug = slug0, k = S.voceSlug.get(slug);
+  if (k === undefined && S.voceSlug.has(slugVoce(slug0))) {
+    slug = slugVoce(slug0);
+    k = S.voceSlug.get(slug);
+    const q = location.hash.indexOf('?');
+    history.replaceState(null, '', `#voce/${slug}${nn ? '/' + nn : ''}${q < 0 ? '' : location.hash.slice(q)}`);
+  }
+  if (k === undefined) {
+    pagina(`<div class="pagina"><h1>Voce non trovata</h1><p class="sotto">«${esc(arg)}» non è una voce del Dizionario di Teologia Biblica.</p><p><a href="#dizionario">Tutte le voci</a></p></div>`);
+    document.title = 'Voce non trovata · Dizionario';
+    return;
+  }
+  const v = Z.voci[k], [, nome, tipo, , pag, autori, firme, bersagli, sezioni, paragrafi] = v;
+  const verso = par.v !== undefined ? S.vix.get(par.v) ?? null : null;
+  const ks = S.citDi[k], risolte = ks.filter(c => Z.cit[c][3].length);
+  const libri = new Set(risolte.map(c => S.vb[Z.cit[c][3][0]]));
+  const ent = entrantiVoce(k);
+  const nomiAut = [...new Set(autori.map(a => Z.aut[a[0]]))];
+  let h = '';
+  if (tipo === 1) {
+    const nv = vociDistinte(v);
+    h = `<p class="rinvio-nota">Voce di rinvio: l’argomento è trattato in ${nv === 1 ? 'questa voce' : `queste ${nv} voci`}${bersagli.length > nv ? ` (${bersagli.length} rimandi a sezioni)` : ''}.</p><ul class="rinvii">${bersagliVoce(v)}</ul>`;
+  } else {
+    // the text: headings of the sections as printed, paragraphs with their page, signatures
+    // the path as printed ("VT II 1") beside a heading below the first level, where it says more
+    const titolo = s => `<div class="dsez-tit l${Math.min(4, sezioni[s][3])} k-${sezioni[s][4]}" id="s${s}" role="heading" aria-level="${Math.min(6, sezioni[s][3] + 1)}">${sezioni[s][3] > 1 ? `<span class="percorso">${esc(sezioni[s][0])}</span>` : ''}${etichettaSez(sezioni[s])}</div>`;
+    let pg = null, s0 = -1;
+    paragrafi.forEach(([n, s, p, html], j) => {
+      for (let t = s0 + 1; t <= s; t++) h += titolo(t);
+      s0 = Math.max(s0, s);
+      h += `<p class="dpar" id="p${n}" data-n="${n}">${p !== pg ? `<span class="pg">p. ${esc(p)}</span>` : ''}${html}</p>`;
+      pg = p;
+      for (const [f, dopo] of firme) if (dopo === j) h += `<p class="firma">${esc(f)}</p>`;
+    });
+    for (let t = s0 + 1; t < sezioni.length; t++) h += titolo(t);
+    const indice = sezioni.length > 3 ? `<details class="voce-indice"${window.innerWidth > 1240 ? ' open' : ''}><summary>Sezioni <span class="n">${sezioni.length}</span></summary><ol>${sezioni.map((x, s) =>
+      `<li class="l${Math.min(4, x[3])}"><a href="${hashVoce(k, primoParDi(k, s))}">${etichettaSez(x).replace(/<a [^>]*>|<\/a>/g, '')}</a></li>`).join('')}</ol></details>` : '';
+    h = `<div class="voce-corpo">${indice}<div class="voce-testo">${h}</div></div>`;
+    if (bersagli.length) h += `<div class="h2" role="heading" aria-level="2">Vedi anche</div><ul class="rinvii">${bersagliVoce(v)}</ul>`;
+  }
+  if (ent.length) {
+    h += `<div class="h2" role="heading" aria-level="2">Rimandano a questa voce <span class="n">${ent.length}</span></div><p class="entranti">${ent.map(j => linkVoce(j)).join(' · ')}</p>`;
+  }
+  const sotto = tipo === 1 ? `rinvio · p. ${esc(pag)}`
+    : `${nomiAut.length ? 'di ' + nomiAut.map(esc).join(', ') + ' · ' : ''}p. ${esc(pag)} · ${sezioni.length} ${sezioni.length === 1 ? 'sezione' : 'sezioni'} · ${paragrafi.length} paragrafi · ${num(ks.length)} citazioni bibliche${libri.size ? ` in ${libri.size} ${libri.size === 1 ? 'libro' : 'libri'}` : ''}`;
+  pagina(`<div class="pagina voce-pagina"><div class="sopratitolo"><a href="#dizionario">Dizionario di Teologia Biblica</a>${verso !== null ? ` · da <a href="${hashVerso(verso)}">${esc(rif(verso))}</a>` : ''}</div>
+    <h1>${esc(nome)}</h1><p class="sotto">${sotto}</p>${h}</div>`);
+  collegaDiz($('#vista'), verso);
+  document.title = `${nome} · Dizionario di Teologia Biblica`;
+  if (nn) {
+    const p = $('#p' + nn);
+    if (p) {
+      p.classList.add('sel');
+      // the headings right above the paragraph stay in view
+      let cima = p;
+      while (cima.previousElementSibling?.classList.contains('dsez-tit')) cima = cima.previousElementSibling;
+      const alto = $('.barra').getBoundingClientRect().bottom;
+      window.scrollTo(0, cima.getBoundingClientRect().top + window.scrollY - alto - 16);
+    } else if (tipo === 0) {
+      $('#vista h1').insertAdjacentHTML('afterend', `<p class="avviso">Questa voce non ha un paragrafo ${esc(nn)}: ne ha ${paragrafi.length}.</p>`);
+    }
+  }
+}
+
+// ---------------------------------------------------------------- the dictionary: index
+
+function mostraDizionario(par = {}) {
+  const m = Z.meta;
+  const lettere = [...new Set(Z.voci.map(v => v[3]))];
+  const conta = k => S.citDi[k].length;
+  const per = l => Z.voci.map((v, k) => k).filter(k => Z.voci[k][3] === l).map(k => rinvio(k)
+    ? `<a class="dvl rinvio" href="${hashVoce(k)}" data-nome="${esc(normalizza(nomeVoce(k)))}" title="rinvio a ${quanti(vociDistinte(Z.voci[k]), 'voce', 'voci')}"><i>${esc(nomeVoce(k))}</i><span>→ ${vociDistinte(Z.voci[k])}</span></a>`
+    : `<a class="dvl" href="${hashVoce(k)}" data-nome="${esc(normalizza(nomeVoce(k)))}" title="${conta(k)} citazioni bibliche"><b>${esc(nomeVoce(k))}</b><span>${num(conta(k))}</span></a>`).join('');
+  pagina(`<div class="pagina dizionario"><div class="sopratitolo">X. Léon-Dufour (a cura di) · Marietti 1976</div>
+    <h1>Dizionario di Teologia Biblica</h1>
+    <p class="sotto">${num(m.piene)} voci e ${num(m.rinvii)} rinvii (in corsivo, con il numero delle voci a cui rimandano). Accanto a ogni voce il numero delle citazioni bibliche: ${num(m.citazioni)} in tutto, ${String(m.pct).replace('.', ',')}% riconosciute in ${num(m.versetti)} versetti di questa Bibbia.</p>
+    <div class="diz-campi"><input type="search" id="dq" value="${esc(par.q || '')}" placeholder="Filtra le voci…" aria-label="Filtra le voci" spellcheck="false">
+    <nav class="lettere" aria-label="Lettere">${lettere.map(l => `<button type="button" data-l="${esc(l)}">${esc(l)}</button>`).join('')}</nav></div>
+    ${lettere.map(l => `<section class="lettera" id="lett-${esc(l)}"><h2>${esc(l)}</h2><div class="dvoci">${per(l)}</div></section>`).join('')}
+    <p class="vuoto" id="dnessuna" hidden>Nessuna voce corrisponde.</p></div>`);
+  document.title = 'Dizionario di Teologia Biblica · Esploratore dei versetti';
+  $('.lettere').addEventListener('click', e => {
+    const b = e.target.closest('[data-l]');
+    if (!b) return;
+    const alto = $('.barra').getBoundingClientRect().bottom;
+    window.scrollTo(0, $('#lett-' + b.dataset.l).getBoundingClientRect().top + window.scrollY - alto - 8);
+  });
+  // the filter is kept in the address (#dizionario?q=), so Back returns to it; a letter with no
+  // entry left is disabled
+  const filtra = () => {
+    const testo = $('#dq').value.trim(), q = normalizza(testo);
+    let tot = 0;
+    $$('.lettera').forEach(sez => {
+      let n = 0;
+      $$('.dvl', sez).forEach(a => { const ok = !q || a.dataset.nome.includes(q); a.hidden = !ok; n += ok; });
+      sez.hidden = !n;
+      $(`.lettere [data-l="${sez.id.slice(5)}"]`).disabled = !n;
+      tot += n;
+    });
+    $('#dnessuna').hidden = tot > 0;
+    return testo;
+  };
+  $('#dq').addEventListener('input', () => {
+    const testo = filtra();
+    history.replaceState(history.state, '', '#dizionario' + (testo ? '?q=' + encodeURIComponent(testo) : ''));
+  });
+  if (par.q) filtra();
+  ripristinaScorrimento();
+}
+function ripristinaScorrimento() {
+  // Back to the index or a search: the scroll position this history entry had (memoScorrimento)
+  const y = history.state?.y;
+  if (y) requestAnimationFrame(() => window.scrollTo(0, y));
+}
+let tScorri = null;
+function memoScorrimento() {
+  // the scroll position of the dictionary index and of the search, kept in the history entry
+  clearTimeout(tScorri);
+  tScorri = setTimeout(() => {
+    if (S.vista === 'dizionario' && !location.hash.startsWith('#voce/') || S.vista === 'cerca') {
+      history.replaceState({ ...(history.state || {}), y: Math.round(window.scrollY) }, '', location.href);
+    }
+  }, 120);
 }
 
 // ---------------------------------------------------------------- routing
@@ -371,6 +706,8 @@ function instrada() {
   else if (via === 'panoramica' || via.startsWith('panoramica/')) { vista = 'panoramica'; mostraPanoramica(via.split('/').slice(1)); }
   else if (via === 'grafo' || via.startsWith('grafo/')) { vista = 'grafo'; mostraGrafo(via.slice(6), parametri(query)); }
   else if (via.startsWith('intro/')) { vista = 'intro'; mostraIntro(via.slice(6)); }
+  else if (via === 'dizionario') { vista = 'dizionario'; mostraDizionario(parametri(query)); }
+  else if (via.startsWith('voce/')) { vista = 'dizionario'; mostraVoce(via.slice(5), parametri(query)); }
   else vista = mostraRif(via, parametri(query));
   $$('.schede a').forEach(a => a.classList.toggle('attiva', a.dataset.vista === vista ||
     (vista === 'lettore' && a.dataset.vista === 'indice')));
@@ -448,6 +785,7 @@ function mostraIndice() {
       <span><b>${num(t.verses)}</b> versetti</span><span><b>${num(t.notes)}</b> note</span>
       <span><b>${num(r.mref_items)}</b> rimandi a margine <small>in ${num(r.mref_entries)} voci</small></span>
       <span><b>${num(r.note_citations + r.intro_citations)}</b> citazioni in note e introduzioni</span>
+      <span><b>${num(Z.meta.piene)}</b> voci del <a href="#dizionario">Dizionario di Teologia Biblica</a> <small>${num(Z.meta.citazioni)} citazioni</small></span>
     </div>
     <div class="testamenti">${col('AT')}${col('NT')}</div></div>`);
   document.title = 'Esploratore dei versetti';
@@ -514,6 +852,7 @@ function mostraCapitolo(b, c) {
     return lettera.get(k);
   };
   let h = '', aperto = null, pag = null;
+  const dv = vociCapitolo(s, e);
   const chiudi = () => { if (aperto) { h += aperto === 'p' ? '</p>' : '</div>'; aperto = null; } };
   for (let i = s; i <= e; i++) {
     for (const k of S.divAt.get(i) || []) { chiudi(); h += `<div class="divisione lv${D.div[k][2]}">${D.div[k][3]}</div>`; }
@@ -527,11 +866,13 @@ function mostraCapitolo(b, c) {
     if (V.ac[i]) h += `<span class="acr">${esc(V.ac[i])}</span>`;
     const pg = V.pg[i] !== pag ? `<span class="pg" title="pagina stampata">p. ${V.pg[i]}</span>` : '';
     pag = V.pg[i];
-    const cl = 'v' + (poesia ? ' vp' : '') + (S.indeg[i] ? ' k' + calore(S.indeg[i]) : '');
+    const cl = 'v' + (poesia ? ' vp' : '') + (S.indeg[i] ? ' k' + calore(S.indeg[i]) : '') + (S.dizS[i] ? ' d' + caloreDiz(S.dizS[i]) : '');
+    const nv = dv.get(i)?.size || 0;
+    const aria = rif(i) + (nv ? `, citato in ${nv} ${nv === 1 ? 'voce' : 'voci'} del Dizionario` : '');
     let corpo = chiamate(i, lettere);
     if (V.f[i] & 2) corpo += '<span class="omesso" title="Il numero è stampato, il testo CEI omette il versetto">(versetto omesso)</span>';
     if (poesia) corpo = corpo.split('<br>').map(r => `<span class="r">${r}</span>`).join('');
-    h += `<span class="${cl}" id="v${i}" data-i="${i}" tabindex="0" role="button" aria-label="${esc(rif(i))}">${segnoMargine(i)}${pg}<span class="vn" aria-hidden="true">${esc(V.l[i])}</span>${corpo}</span>${poesia ? '' : ' '}`;
+    h += `<span class="${cl}" id="v${i}" data-i="${i}" tabindex="0" role="button" aria-label="${esc(aria)}">${segnoMargine(i)}${segnoDiz(i, dv.get(i))}${pg}<span class="vn" aria-hidden="true">${esc(V.l[i])}</span>${corpo}</span>${poesia ? '' : ' '}`;
   }
   chiudi();
   const prec = c > 0 ? [b, c - 1] : b > 0 ? [b - 1, D.libri[b - 1].c.length - 1] : null;
@@ -540,11 +881,14 @@ function mostraCapitolo(b, c) {
   const capNome = ([bb, cc]) => `${D.libri[bb].s} ${D.libri[bb].c[cc][0] === 'Prol' ? 'prol.' : D.libri[bb].c[cc][0]}`;
   const freccia = (x, seg, tit) => x ? `<a href="${capRif(x)}" title="${tit}: ${esc(capNome(x))}" aria-label="${tit}">${seg}</a>` : `<span>${seg}</span>`;
   const titCap = lab === 'Prol' ? 'Prologo' : (L.c.length === 1 ? '' : lab);
+  const calo = document.body.classList.contains('calore');
   pagina(`<article class="lettore">
     <div class="testata"><div><div class="sopratitolo"><a href="#${L.o}">${esc(D.vol[L.v][1])}</a></div>
       <h1><a href="#${L.o}">${esc(L.t)}</a><span class="cap">${esc(titCap)}</span></h1></div>
       <div class="sfoglia">${freccia(prec, '‹', 'Capitolo precedente')}<a href="#${L.o}" title="Tutti i capitoli">${L.c.length > 1 ? '⋯' : '≡'}</a>${freccia(succ, '›', 'Capitolo successivo')}</div></div>
-    <div class="legenda-calore">rimandi entranti: <i style="background:color-mix(in srgb,var(--caldo) 7%,transparent)"></i>1–2 <i style="background:color-mix(in srgb,var(--caldo) 20%,transparent)"></i>6–10 <i style="background:color-mix(in srgb,var(--caldo) 38%,transparent)"></i>21+</div>
+    <div class="legenda-calore"><span class="lc-et" id="lc-et">Evidenzia</span><div class="segmenti fonte-calore" role="group" aria-labelledby="lc-et"><button type="button" data-fonte="bj" aria-pressed="${calo && !S.caloreDiz}">Rimandi BJ</button><button type="button" data-fonte="diz" aria-pressed="${calo && !!S.caloreDiz}">Dizionario</button></div>
+      <span class="lc-bj">rimandi entranti: <i style="background:color-mix(in srgb,var(--caldo) 7%,transparent)"></i>1–2 <i style="background:color-mix(in srgb,var(--caldo) 20%,transparent)"></i>6–10 <i style="background:color-mix(in srgb,var(--caldo) 38%,transparent)"></i>21+</span>
+      <span class="lc-diz" title="citazioni di al più ${STRETTA} versetti">citazioni brevi del Dizionario: <i style="background:color-mix(in srgb,var(--r-diz) 9%,transparent)"></i>1 <i style="background:color-mix(in srgb,var(--r-diz) 22%,transparent)"></i>3–4 <i style="background:color-mix(in srgb,var(--r-diz) 40%,transparent)"></i>10+</span></div>
     <div class="testo" lang="it">${h}</div>
     <div class="fine">${prec ? `<a href="${capRif(prec)}">‹ ${esc(capNome(prec))}</a>` : '<span></span>'}${succ ? `<a href="${capRif(succ)}">${esc(capNome(succ))} ›</a>` : ''}</div>
   </article>`);
@@ -625,12 +969,15 @@ function entranti(i) {
   return { rel, note, intro };
 }
 function contesto(testo, raw, max = 200) {
-  const k = Math.max(0, testo.indexOf(raw));
+  return contestoA(testo, Math.max(0, testo.indexOf(raw)), raw.length, max);
+}
+function contestoA(testo, k, n, max = 200) {
+  // the text around [k, k + n), from a word start, cut at a word, the span marked
   let da = Math.max(0, k - 80);
   if (da > 0) { const sp = testo.indexOf(' ', da); if (sp >= 0 && sp < k) da = sp + 1; }   // from a word start
   let a = Math.min(testo.length, da + max);
-  if (a < testo.length) { const sp = testo.lastIndexOf(' ', a); if (sp > k + raw.length) a = sp; }
-  return (da > 0 ? '…' : '') + esc(testo.slice(da, k)) + '<mark>' + esc(testo.slice(k, k + raw.length)) + '</mark>' + esc(testo.slice(k + raw.length, a)) + (a < testo.length ? '…' : '');
+  if (a < testo.length) { const sp = testo.lastIndexOf(' ', a); if (sp > k + n) a = sp; }
+  return (da > 0 ? '…' : '') + esc(testo.slice(da, k)) + '<mark>' + esc(testo.slice(k, k + n)) + '</mark>' + esc(testo.slice(k + n, a)) + (a < testo.length ? '…' : '');
 }
 function mostraPannello(i) {
   const p = $('#pannello');
@@ -651,12 +998,13 @@ function mostraPannello(i) {
   }
   const E = entranti(i);
   const nEntr = Object.values(E.rel).reduce((s, x) => s + x.length, 0);
+  const DZ = dizDi(i);
   let h = `<div class="pan-testa"><button type="button" class="maniglia" data-maniglia aria-label="Allarga o riduci il pannello"></button><div><h2 class="rif" tabindex="-1">${esc(rif(i))}</h2><div class="libro-tit">${esc(L.t)} · p. ${V.pg[i]}</div></div>
     <div class="azioni"><a class="bottone" href="#grafo/${V.id[i]}" title="Rete dei collegamenti (g)">Grafo</a>
     <button class="bottone" type="button" data-chiudi title="Chiudi (Esc)" aria-label="Chiudi">✕</button></div></div>
     <div class="pan-corpo">
     <div class="citazione">${V.h[i] || '<span class="omesso">(versetto omesso nel testo CEI)</span>'}</div>
-    <div class="contatori"><span><b>${qui.length + altre.length}</b> note</span><span><b>${nUscita}</b> rimandi in uscita</span><span><b>${nEntr}</b> rimandi entranti</span><span><b>${E.note.length + E.intro.length}</b> citazioni</span></div>`;
+    <div class="contatori"><span><b>${qui.length + altre.length}</b> note</span><span><b>${nUscita}</b> rimandi in uscita</span><span><b>${nEntr}</b> rimandi entranti</span><span><b>${E.note.length + E.intro.length}</b> citazioni</span><span><b>${DZ.length}</b> ${DZ.length === 1 ? 'voce' : 'voci'} del Dizionario</span></div>`;
 
   h += `<section class="sez"><h3>Note della BJ <span class="n">${qui.length + altre.length}</span></h3>`;
   if (!qui.length && !altre.length) h += '<p class="vuoto">Nessuna nota riguarda questo versetto.</p>';
@@ -726,7 +1074,7 @@ function mostraPannello(i) {
     });
     h += elencoLungo(`<span class="seg">¶</span>Citato nelle introduzioni <span class="n">${E.intro.length}</span>`, righe);
   }
-  h += '</section></div>';
+  h += '</section>' + sezioneDiz(i, DZ) + '</div>';
   p.innerHTML = h;
   collegaCitazioni(p);
   p.hidden = false;
@@ -763,8 +1111,13 @@ function collegaCitazioni(radice) {
 let tAnteprima = null, puntatore = 'mouse', bersaglio = null;
 function nascondiAnteprima() { clearTimeout(tAnteprima); $('#anteprima').hidden = true; bersaglio = null; }
 function mostraAnteprima(el, tocco) {
-  const r = el.dataset.r.split(',').map(x => x.split('-').map(Number));
   const box = $('#anteprima');
+  if (el.dataset.x !== undefined) {
+    // an unresolved citation of the dictionary: why it has no target
+    box.innerHTML = `<div class="ap-rif">${esc(el.textContent)}</div><p class="ap-x">Riferimento non risolto: ${esc(el.dataset.x)}.</p>`;
+    return posaAnteprima(el, box);
+  }
+  const r = el.dataset.r.split(',').map(x => x.split('-').map(Number));
   let h = `<div class="ap-rif">${esc(rifRuns(r.flat()))}${r.length === 1 && r[0][1] > r[0][0] ? `<small>${r[0][1] - r[0][0] + 1} versetti</small>` : ''}</div>`;
   let mostrati = 0, totale = 0;
   for (const [a, b] of r) {
@@ -778,6 +1131,9 @@ function mostraAnteprima(el, tocco) {
   if (totale > mostrati) h += `<div class="ap-piu">… e altri ${totale - mostrati} versetti</div>`;
   if (tocco) h += `<div class="ap-vai"><a class="bottone primario" href="${esc(el.getAttribute('href'))}">Vai a ${esc(rif(r[0][0]))} ›</a></div>`;
   box.innerHTML = h;
+  posaAnteprima(el, box);
+}
+function posaAnteprima(el, box) {
   box.hidden = false;
   const q = el.getBoundingClientRect(), w = box.offsetWidth, ht = box.offsetHeight;
   let x = Math.min(Math.max(8, q.left), window.innerWidth - w - 8);
@@ -825,12 +1181,12 @@ function mostraCerca(par) {
     aggiornaRisultati(q, dove, T, bsel);
     return;
   }
-  pagina(`<div class="pagina ricerca"><h1>Cerca nel testo e nelle note</h1>
+  pagina(`<div class="pagina ricerca"><h1>Cerca nel testo, nelle note e nel Dizionario</h1>
     <p class="sotto">Parole intere, senza distinguere accenti e maiuscole: <a href="#cerca?q=melchisedek">melchisedek</a> trova «Melchìsedek». Più parole devono comparire tutte; tra virgolette una frase esatta; un asterisco cerca l’inizio di parola (<a href="#cerca?q=ira*">ira*</a> trova anche «irato»).</p>
     <div class="ricerca-campi">
       <input type="search" id="rq" value="${esc(q)}" placeholder="Parola o frase…" aria-label="Testo da cercare" spellcheck="false">
       <div class="segmenti" role="group" aria-label="Dove cercare">
-        ${[['tutto', 'Tutto'], ['versetti', 'Versetti'], ['note', 'Note']].map(([v, t]) => `<button type="button" data-in="${v}" aria-pressed="${v === dove}">${t}</button>`).join('')}
+        ${[['tutto', 'Tutto'], ['versetti', 'Versetti'], ['note', 'Note'], ['dizionario', 'Dizionario']].map(([v, t]) => `<button type="button" data-in="${v}" aria-pressed="${v === dove}">${t}</button>`).join('')}
       </div>
       <select id="rt" aria-label="Testamento"><option value="">Tutta la Bibbia</option><option value="AT"${T === 'AT' ? ' selected' : ''}>Antico Testamento</option><option value="NT"${T === 'NT' ? ' selected' : ''}>Nuovo Testamento</option></select>
       <select id="rb" aria-label="Libro"><option value="">Tutti i libri</option>${opz}</select>
@@ -858,6 +1214,7 @@ function mostraCerca(par) {
   $('#rb').addEventListener('change', scrivi);
   aggiornaRisultati(q, dove, T, bsel);
   if (!q) $('#rq').focus();
+  ripristinaScorrimento();
 }
 // a term matches whole words of the normalised text ("ira" is not in "apparirà"); "ira*" matches
 // the words starting with it; a "phrase" matches whole words at both ends; terms with no letter
@@ -887,7 +1244,15 @@ function aggiornaRisultati(q, dove, T, bsel) {
   const per = new Map();
   let nv = 0, nn = 0;
   const tutti = s => ts.every(t => s.includes(t.t) && (t.g.lastIndex = 0, t.g.test(s)));
-  if (dove !== 'note') {
+  // the dictionary: entry names and paragraphs (the testament and book filters leave it out)
+  const dv = [], dpar = [];
+  const conDiz = (dove === 'tutto' || dove === 'dizionario') && !T && bfil < 0;
+  if (conDiz) {
+    indiceDiz(I);
+    I.dnomi.forEach((x, k) => { if (tutti(x)) dv.push(k); });
+    I.dpn.forEach((x, j) => { if (tutti(x)) dpar.push(j); });
+  }
+  if (dove === 'tutto' || dove === 'versetti') {
     for (let i = 0; i < S.n; i++) {
       if (!ok(S.vb[i]) || !tutti(I.vn[i])) continue;
       if (!per.has(S.vb[i])) per.set(S.vb[i], []);
@@ -895,7 +1260,7 @@ function aggiornaRisultati(q, dove, T, bsel) {
       nv++;
     }
   }
-  if (dove !== 'versetti') {
+  if (dove === 'tutto' || dove === 'note') {
     D.note.forEach((x, k) => {
       const b = S.vb[x[0]];
       if (!ok(b) || !tutti(I.nn[k])) return;
@@ -905,7 +1270,12 @@ function aggiornaRisultati(q, dove, T, bsel) {
     });
   }
   const ms = performance.now() - t0;
-  esito.innerHTML = nv + nn ? `<b>${num(nv)}</b> versetti e <b>${num(nn)}</b> note in <b>${per.size}</b> libri <small>(${ms.toFixed(0)} ms)</small>` : `Nessun risultato per «${esc(q)}».`;
+  const nd = dpar.length + dv.length;
+  const parti = [];
+  if (dove !== 'dizionario') parti.push(`<b>${num(nv)}</b> versetti e <b>${num(nn)}</b> note in <b>${per.size}</b> libri`);
+  if (conDiz) parti.push(`<b>${num(dv.length)}</b> ${dv.length === 1 ? 'voce' : 'voci'} e <b>${num(dpar.length)}</b> ${dpar.length === 1 ? 'paragrafo' : 'paragrafi'} del Dizionario`);
+  esito.innerHTML = nv + nn + nd ? `${parti.join('; ')} <small>(${ms.toFixed(0)} ms)</small>`
+    : `Nessun risultato per «${esc(q)}»${!conDiz && dove !== 'versetti' && dove !== 'note' ? ' (i filtri di testamento e libro escludono il Dizionario)' : ''}.`;
   const libri = [...per.keys()].sort((a, b) => a - b);
   const riga = ([tipo, k]) => {
     if (tipo === 0) return `<div class="r"><a class="dove" href="${hashVerso(k)}" data-r="${k}-${k}">${esc(rif(k))}</a><div class="frase">${evidenzia(I.vp[k], I.vn[k], ts)}</div></div>`;
@@ -913,6 +1283,22 @@ function aggiornaRisultati(q, dove, T, bsel) {
     return `<div class="r rn"><a class="dove" href="${hashVerso(x[0])}" data-nota="${k}">nota ${esc(x[3] + x[2])}<small>${esc(rif(x[0]))}</small></a><div class="frase">${evidenzia(I.np[k], I.nn[k], ts)}</div></div>`;
   };
   let h = '', righe = 0;
+  const rigaDiz = x => {
+    const [k, j] = I.dk[x], p = Z.voci[k][9][j], sz = sezioneDi(k, p[1]);
+    return `<div class="r rd"><a class="dove" href="${hashVoce(k, p[0])}">${esc(nomeVoce(k))}<small>${sz ? esc(sz[0]) : 'introd.'}</small></a><div class="frase">${evidenzia(I.dp[x], I.dpn[x], ts)}</div></div>`;
+  };
+  const PAGINA_DIZ = 50;
+  const altriDiz = n => `<button class="altro" type="button" data-diz="1">mostra altri ${num(Math.min(PAGINA_DIZ, dpar.length - n))} paragrafi${dpar.length - n > PAGINA_DIZ ? ` (di ${num(dpar.length - n)})` : ''}</button>`;
+  if (dv.length || dpar.length) {
+    // the rows shown before leaving the page come back with Back (history state)
+    const st = history.state || {};
+    const lim = Math.max(dove === 'dizionario' ? 25 : 5, st.q === q && st.in === dove ? st.dizN || 0 : 0);
+    h += `<section class="blocco bdiz"><h3><span class="seg">◊</span>Dizionario di Teologia Biblica<small>${quanti(dv.length, 'voce', 'voci')} · ${quanti(dpar.length, 'paragrafo', 'paragrafi')}</small></h3>`;
+    if (dv.length) h += `<div class="chips dchips">${dv.map(k => `<a class="chip" href="${hashVoce(k)}" style="--c:var(--r-diz)">${evidenzia(nomeVoce(k), I.dnomi[k], ts)}${rinvio(k) ? ' <small>rinvio</small>' : ''}</a>`).join('')}</div>`;
+    h += dpar.slice(0, lim).map(rigaDiz).join('');
+    if (dpar.length > lim) h += altriDiz(lim);
+    h += '</section>';
+  }
   for (const b of libri) {
     const xs = per.get(b);
     xs.sort((x, y) => (x[0] ? D.note[x[1]][0] : x[1]) - (y[0] ? D.note[y[1]][0] : y[1]) || x[0] - y[0]);
@@ -925,6 +1311,14 @@ function aggiornaRisultati(q, dove, T, bsel) {
   }
   box.innerHTML = h;
   box.onclick = e => {
+    const dz = e.target.closest('[data-diz]');
+    if (dz) {
+      const n = dz.parentNode.querySelectorAll('.r').length, m = Math.min(dpar.length, n + PAGINA_DIZ);
+      dz.insertAdjacentHTML('beforebegin', dpar.slice(n, m).map(rigaDiz).join('') + (m < dpar.length ? altriDiz(m) : ''));
+      dz.remove();
+      history.replaceState({ ...(history.state || {}), q, in: dove, dizN: m }, '', location.href);
+      return;
+    }
     const btn = e.target.closest('[data-libro]');
     if (!btn) return;
     const xs = per.get(+btn.dataset.libro);
@@ -969,8 +1363,31 @@ function vicini(a, b, filtro) {
     const s = D.note[c[0]][0];
     out.push({ x: s, y: s, rel: 'cites', dir: -1, w: ampiezza(c[1]) + 5 });
   });
-  const pri = { parallel: 0, 'quoted-later': 1, doublet: 2, keynote: 3, related: 4, cites: 5 };
+  if (filtro.has('diz')) {
+    // the entries of the dictionary citing the passage: one card per entry, at its most
+    // specific citation
+    const per = new Map();
+    Z.cit.forEach((c, k) => {
+      if (!sovrappone(c[3], a, b)) return;
+      const w = ampiezza(c[3]), x = per.get(c[0]);
+      if (!x || w < x.w) per.set(c[0], { voce: c[0], cit: k, x: -1, y: -1, rel: 'diz', dir: 1, w });
+    });
+    out.push(...per.values());
+  }
+  const pri = { parallel: 0, 'quoted-later': 1, doublet: 2, keynote: 3, related: 4, cites: 5, diz: 6 };
   return out.filter(e => !(e.x === a && e.y === b)).sort((p, q) => pri[p.rel] - pri[q.rel] || p.w - q.w || p.x - q.x);
+}
+function viciniVoce(c) {
+  // the passages an entry cites: those of the paragraph that led here first, then the others,
+  // in the order printed
+  const ks = S.citDi[c.voce], par = Z.cit[c.cit][1], sez = Z.cit[c.cit][2];
+  const qui = k => Z.cit[k][1] === par && (par >= 0 || Z.cit[k][2] === sez);
+  const out = [];
+  for (const k of [...ks.filter(qui), ...ks.filter(k => !qui(k))]) {
+    const r = Z.cit[k][3];
+    for (let j = 0; j < r.length; j += 2) out.push({ x: r[j], y: r[j + 1], rel: 'diz', dir: 1, w: r[j + 1] - r[j] });
+  }
+  return out;
 }
 // The graph view is a tree to explore: the chosen verse is the root, its links hang from it
 // grouped by relation and direction, and every card can grow its own links (▸) in turn.
@@ -1005,6 +1422,9 @@ function contorno(el, seme) {
 // ---- the tree: cards (passages) and, between them, the groups of one relation and direction
 
 const nuovaCarta = (a, b, padre) => ({ tipo: 'carta', a, b, k: a + '-' + b, padre, aperta: false, figli: null });
+// an entry of the dictionary as a card: cit is the citation that brought it into the tree
+const nuovaVoce = (e, padre) => ({ tipo: 'carta', voce: e.voce, cit: e.cit, k: 'v' + e.voce, padre, aperta: false, figli: null });
+const chiaveVicino = e => (e.voce !== undefined ? 'v' + e.voce : e.x + '-' + e.y);
 function antenati(n) {
   const s = new Set();
   for (let x = n; x; x = x.padre) if (x.tipo === 'carta') s.add(x.k);
@@ -1015,8 +1435,8 @@ function collegamenti(c) {
   // path from the root (a tree has no cycles); memoised per card
   if (c.gruppi) return c.gruppi;
   const gruppi = new Map(), visti = antenati(c);
-  for (const e of vicini(c.a, c.b, S.filtro)) {
-    const k = e.x + '-' + e.y;
+  for (const e of c.voce !== undefined ? viciniVoce(c) : vicini(c.a, c.b, S.filtro)) {
+    const k = chiaveVicino(e);
     if (visti.has(k)) continue;
     visti.add(k);
     const due = e.rel === 'parallel' || e.rel === 'doublet';       // printed both ways
@@ -1029,7 +1449,7 @@ function collegamenti(c) {
   return c.gruppi;
 }
 function altri(g, n) {
-  g.figli.push(...g.voci.slice(g.figli.length, g.figli.length + n).map(e => nuovaCarta(e.x, e.y, g)));
+  g.figli.push(...g.voci.slice(g.figli.length, g.figli.length + n).map(e => (e.voce !== undefined ? nuovaVoce(e, g) : nuovaCarta(e.x, e.y, g))));
 }
 function apri(c) {
   if (!c.figli) {
@@ -1047,6 +1467,7 @@ function tutti(n, out = []) {
 function titoloGruppo(g) {
   const R = REL[g.rel];
   if (g.rel === 'cites') return g.dir > 0 ? '§ Le sue note citano' : '§ Citato nelle note di';
+  if (g.rel === 'diz') return g.padre.voce !== undefined ? '◊ La voce cita' : '◊ Nel Dizionario';
   if (!g.dir) return `${R.seg} ${R.nome}`;
   return g.dir > 0 ? `${R.seg} ${R.nome} →` : `← ${R.seg} ${R.entr}`;
 }
@@ -1080,7 +1501,21 @@ function foglietti(c, radice) {
   }).join('');
   return html + (ks.length > max ? `<div class="foglietti-altre">${ks.length - max === 1 ? 'e un’altra nota' : `e altre ${ks.length - max} note`}: <a href="${hashVerso(c.a)}">nel lettore</a></div>` : '');
 }
+function htmlVoceCarta(c) {
+  // an entry: its name (opens the entry at the paragraph), the section, the sentence around the
+  // citation; ▸ grows the passages it cites
+  collegamenti(c);
+  const n = c.nvoci, k = c.voce, cz = Z.cit[c.cit], s = sezioneDi(k, cz[2]);
+  const pn = cz[1] >= 0 ? Z.voci[k][9][cz[1]][0] : primoParDi(k, cz[2]);
+  const dove = hashVoce(k, pn, c.padre?.padre?.a);
+  return `<div class="carta voce" data-i="${c.i}" style="width:${S.albW.carta}px">
+    <div class="carta-testa"><span class="pallino diz" title="Dizionario di Teologia Biblica"></span><a class="carta-rif" href="${dove}" title="Apri la voce">${esc(nomeVoce(k))}</a><span class="carta-libro">Dizionario</span></div>
+    ${s ? `<div class="carta-sez"><span class="percorso">${esc(s[0])}</span>${esc(testoPiano(s[2]))}</div>` : ''}
+    <div class="carta-testo">${fraseCit(c.cit, 230)}</div>
+    <div class="carta-piede"><button type="button" class="cresci" data-i="${c.i}" aria-expanded="${c.aperta}"${n ? '' : ' disabled'}>${n ? `${c.aperta ? '▾' : '▸'} ${n} ${n === 1 ? 'passo citato' : 'passi citati'}` : 'nessun altro passo'}</button><a class="leggi" href="${dove}">leggi ›</a></div></div>`;
+}
 function htmlCarta(c) {
+  if (c.voce !== undefined) return htmlVoceCarta(c);
   const radice = !c.padre, id = V.id[c.a], AT = D.libri[S.vb[c.a]].T === 'AT';
   collegamenti(c);
   const n = c.nvoci;
@@ -1158,9 +1593,10 @@ function mostraGrafo(id, par) {
       <div class="leg"><svg width="26" height="14"><circle cx="13" cy="7" r="5" fill="var(--s-at)"/></svg>Antico Testamento</div>
       <div class="leg"><svg width="26" height="14"><circle cx="13" cy="7" r="5" fill="var(--s-nt)"/></svg>Nuovo Testamento</div>
       <div class="leg"><svg width="26" height="16"><rect x="3" y="2" width="20" height="12" fill="var(--foglietto)" stroke="var(--foglietto-tratto)"/></svg>nota della BJ</div>
+      <div class="leg"><svg width="26" height="16"><rect x="3" y="2" width="20" height="12" fill="var(--biglietto-diz)" stroke="var(--tratto)"/></svg>voce del Dizionario</div>
       <h3>Albero</h3><div class="grafo-info" id="ginfo"></div>
       <details class="grafo-nodi"><summary>Elenco delle schede</summary><ul id="gnodi"></ul></details>
-      <p class="grafo-info nota-grafo">▸ su una scheda apre i suoi collegamenti, raggruppati per relazione; il riferimento la mette al centro. Trascina per spostarti, rotella per scorrere, Ctrl + rotella o +/− per lo zoom.</p>
+      <p class="grafo-info nota-grafo">▸ su una scheda apre i suoi collegamenti, raggruppati per relazione; il riferimento la mette al centro (il nome di una voce del Dizionario la apre). Trascina per spostarti, rotella per scorrere, Ctrl + rotella o +/− per lo zoom.</p>
     </div></div>`);
   document.title = `Grafo ${rif(i)} · Esploratore dei versetti`;
   S.ridisegna = null;
@@ -1216,7 +1652,7 @@ function disegnaAlbero(fermo, adattare) {
   });
   nodi.forEach(n => {
     if (n.tipo !== 'carta') return;
-    contorno(n.el, n.a * 7 + n.b);
+    contorno(n.el, n.voce !== undefined ? 100003 + n.voce * 7 : n.a * 7 + n.b);
     $$('.foglietto', n.el).forEach((f, j) => contorno(f, +f.dataset.n * 3 + j));
   });
   const rami = $('#rami');
@@ -1226,11 +1662,15 @@ function disegnaAlbero(fermo, adattare) {
   if (adattare) adatta();
   else if (prima) { S.av.x = prima.x - fermo.x * S.av.z; S.av.y = prima.y - fermo.y * S.av.z; }
   applica();
-  const carte = nodi.filter(n => n.tipo === 'carta'), nAT = carte.filter(n => D.libri[S.vb[n.a]].T === 'AT').length;
+  const carte = nodi.filter(n => n.tipo === 'carta' && n.voce === undefined), nAT = carte.filter(n => D.libri[S.vb[n.a]].T === 'AT').length;
+  const voci = nodi.filter(n => n.voce !== undefined);
   const nNote = carte.reduce((s, n) => s + n.el.querySelectorAll('.foglietto').length, 0);
-  $('#ginfo').innerHTML = `<b>${carte.length}</b> schede, <b>${nNote}</b> note della BJ<br>${nAT} nell’AT, ${carte.length - nAT} nel NT` +
+  $('#ginfo').innerHTML = `<b>${carte.length}</b> ${carte.length === 1 ? 'scheda' : 'schede'}, <b>${nNote}</b> ${nNote === 1 ? 'nota' : 'note'} della BJ<br>${nAT} nell’AT, ${carte.length - nAT} nel NT` +
+    (voci.length ? `<br><b>${voci.length}</b> ${voci.length === 1 ? 'voce' : 'voci'} del Dizionario` : '') +
     (!S.filtro.size ? '<br><small>nessuna relazione scelta: spunta almeno una casella</small>' : '');
-  $('#gnodi').innerHTML = carte.filter(n => n.padre).map(n => `<li><a href="#grafo/${V.id[n.a]}${S.albProf > 1 ? '?p=2' : ''}">${esc(rif(n.a, n.b))}</a></li>`).join('');
+  $('#gnodi').innerHTML = nodi.filter(n => n.tipo === 'carta' && n.padre).map(n => (n.voce !== undefined
+    ? `<li><a href="${hashVoce(n.voce)}">◊ ${esc(nomeVoce(n.voce))}</a> <small>Dizionario</small></li>`
+    : `<li><a href="#grafo/${V.id[n.a]}${S.albProf > 1 ? '?p=2' : ''}">${esc(rif(n.a, n.b))}</a></li>`)).join('');
 }
 function applica() {
   const m = $('#mondo');
@@ -1353,9 +1793,48 @@ function mostraPanoramica(sel) {
     <div class="h2">I 50 versetti più rimandati</div>
     <p class="sotto" style="margin-bottom:.4rem">Quanti rimandi a margine indicano un passo che comprende il versetto.</p>
     <table class="classifica"><tbody>${top.map((i, k) => `<tr><td class="pos">${k + 1}</td><td class="rif"><a href="${hashVerso(i)}" data-r="${i}-${i}">${esc(rif(i))}</a></td><td class="cnt"><div><i style="width:${(5 * S.indeg[i] / S.indeg[top[0]]).toFixed(2)}rem"></i>${S.indeg[i]}</div></td><td class="frase">${esc(testoPiano(V.h[i]).slice(0, 120))}${testoPiano(V.h[i]).length > 120 ? '…' : ''}</td></tr>`).join('')}</tbody></table>
+    ${panoramicaDiz()}
   </div>`);
   document.title = 'Panoramica · Esploratore dei versetti';
   disegnaMatrice(sel, sel.length === 2);
+  $('#dtop-scelta').addEventListener('click', e => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    $$('#dtop-scelta button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    $('#dtop tbody').innerHTML = righeTopDiz(b.dataset.top === 'stretti');
+  });
+}
+function topDiz(stretti) {
+  // the 20 verses most cited by the dictionary: every citation naming a passage that includes
+  // the verse, or only those of at most STRETTA verses; ties in canonical order
+  const A = stretti ? S.dizS : S.dizN, idx = [];
+  for (let i = 0; i < S.n; i++) if (A[i]) idx.push(i);
+  return idx.sort((a, b) => A[b] - A[a] || a - b).slice(0, 20);
+}
+function righeTopDiz(stretti) {
+  const A = stretti ? S.dizS : S.dizN, top = topDiz(stretti);
+  return top.map((i, k) => {
+    const nv = dizDi(i).length, t = testoPiano(V.h[i]);
+    return `<tr><td class="pos">${k + 1}</td><td class="rif"><a href="${hashVerso(i)}" data-r="${i}-${i}">${esc(rif(i))}</a></td><td class="cnt"><div><i style="width:${(5 * A[i] / A[top[0]]).toFixed(2)}rem"></i>${A[i]}</div><small>in ${nv} voci</small></td><td class="frase">${esc(t.slice(0, 120))}${t.length > 120 ? '…' : ''}</td></tr>`;
+  }).join('');
+}
+function panoramicaDiz() {
+  const m = Z.meta;
+  let soli = 0;
+  for (let i = 0; i < S.n; i++) if (S.dizS[i]) soli++;
+  const tessere = [
+    [num(m.piene), 'voci del Dizionario', `${num(m.rinvii)} rinvii · ${num(m.paragrafi)} paragrafi`],
+    [num(m.citazioni), 'citazioni bibliche', `in ${num(m.libri)} libri`],
+    [String(m.pct).replace('.', ',') + '%', 'citazioni riconosciute', `${num(m.stati[1])} in parte, ${num(m.stati[2])} irrisolte`],
+    [num(m.versetti), 'versetti citati', `${num(soli)} da soli o in passi di al più ${STRETTA} versetti`],
+  ];
+  return `<div class="h2 diz-h2"><span class="seg">◊</span>Dizionario di Teologia Biblica</div>
+    <p class="sotto">X. Léon-Dufour (a cura di), Marietti 1976: le citazioni bibliche delle voci, lette con la numerazione di questa Bibbia (i Salmi con quella ebraica, come la CEI). <a href="#dizionario">Tutte le voci</a></p>
+    <div class="tessere tessere-diz">${tessere.map(([n, l, s]) => `<div class="tessera"><b>${n}</b><span>${l}</span>${s ? `<small>${s}</small>` : ''}</div>`).join('')}</div>
+    <div class="h2">I 20 versetti più citati dal Dizionario</div>
+    <div class="segmenti" id="dtop-scelta" role="group" aria-label="Quali citazioni contare"><button type="button" data-top="tutte" aria-pressed="true">Tutte le citazioni</button><button type="button" data-top="stretti" aria-pressed="false">Di al più ${STRETTA} versetti</button></div>
+    <p class="sotto nota-barre">Quante citazioni indicano un passo che comprende il versetto: con tutte, i capitoli interi e i passi lunghi pesano (Is 53); con le sole citazioni brevi resta il versetto nominato da solo.</p>
+    <table class="classifica diz-top" id="dtop"><tbody>${righeTopDiz(false)}</tbody></table>`;
 }
 function disegnaMatrice(sel, scorri = false) {
   const { M, max } = matriceDati();
@@ -1498,6 +1977,7 @@ function guida() {
     <tr><td><kbd>n</kbd> <kbd>p</kbd></td><td>capitolo successivo / precedente</td></tr>
     <tr><td><kbd>g</kbd></td><td>grafo del versetto selezionato</td></tr>
     <tr><td><kbd>h</kbd></td><td>evidenzia i versetti più rimandati</td></tr>
+    <tr><td><kbd>d</kbd></td><td>evidenzia invece i più citati dal Dizionario (e viceversa)</td></tr>
     <tr><td><kbd>t</kbd></td><td>tema chiaro / scuro</td></tr>
     <tr><td><kbd>Tab</kbd> <kbd>Invio</kbd></td><td>scorre versetti e richiami di nota, li apre</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>chiude pannello, anteprima, guida</td></tr></table>
@@ -1513,6 +1993,20 @@ function calore_(on) {
   document.body.classList.toggle('calore', on);
   $('#calore').setAttribute('aria-pressed', String(on));
   memo.set('calore', on ? '1' : '0');
+  premiFonte();
+}
+function premiFonte() {
+  // the switch above the text: the source pressed while the heat is on, none when it is off
+  const on = document.body.classList.contains('calore');
+  $$('.fonte-calore button').forEach(b => b.setAttribute('aria-pressed', String(on && (b.dataset.fonte === 'diz') === !!S.caloreDiz)));
+}
+function fonteCalore(diz) {
+  // what the heat shows: margin references of the BJ or citations of the dictionary
+  S.caloreDiz = diz;
+  document.body.classList.toggle('calore-diz', diz);
+  $('#calore').title = diz ? 'Evidenzia i versetti più citati dal Dizionario' : 'Evidenzia i versetti più rimandati';
+  memo.set('fonte', diz ? 'diz' : 'bj');
+  premiFonte();
 }
 
 function eventi() {
@@ -1548,11 +2042,23 @@ function eventi() {
   document.addEventListener('click', e => {
     if (e.detail === 0) S.fuocoPannello = true;   // activated from the keyboard: focus follows to the panel
     if (e.target.closest('[data-maniglia]')) { $('#pannello').classList.toggle('alto'); return; }
+    const fonte = e.target.closest('[data-fonte]');
+    if (fonte) {
+      // the switch above the text: a source turns the heat on, the pressed one turns it off
+      const diz = fonte.dataset.fonte === 'diz';
+      if (document.body.classList.contains('calore') && diz === !!S.caloreDiz) calore_(false);
+      else { fonteCalore(diz); calore_(true); }
+      return;
+    }
     const nota = e.target.closest('[data-nota]');
     if (nota) S.notaChiave = +nota.dataset.nota;
     const chiudi = e.target.closest('[data-chiudi]');
     if (chiudi) { chiudiPannello(true); return; }
-    const anteprima = e.target.closest('[data-r]');
+    const anteprima = e.target.closest('[data-r], [data-x]');
+    if (anteprima && anteprima.dataset.x !== undefined && !e.target.closest('#anteprima')) {
+      mostraAnteprima(anteprima, puntatore === 'touch');
+      return;
+    }
     if (anteprima && puntatore === 'touch' && bersaglio !== anteprima && !e.target.closest('#anteprima')) {
       e.preventDefault();
       mostraAnteprima(anteprima, true);
@@ -1567,6 +2073,14 @@ function eventi() {
       if (location.hash === id) mostraPannello(+v.dataset.i); else location.hash = id;
       return;
     }
+    // a link to the address already shown (the section index of an entry clicked again after
+    // scrolling) shows it again instead of doing nothing
+    const stesso = e.target.closest('a[href^="#voce/"]');
+    if (stesso && stesso.getAttribute('href') === location.hash && !e.defaultPrevented) {
+      e.preventDefault();
+      instrada();
+      return;
+    }
     const v = e.target.closest('.testo .v');
     if (v && !e.target.closest('a') && !String(getSelection()).trim()) {
       const id = '#' + V.id[+v.dataset.i];
@@ -1575,22 +2089,28 @@ function eventi() {
   });
   document.addEventListener('pointerover', e => {
     if (e.pointerType === 'touch') return;
-    const el = e.target.closest('[data-r]');
+    const el = e.target.closest('[data-r], [data-x]');
     if (!el || el.closest('#anteprima')) return;
     clearTimeout(tAnteprima);
     tAnteprima = setTimeout(() => mostraAnteprima(el, false), 120);
   });
+  document.addEventListener('focusin', e => {
+    const el = e.target.closest?.('a.cd.x');
+    if (el) mostraAnteprima(el, false);
+  });
   document.addEventListener('pointerout', e => {
     if (e.pointerType === 'touch') return;
-    const el = e.target.closest('[data-r]');
+    const el = e.target.closest('[data-r], [data-x]');
     if (!el || (e.relatedTarget && el.contains(e.relatedTarget))) return;
     clearTimeout(tAnteprima);
     tAnteprima = setTimeout(nascondiAnteprima, 150);
   });
   $('#anteprima').addEventListener('pointerover', () => clearTimeout(tAnteprima));
   $('#anteprima').addEventListener('pointerout', e => { if (e.pointerType !== 'touch') tAnteprima = setTimeout(nascondiAnteprima, 150); });
-  const via = () => { if (!$('#anteprima').hidden && puntatore !== 'touch') nascondiAnteprima(); };
+  // scrolling hides the preview, except the one of the element that has the keyboard focus
+  const via = () => { if (!$('#anteprima').hidden && puntatore !== 'touch' && bersaglio !== document.activeElement) nascondiAnteprima(); };
   window.addEventListener('scroll', via, { passive: true });
+  window.addEventListener('scroll', memoScorrimento, { passive: true });
   $('#pannello').addEventListener('scroll', via, { passive: true });
   document.addEventListener('keydown', e => {
     const campo = e.target.closest('input, select, textarea');
@@ -1603,6 +2123,11 @@ function eventi() {
     }
     if (campo || e.ctrlKey || e.metaKey || e.altKey) return;
     if (!$('#guida').hidden) return;
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('a.cd.x')) {
+      e.preventDefault();
+      mostraAnteprima(e.target, false);
+      return;
+    }
     if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.testo .v')) {
       e.preventDefault();
       S.fuocoPannello = true;
@@ -1623,6 +2148,7 @@ function eventi() {
       }
       case 'g': if (S.sel !== null && S.sel !== undefined && S.vista === 'lettore') location.hash = '#grafo/' + V.id[S.sel]; break;
       case 'h': calore_(!document.body.classList.contains('calore')); break;
+      case 'd': fonteCalore(!S.caloreDiz); calore_(true); break;
       case 't': tema(scuro() ? 'light' : 'dark'); break;
       case '?': guida(); break;
       default: return;
@@ -1648,6 +2174,7 @@ async function avvia() {
   indici();
   eventi();
   calore_(memo.get('calore') === '1');
+  fonteCalore(memo.get('fonte') === 'diz');
   instrada();
   const t2 = performance.now();
   window.__esploratore = { dati: Math.round(t1 - T0), indici: Math.round(t2 - t1), pronto: Math.round(t2 - T0) };

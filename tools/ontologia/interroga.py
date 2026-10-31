@@ -3,9 +3,9 @@
 usage: interroga.py <query.rq> [<query.rq> ...] [--limite N] [--largo] [--tsv] [--riepilogo F]
        interroga.py -e "SELECT ?v WHERE { ?v bj:haNota ?n } LIMIT 5"
 
-Loads ontologia/bj-dati.nt.gz and the ontology once (grafo.py, about 20 s) and runs
+Loads ontologia/bj-dati.nt.gz and the ontology once (grafo.py, about 45 s) and runs
 each query in turn. Queries given with -e may use the prefixes of the data without
-declaring them (bj:, verso:, libro:, nota:, dcterms:, oa:, skos:, ...). IRIs are
+declaring them (bj:, verso:, libro:, nota:, voce:, persona:, dcterms:, oa:, skos:, foaf:, ...). IRIs are
 printed in their short form (verso:John.3.16), long values are cut at 70 characters
 (--largo keeps them whole, --tsv prints tab-separated values); --limite N prints only
 the first N rows (the count is of all of them). After several queries a summary of rows

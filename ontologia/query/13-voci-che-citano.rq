@@ -1,0 +1,24 @@
+# Le voci del Dizionario di Teologia Biblica che citano un versetto (Gv 1,14), con la
+# sezione, il paragrafo e la citazione come stampata.
+# The entries of the dictionary citing a verse, with section, paragraph and citation as printed.
+PREFIX bj: <https://massimo-nocentini.github.io/bibbia-gerusalemme/ontologia#>
+PREFIX verso: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/verso/>
+PREFIX libro: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/libro/>
+PREFIX voce: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/voce/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX oa: <http://www.w3.org/ns/oa#>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+
+SELECT ?voce ?sezione ?paragrafo ?come_stampato ?pagina WHERE {
+  ?p bj:comprende verso:John.1.14 .
+  ?c bj:aPassaggio ?p ; bj:nellaVoce ?x ; bj:testo ?come_stampato .
+  ?x skos:prefLabel ?voce ; bj:ordine ?o .
+  OPTIONAL { ?c bj:daParagrafo ?pa . ?pa rdfs:label ?paragrafo ; bj:numero ?n ; bj:pagina ?pagina .
+             # a paragraph before the first heading is part of the entry only: no section path
+             OPTIONAL { ?pa dcterms:isPartOf ?s . ?s bj:percorso ?sezione } }
+  OPTIONAL { ?c bj:daSezione ?s2 . ?s2 bj:percorso ?sezione ; bj:pagina ?pagina }
+}
+ORDER BY ?o ?n

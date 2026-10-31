@@ -1,4 +1,5 @@
-# SHACL shapes for the data of the verse ontology (ontologia/bj-dati.ttl.gz).
+# SHACL shapes for the data of the verse ontology (ontologia/bj-dati.ttl.gz), the Bible
+# and the Dizionario di Teologia Biblica (last section).
 # Checked by tools/ontologia/verifica_rdf.py with pyshacl, on the whole graph.
 
 @prefix bj:      <https://massimo-nocentini.github.io/bibbia-gerusalemme/ontologia#> .
@@ -11,6 +12,8 @@
 @prefix dc:      <http://purl.org/dc/elements/1.1/> .
 @prefix oa:      <http://www.w3.org/ns/oa#> .
 @prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix foaf:    <http://xmlns.com/foaf/0.1/> .
 
 bjf:Bibbia a sh:NodeShape ;
     sh:targetClass bj:Bibbia ;
@@ -93,7 +96,8 @@ bjf:Versetto a sh:NodeShape ;
                 [ sh:path bj:paralleloA ; sh:class bj:Versetto ] ,
                 [ sh:path bj:doppioneDi ; sh:class bj:Versetto ] ,
                 [ sh:path bj:citatoIn ; sh:class bj:Versetto ] ,
-                [ sh:path bj:rinviaANotaChiave ; sh:class bj:Versetto ] .
+                [ sh:path bj:rinviaANotaChiave ; sh:class bj:Versetto ] ,
+                [ sh:path bj:citatoNellaVoce ; sh:class bj:Voce ] .
 
 bjf:Pagina a sh:NodeShape ;
     sh:targetClass bj:Pagina ;
@@ -180,16 +184,28 @@ bjf:Rimando a sh:NodeShape ;
                 [ sh:path bj:segno ; sh:maxCount 1 ; sh:in ( "‖" "=" "/" ) ] ,
                 [ sh:path bj:doppioneDelRimando ; sh:maxCount 1 ; sh:class bj:Rimando ] .
 
-# A citation stands in exactly one note or one introduction paragraph.
+# A citation stands in exactly one note, one introduction paragraph, one paragraph of a
+# dictionary entry or one section title of an entry (those two with their entry).
 bjf:Citazione a sh:NodeShape ;
     sh:targetClass bj:Citazione ;
     sh:xone ( [ sh:path bj:daNota ; sh:minCount 1 ; sh:maxCount 1 ; sh:class bj:Nota ]
-              [ sh:path bj:daParagrafo ; sh:minCount 1 ; sh:maxCount 1 ; sh:class bj:Paragrafo ] ) ;
+              [ sh:path bj:daParagrafo ; sh:minCount 1 ; sh:maxCount 1 ; sh:class bj:Paragrafo ]
+              [ sh:property [ sh:path bj:daParagrafo ; sh:minCount 1 ; sh:maxCount 1 ; sh:class bj:ParagrafoVoce ] ,
+                            [ sh:path bj:nellaVoce ; sh:minCount 1 ] ]
+              [ sh:property [ sh:path bj:daSezione ; sh:minCount 1 ; sh:maxCount 1 ; sh:class bj:SezioneVoce ] ,
+                            [ sh:path bj:nellaVoce ; sh:minCount 1 ] ] ) ;
     sh:property [ sh:path bj:posizioneTesto ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ; sh:minInclusive 0 ] ,
                 [ sh:path bj:lunghezza ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ; sh:minInclusive 1 ] ,
                 [ sh:path bj:posizioneHtml ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ] ,
                 [ sh:path bj:fineHtml ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ] ,
-                [ sh:path bj:conCf ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:boolean ] .
+                [ sh:path bj:conCf ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:boolean ] ,
+                [ sh:path bj:nellaVoce ; sh:maxCount 1 ; sh:class bj:Voce ] ,
+                [ sh:path bj:eAltrove ; sh:maxCount 1 ; sh:in ( true ) ] ,
+                [ sh:path bj:libroImplicito ; sh:maxCount 1 ; sh:in ( 1 2 3 ) ] ,
+                [ sh:path bj:conversione ; sh:maxCount 1 ; sh:datatype xsd:string ] ,
+                [ sh:path bj:tipoMotivo ; sh:maxCount 1 ;
+                  sh:in ( "out-of-range" "ambiguous-book" "extra-canonical" "other" ) ] ,
+                [ sh:path bj:statoFonte ; sh:maxCount 1 ; sh:in ( "out_of_range" "fixed" "noncanonical" "recovered" ) ] .
 
 bjf:Passaggio a sh:NodeShape ;
     sh:targetClass bj:Passaggio ;
@@ -197,3 +213,122 @@ bjf:Passaggio a sh:NodeShape ;
                 [ sh:path bj:fine ; sh:minCount 1 ; sh:maxCount 1 ; sh:class bj:Versetto ] ,
                 [ sh:path bj:comprende ; sh:minCount 1 ; sh:class bj:Versetto ] ,
                 [ sh:path oa:hasSource ; sh:minCount 1 ; sh:maxCount 1 ; sh:class bj:Libro ] .
+
+# ================================================================== the Dizionario di Teologia Biblica
+
+# The work: a concept scheme with its bibliographic data, editors and translators.
+bjf:Dizionario a sh:NodeShape ;
+    sh:targetClass bj:Dizionario ;
+    sh:class skos:ConceptScheme ;
+    sh:property [ sh:path dcterms:title ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype rdf:langString ] ,
+                [ sh:path dcterms:publisher ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ] ,
+                [ sh:path dcterms:issued ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:gYear ] ,
+                [ sh:path bj:edizione ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ] ,
+                [ sh:path bj:curatore ; sh:minCount 1 ; sh:class foaf:Person ] ,
+                [ sh:path bj:traduttore ; sh:class foaf:Person ] ,
+                [ sh:path skos:hasTopConcept ; sh:minCount 1 ; sh:class bj:Voce ] .
+
+bjf:Persona a sh:NodeShape ;
+    sh:targetClass foaf:Person ;
+    sh:property [ sh:path foaf:name ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:minLength 1 ] ,
+                [ sh:path foaf:givenName ; sh:maxCount 1 ; sh:datatype xsd:string ] ,
+                [ sh:path foaf:familyName ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ] ,
+                [ sh:path bj:ordineReligioso ; sh:maxCount 1 ; sh:datatype xsd:string ] ,
+                [ sh:path bj:sede ; sh:maxCount 1 ; sh:datatype xsd:string ] .
+
+bjf:PaginaDizionario a sh:NodeShape ;
+    sh:targetClass bj:PaginaDizionario ;
+    sh:property [ sh:path bj:numero ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ; sh:minInclusive 1 ] ,
+                [ sh:path bj:paginaPdf ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ] ,
+                [ sh:path dcterms:isPartOf ; sh:minCount 1 ; sh:maxCount 1 ; sh:class bj:Dizionario ] .
+
+# An entry: a SKOS concept of the dictionary's scheme with one Italian preferred label,
+# printed on pages of the dictionary. A full entry has authors, a signature and a word
+# count; a redirect entry has none of them.
+bjf:Voce a sh:NodeShape ;
+    sh:targetClass bj:Voce ;
+    sh:class skos:Concept ;
+    sh:property [ sh:path skos:prefLabel ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype rdf:langString ;
+                  sh:languageIn ( "it" ) ] ,
+                [ sh:path skos:altLabel ; sh:datatype rdf:langString ] ,
+                [ sh:path skos:inScheme ; sh:minCount 1 ; sh:maxCount 1 ; sh:class bj:Dizionario ] ,
+                [ sh:path skos:topConceptOf ; sh:minCount 1 ; sh:maxCount 1 ; sh:class bj:Dizionario ] ,
+                [ sh:path dcterms:identifier ; sh:minCount 1 ; sh:maxCount 1 ; sh:pattern "^[a-z0-9]+(-[a-z0-9]+)*$" ] ,
+                [ sh:path bj:lettera ; sh:minCount 1 ; sh:maxCount 1 ; sh:pattern "^[A-Z]$" ] ,
+                [ sh:path bj:ordine ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ; sh:minInclusive 1 ] ,
+                [ sh:path bj:pagina ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ] ,
+                [ sh:path bj:paginaFinale ; sh:maxCount 1 ; sh:datatype xsd:integer ] ,
+                [ sh:path prov:wasDerivedFrom ; sh:minCount 1 ; sh:class bj:PaginaDizionario ] ,
+                [ sh:path bj:testoRinvii ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:minLength 1 ] ,
+                [ sh:path dcterms:creator ; sh:class foaf:Person ] ,
+                [ sh:path bj:firma ; sh:datatype xsd:string ] ,
+                [ sh:path skos:related ; sh:class bj:Voce ] ,
+                [ sh:path bj:richiamaVoce ; sh:class bj:Voce ] ,
+                [ sh:path bj:vediAncheVoce ; sh:class bj:Voce ] ,
+                [ sh:path bj:voceCitaVersetto ; sh:class bj:Versetto ] ;
+    sh:xone ( [ sh:class bj:VoceRinvio ;
+                sh:property [ sh:path dcterms:creator ; sh:maxCount 0 ] ,
+                            [ sh:path bj:numeroParole ; sh:maxCount 0 ] ]
+              [ sh:not [ sh:class bj:VoceRinvio ] ;
+                sh:property [ sh:path dcterms:creator ; sh:minCount 1 ] ,
+                            [ sh:path bj:firma ; sh:minCount 1 ] ,
+                            [ sh:path bj:numeroParole ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ] ] ) .
+
+bjf:VoceRinvio a sh:NodeShape ;
+    sh:targetClass bj:VoceRinvio ;
+    sh:property [ sh:path bj:rinviaAVoce ; sh:class bj:Voce ] .
+
+bjf:SezioneVoce a sh:NodeShape ;
+    sh:targetClass bj:SezioneVoce ;
+    sh:property [ sh:path dcterms:isPartOf ; sh:minCount 1 ; sh:maxCount 1 ;
+                  sh:or ( [ sh:class bj:SezioneVoce ] [ sh:class bj:Voce ] ) ] ,
+                [ sh:path bj:nellaVoce ; sh:minCount 1 ; sh:maxCount 1 ; sh:class bj:Voce ] ,
+                [ sh:path bj:percorso ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:minLength 1 ] ,
+                [ sh:path bj:tipoSezione ; sh:minCount 1 ; sh:maxCount 1 ;
+                  sh:in ( "part" "testament" "roman" "num" "alpha" "runin" "caps" ) ] ,
+                [ sh:path bj:livello ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ;
+                  sh:minInclusive 1 ; sh:maxInclusive 4 ] ,
+                [ sh:path bj:ordine ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ; sh:minInclusive 1 ] ,
+                [ sh:path dcterms:title ; sh:maxCount 1 ; sh:datatype rdf:langString ] ,
+                [ sh:path bj:testoHtml ; sh:maxCount 1 ; sh:datatype xsd:string ] ,
+                [ sh:path bj:etichetta ; sh:maxCount 1 ; sh:datatype xsd:string ] ,
+                [ sh:path dcterms:creator ; sh:class foaf:Person ] ,
+                [ sh:path bj:pagina ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ] ,
+                [ sh:path prov:wasDerivedFrom ; sh:minCount 1 ; sh:maxCount 1 ; sh:class bj:PaginaDizionario ] .
+
+bjf:ParagrafoVoce a sh:NodeShape ;
+    sh:targetClass bj:ParagrafoVoce ;
+    sh:property [ sh:path dcterms:isPartOf ; sh:minCount 1 ; sh:maxCount 1 ;
+                  sh:or ( [ sh:class bj:SezioneVoce ] [ sh:class bj:Voce ] ) ] ,
+                [ sh:path bj:nellaVoce ; sh:minCount 1 ; sh:maxCount 1 ; sh:class bj:Voce ] ,
+                [ sh:path bj:testo ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype rdf:langString ;
+                  sh:languageIn ( "it" ) ; sh:minLength 1 ] ,
+                [ sh:path bj:testoHtml ; sh:maxCount 1 ; sh:datatype xsd:string ] ,
+                [ sh:path bj:numero ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ; sh:minInclusive 1 ] ,
+                [ sh:path bj:pagina ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ] ,
+                [ sh:path prov:wasDerivedFrom ; sh:minCount 1 ; sh:maxCount 1 ; sh:class bj:PaginaDizionario ] .
+
+# A link between entries: its kind, the entry it is printed in and, when resolved, the
+# entry it names (an unresolved one names none); a «*» word stands in a paragraph or a
+# section title.
+bjf:CollegamentoVoce a sh:NodeShape ;
+    sh:targetClass bj:CollegamentoVoce ;
+    sh:property [ sh:path bj:tipoCollegamento ; sh:minCount 1 ; sh:maxCount 1 ;
+                  sh:in ( bj:collegamentoAsterisco bj:collegamentoVediAnche bj:collegamentoRinvio ) ] ,
+                [ sh:path bj:daVoce ; sh:minCount 1 ; sh:maxCount 1 ; sh:class bj:Voce ] ,
+                [ sh:path bj:nellaVoce ; sh:minCount 1 ; sh:maxCount 1 ; sh:class bj:Voce ] ,
+                [ sh:path bj:aVoce ; sh:maxCount 1 ; sh:class bj:Voce ] ,
+                [ sh:path bj:aSezione ; sh:maxCount 1 ; sh:class bj:SezioneVoce ] ,
+                [ sh:path bj:forma ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:minLength 1 ] ,
+                [ sh:path bj:percorso ; sh:maxCount 1 ; sh:datatype xsd:string ] ,
+                [ sh:path bj:metodo ; sh:maxCount 1 ; sh:datatype xsd:string ] ,
+                [ sh:path bj:esitoPercorso ; sh:maxCount 1 ; sh:datatype xsd:string ] ,
+                [ sh:path bj:daParagrafo ; sh:maxCount 1 ; sh:class bj:ParagrafoVoce ] ,
+                [ sh:path bj:daSezione ; sh:maxCount 1 ; sh:class bj:SezioneVoce ] ;
+    sh:xone ( [ sh:property [ sh:path bj:stato ; sh:minCount 1 ; sh:maxCount 1 ; sh:hasValue bj:risolto ] ,
+                            [ sh:path bj:aVoce ; sh:minCount 1 ] ]
+              [ sh:property [ sh:path bj:stato ; sh:minCount 1 ; sh:maxCount 1 ; sh:hasValue bj:irrisolto ] ,
+                            [ sh:path bj:aVoce ; sh:maxCount 0 ] ] ) ;
+    sh:or ( [ sh:path bj:tipoCollegamento ; sh:in ( bj:collegamentoVediAnche bj:collegamentoRinvio ) ]
+            [ sh:path bj:daParagrafo ; sh:minCount 1 ]
+            [ sh:path bj:daSezione ; sh:minCount 1 ] ) .

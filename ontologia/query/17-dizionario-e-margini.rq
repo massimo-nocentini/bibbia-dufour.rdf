@@ -1,0 +1,32 @@
+# Dizionario e margini della BJ sugli stessi versetti: le coppie di versetti che un
+# paragrafo della voce AGNELLO DI DIO cita insieme e che la BJ collega a margine
+# (bj:rimandaA), con i rimandi come stampati accanto all'uno o all'altro versetto.
+# Dictionary citations against BJ margin references: pairs of verses a paragraph of an
+# entry cites together that the BJ margins also link, with the margin references.
+PREFIX bj: <https://massimo-nocentini.github.io/bibbia-gerusalemme/ontologia#>
+PREFIX verso: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/verso/>
+PREFIX libro: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/libro/>
+PREFIX voce: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/voce/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX oa: <http://www.w3.org/ns/oa#>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+
+SELECT ?paragrafo ?versetto ?altro (GROUP_CONCAT(DISTINCT ?stampato; separator=" | ") AS ?rimandi_bj) WHERE {
+  ?pa bj:nellaVoce voce:agnello-di-dio ; a bj:ParagrafoVoce ; rdfs:label ?paragrafo ; bj:numero ?n .
+  ?c1 bj:daParagrafo ?pa ; bj:aPassaggio/bj:comprende ?v .
+  ?c2 bj:daParagrafo ?pa ; bj:aPassaggio/bj:comprende ?w .
+  FILTER (?c1 != ?c2)
+  ?v bj:rimandaA ?w .
+  ?v rdfs:label ?versetto ; bj:ordine ?o .
+  ?w rdfs:label ?altro ; bj:ordine ?ow .
+  OPTIONAL { { ?r bj:daVersetto ?v ; bj:aPassaggio/bj:comprende ?w } UNION
+             { ?r bj:daVersetto ?w ; bj:aPassaggio/bj:comprende ?v }
+             ?r bj:testo ?t ; bj:daVersetto/rdfs:label ?accanto }
+  BIND (COALESCE(CONCAT(?accanto, ": ", ?t), "") AS ?stampato)
+}
+GROUP BY ?paragrafo ?n ?versetto ?o ?altro ?ow
+ORDER BY ?n ?o ?ow

@@ -1,9 +1,10 @@
-"""Build the RDF graph of the verse ontology from the two JSON files of stages 1 and 2.
+"""Build the RDF graph of the verse ontology from the JSON files of stages 1, 2 and 2b.
 
 usage: rdf.py [-q]
 
-Reads ontologia/build/bibbia.json (estrai.py) and ontologia/build/collegamenti.json
-(riferimenti.py) and writes, in the vocabulary of ontologia/bj-ontologia.ttl:
+Reads ontologia/build/bibbia.json (estrai.py), ontologia/build/collegamenti.json
+(riferimenti.py) and ontologia/build/dufour.json (dufour.py) and writes, in the
+vocabulary of ontologia/bj-ontologia.ttl:
   ontologia/bj-dati.ttl.gz      Turtle, one block per resource
   ontologia/bj-dati.nt.gz       N-Triples, the same triples in the same order
   ontologia/bj-contesto.jsonld  a JSON-LD context for the bj: terms and the data ids
@@ -21,6 +22,18 @@ bj:doppioneDelRimando of that reference; a margin entry anchored to the verse th
 begins on its printed line keeps the verse its call is printed in as
 bj:stampatoNelVersetto.
 
+The Dizionario di Teologia Biblica (dufour.json) goes into the same graph: the work
+(bj:Dizionario, also the skos:ConceptScheme), its 70 collaborators and 2 translators
+(foaf:Person), its printed pages (bj:PaginaDizionario), every entry (bj:Voce, a
+skos:Concept; redirects also bj:VoceRinvio, whose headword is an skos:altLabel of their
+target when they have only one), its sections and paragraphs (dcterms:isPartOf chain,
+bj:nellaVoce), every link between entries (bj:CollegamentoVoce, shortcuts
+bj:richiamaVoce / bj:vediAncheVoce / bj:rinviaAVoce under skos:related, stored in both
+directions) and every Bible citation (bj:Citazione to bj:Passaggio, like the BJ notes),
+with the shortcuts bj:voceCitaVersetto and its inverse bj:citatoNellaVoce. Data IRIs:
+id/voce/<slug>, id/voce/<slug>/sezione/<path>, .../paragrafo/<n>, .../citazione/<n>,
+.../collegamento/<n>, id/persona/<id>, id/dizionario/pagina/<n>, id/dizionario.
+
 No blank nodes: every resource has an IRI under ID, so the graph can be compared as a
 set of triples. Output is deterministic (same order, gzip without timestamps).
 
@@ -28,7 +41,8 @@ Checks (exit status 1 if any fails): every bj: term used is declared in the onto
 and every declared term has an Italian and English rdfs:label and rdfs:comment; object
 properties have IRIs as objects and datatype properties literals of their range; every
 IRI of the data that is an object is also described; resource counts equal the JSON
-counts; the verses of the passages of each link equal its targets; no duplicate triples.
+counts (dictionary included); the verses of the passages of each link and citation equal
+its targets; no duplicate triples.
 """
 import gzip
 import json
@@ -36,6 +50,7 @@ import os
 import re
 import sys
 import time
+import unicodedata
 from collections import Counter, defaultdict
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -46,6 +61,7 @@ import riferimenti as R  # noqa: E402
 OUT = os.path.join(C, 'ontologia')
 BIBBIA = os.path.join(OUT, 'build', 'bibbia.json')
 COLLEGAMENTI = os.path.join(OUT, 'build', 'collegamenti.json')
+DUFOUR = os.path.join(OUT, 'build', 'dufour.json')
 ONTOLOGIA = os.path.join(OUT, 'bj-ontologia.ttl')
 TTL = os.path.join(OUT, 'bj-dati.ttl.gz')
 NT = os.path.join(OUT, 'bj-dati.nt.gz')
@@ -58,13 +74,18 @@ ID = SITO + 'id/'
 # data namespaces: one per kind of resource (id/verso/John.3.16, id/libro/John, ...)
 RISORSE = ['testamento', 'libro', 'capitolo', 'divisione', 'pericope', 'verso', 'pagina', 'introduzione',
            'paragrafo', 'nota', 'corpo', 'margine', 'rimando', 'citazione', 'passaggio']
+# the dictionary: id/voce/<slug>[/sezione|paragrafo|citazione|collegamento/...], people, pages
+RISORSE_DIZIONARIO = [('voce', ID + 'voce/'), ('persona', ID + 'persona/'),
+                      ('pagdiz', ID + 'dizionario/pagina/')]
 PREFISSI = dict([
     ('bj', BJ), ('rdf', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#'),
     ('rdfs', 'http://www.w3.org/2000/01/rdf-schema#'), ('xsd', 'http://www.w3.org/2001/XMLSchema#'),
     ('owl', 'http://www.w3.org/2002/07/owl#'), ('dcterms', 'http://purl.org/dc/terms/'),
     ('dc', 'http://purl.org/dc/elements/1.1/'), ('skos', 'http://www.w3.org/2004/02/skos/core#'),
     ('oa', 'http://www.w3.org/ns/oa#'), ('cito', 'http://purl.org/spar/cito/'),
-    ('prov', 'http://www.w3.org/ns/prov#'), ('id', ID)] + [(r, ID + r + '/') for r in RISORSE])
+    ('prov', 'http://www.w3.org/ns/prov#'), ('id', ID)] + [(r, ID + r + '/') for r in RISORSE]
+    + RISORSE_DIZIONARIO + [('foaf', 'http://xmlns.com/foaf/0.1/')])
+NOSTRI = RISORSE + ['id'] + [k for k, _ in RISORSE_DIZIONARIO]     # prefixes of described resources
 
 RELAZIONE = {'related': 'bj:correlato', 'parallel': 'bj:parallelo', 'doublet': 'bj:doppione',
              'quoted-later': 'bj:citatoDopo', 'numbering': 'bj:numerazione', 'comment': 'bj:commento'}
@@ -76,8 +97,28 @@ STATO = {'resolved': 'bj:risolto', 'partial': 'bj:parziale', 'unresolved': 'bj:i
 AMBITO = {'verses': 'bj:ambitoVersetti', 'chapter': 'bj:ambitoCapitolo', 'book': 'bj:ambitoLibro'}
 TESTAMENTI = [('AT', 'Antico Testamento', 'Old Testament'), ('NT', 'Nuovo Testamento', 'New Testament')]
 PAGINA_PDF = 33
+PAGINA_PDF_DIZIONARIO = 21           # PDF page from 1; the Dufour corpus's 0-based index is page + 20
 
-# a literal is a tuple (kind, value): s string, it Italian text, i integer, b boolean
+# the dictionary as a work, from its title page (../dufour/corpus/data/front/frontespizio.txt)
+DIZIONARIO = {
+    'titolo': 'Dizionario di Teologia Biblica',
+    'originale': 'Vocabulaire de Théologie Biblique',
+    'editore': 'Marietti',
+    'anno': '1976',
+    'edizione': 'V edizione 1976 riveduta e corretta, ristampa 2002; edizione italiana completamente '
+                'rifusa sulla II edizione francese riveduta e ampliata (Les Éditions du Cerf, Paris)',
+    'citazione': 'X. Léon-Dufour (ed.), Dizionario di Teologia Biblica, ed. italiana a cura di G. Viola '
+                 'e A. Milanoli, V ed. 1976, ristampa 2002, Marietti, Genova',
+    'curatori': ['xavier-leon-dufour', 'jean-duplacy', 'augustin-george', 'pierre-grelot',
+                 'jacques-guillet', 'marc-francois-lacan'],
+    'traduttori': [('giovanni-viola', 'Giovanni', 'Viola'), ('ambretta-milanoli', 'Ambretta', 'Milanoli')],
+}
+TIPO_COLLEGAMENTO = {'star': ('bj:collegamentoAsterisco', 'bj:richiamaVoce'),
+                     'seealso': ('bj:collegamentoVediAnche', 'bj:vediAncheVoce'),
+                     'redirect': ('bj:collegamentoRinvio', 'bj:rinviaAVoce')}
+
+# a literal is a tuple (kind, value): s string, it/en/fr text in that language, i integer,
+# b boolean, y year (xsd:gYear)
 XSD = {'i': 'xsd:integer', 'b': 'xsd:boolean'}
 PN_LOCAL = re.compile(r'[A-Za-z0-9_]([A-Za-z0-9_.\-]*[A-Za-z0-9_\-])?$')
 
@@ -99,12 +140,18 @@ def b(x):
 
 
 class Grafo:
-    """Triples grouped by subject, in the order they are added (the output order)."""
+    """Triples grouped by subject, in the order they are added (the output order). Each
+    triple is counted in the part being built (`parte`: the Bible, then the dictionary),
+    and each subject belongs to the part that described it first (VoID subsets)."""
 
     def __init__(self):
         self.per = {}
         self.visti = set()
         self.doppi = 0
+        self.parte = 'bibbia'
+        self.per_parte = Counter()
+        self.per_parte_prop = Counter()
+        self.parte_di = {}
 
     def add(self, sog, pred, ogg):
         if ogg is None:
@@ -114,6 +161,10 @@ class Grafo:
             self.doppi += 1
             return
         self.visti.add(t)
+        self.per_parte[self.parte] += 1
+        self.per_parte_prop[self.parte, pred] += 1
+        if sog not in self.per:
+            self.parte_di[sog] = self.parte
         self.per.setdefault(sog, []).append((pred, ogg))
 
     def link(self, sog, pred, ogg):
@@ -553,6 +604,313 @@ def citazioni(G, links, passaggi):
                 G.link(chi, 'bj:citaVersetto', verso(t))
 
 
+# ---------------------------------------------------------------- the dictionary (dufour.json)
+
+CF = re.compile(r'\bcfr?\.\s*$', re.I)
+
+
+def voce(slug):
+    return iri('voce', slug)
+
+
+def tratto(path):
+    """A section path as an IRI segment: ASCII letters and digits joined by "-"
+    ("VT I 2" -> VT-I-2, "introd. 2 a" -> introd-2-a, "VT «Segno di ...»" -> VT-Segno-di-...)."""
+    ascii_ = unicodedata.normalize('NFKD', path).encode('ascii', 'ignore').decode()
+    return re.sub(r'[^A-Za-z0-9]+', '-', ascii_).strip('-')
+
+
+def sezione(slug, path):
+    return iri('voce', '%s/sezione/%s' % (slug, tratto(path)))
+
+
+def paragrafo_voce(pid):
+    slug, n = pid.rsplit('.', 1)
+    return iri('voce', '%s/paragrafo/%s' % (slug, n))
+
+
+def citazione_voce(cid):
+    slug, n = cid.rsplit('#', 1)
+    return iri('voce', '%s/citazione/%s' % (slug, n))
+
+
+def persona(pid):
+    return iri('persona', pid)
+
+
+def pagina_dizionario(n):
+    return iri('pagdiz', n)
+
+
+def stampato_dizionario(G, X, page):
+    G.add(X, 'bj:pagina', i(page))
+    G.add(X, 'prov:wasDerivedFrom', pagina_dizionario(int(page)))
+
+
+def locale(X):
+    return X.split(':', 1)[1]
+
+
+def opera(G, dz):
+    """The work and the people: title-page data, editors, translators, collaborators."""
+    D, W = 'id:dizionario', DIZIONARIO
+    G.add(D, 'rdf:type', 'bj:Dizionario')
+    G.add(D, 'rdf:type', 'skos:ConceptScheme')
+    G.add(D, 'rdfs:label', it(W['titolo']))
+    G.add(D, 'dcterms:title', it(W['titolo']))
+    G.add(D, 'dcterms:alternative', ('fr', W['originale']))
+    G.add(D, 'dcterms:identifier', s('dizionario'))
+    G.add(D, 'dcterms:publisher', s(W['editore']))
+    G.add(D, 'dcterms:issued', ('y', W['anno']))
+    G.add(D, 'dcterms:language', s('it'))
+    G.add(D, 'bj:edizione', s(W['edizione']))
+    G.add(D, 'dcterms:bibliographicCitation', s(W['citazione']))
+    G.add(D, 'dcterms:source', s('../dufour/corpus/data (Dizionario di Teologia Biblica.pdf, 812 pagine)'))
+    G.add(D, 'dcterms:rights', it('Testo protetto da diritto d\'autore (Marietti): solo per uso locale, '
+                                  'non pubblicare.'))
+    G.add(D, 'dcterms:rights', ('en', 'The text is copyrighted (Marietti): local use only, do not publish.'))
+    for a in dz['meta']['authors']:
+        P = persona(a['id'])
+        G.add(P, 'rdf:type', 'foaf:Person')
+        G.add(P, 'rdfs:label', s(a['name']))
+        G.add(P, 'dcterms:identifier', s(a['id']))
+        G.add(P, 'foaf:name', s(a['name']))
+        G.add(P, 'foaf:givenName', s(a['given']))
+        G.add(P, 'foaf:familyName', s(a['surname']))
+        if a.get('order'):
+            G.add(P, 'bj:ordineReligioso', s(a['order']))
+        if a.get('place'):
+            G.add(P, 'bj:sede', s(a['place']))
+    for pid, nome, cognome in W['traduttori']:
+        P = persona(pid)
+        G.add(P, 'rdf:type', 'foaf:Person')
+        G.add(P, 'rdfs:label', s('%s %s' % (nome, cognome)))
+        G.add(P, 'dcterms:identifier', s(pid))
+        G.add(P, 'foaf:name', s('%s %s' % (nome, cognome)))
+        G.add(P, 'foaf:givenName', s(nome))
+        G.add(P, 'foaf:familyName', s(cognome))
+    for pid in W['curatori']:
+        G.add(D, 'bj:curatore', persona(pid))
+    for pid, _, _ in W['traduttori']:
+        G.add(D, 'bj:traduttore', persona(pid))
+
+
+def pagine_dizionario(G, dz):
+    nums = set()
+    for v in dz['voci']:
+        nums.update(range(int(v['pages'][0]), int(v['pages'][1]) + 1))
+        nums.update(int(x['page']) for x in v.get('sections', []) + v.get('paragraphs', []))
+    for n in sorted(nums):
+        P = pagina_dizionario(n)
+        G.add(P, 'rdf:type', 'bj:PaginaDizionario')
+        G.add(P, 'rdfs:label', s('DTB p. %d' % n))
+        G.add(P, 'bj:numero', i(n))
+        G.add(P, 'bj:paginaPdf', i(n + PAGINA_PDF_DIZIONARIO))
+        G.add(P, 'dcterms:isPartOf', 'id:dizionario')
+    return len(nums)
+
+
+def parte_firmata(v, path):
+    """The top-level section holding the section a signature follows ("VT 4" -> VT)."""
+    padre = {x['path']: x['parent'] for x in v['sections']}
+    while padre.get(path):
+        path = padre[path]
+    return path if path in padre else None
+
+
+def autori(G, V, v):
+    """dcterms:creator of the entry; an entry signed part by part (NOME: VT, NT) also has
+    each signer as dcterms:creator of the top-level section that signature closes."""
+    firme = []
+    for a in v['authors']:
+        G.add(V, 'dcterms:creator', persona(a['id']))
+        if a['signature'] not in firme:
+            firme.append(a['signature'])
+    for f in firme:
+        G.add(V, 'bj:firma', s(f))
+    if len(firme) > 1:
+        for a in v['authors']:
+            top = parte_firmata(v, a['part'])
+            if top:
+                G.add(sezione(v['id'], top), 'dcterms:creator', persona(a['id']))
+
+
+def sezioni_e_paragrafi(G, V, v):
+    slug, nome = v['id'], v['headword']
+    for k, x in enumerate(v['sections'], 1):
+        S = sezione(slug, x['path'])
+        G.add(S, 'rdf:type', 'bj:SezioneVoce')
+        G.add(S, 'rdfs:label', s('%s %s' % (nome, x['path'])))
+        G.add(S, 'dcterms:identifier', s(locale(S)))
+        if x['title']:
+            G.add(S, 'dcterms:title', it(x['title']))
+            html(G, S, x['title'], x['title_html'])
+        if x['label']:
+            G.add(S, 'bj:etichetta', s(x['label']))
+        G.add(S, 'bj:percorso', s(x['path']))
+        G.add(S, 'bj:tipoSezione', s(x['kind']))
+        G.add(S, 'bj:livello', i(x['depth']))
+        G.add(S, 'bj:ordine', i(k))
+        G.add(S, 'dcterms:isPartOf', sezione(slug, x['parent']) if x['parent'] else V)
+        G.add(S, 'bj:nellaVoce', V)
+        stampato_dizionario(G, S, x['page'])
+    for p in v['paragraphs']:
+        P = paragrafo_voce(p['id'])
+        G.add(P, 'rdf:type', 'bj:ParagrafoVoce')
+        G.add(P, 'rdfs:label', s('%s ¶ %d' % (nome if p['sec'] == '0' else '%s %s' % (nome, p['sec']), p['n'])))
+        G.add(P, 'dcterms:identifier', s(p['id']))
+        G.add(P, 'bj:numero', i(p['n']))
+        G.add(P, 'bj:testo', it(p['text']))
+        html(G, P, p['text'], p['html'])
+        G.add(P, 'dcterms:isPartOf', V if p['sec'] == '0' else sezione(slug, p['sec']))
+        G.add(P, 'bj:nellaVoce', V)
+        stampato_dizionario(G, P, p['page'])
+
+
+def voci(G, dz):
+    """Every entry: a skos:Concept of the dictionary's scheme and its article."""
+    D = 'id:dizionario'
+    for k, v in enumerate(dz['voci'], 1):
+        V = voce(v['id'])
+        G.add(V, 'rdf:type', 'bj:Voce')
+        G.add(V, 'rdf:type', 'skos:Concept')
+        if v['kind'] == 'redirect':
+            G.add(V, 'rdf:type', 'bj:VoceRinvio')
+        G.add(V, 'rdfs:label', it(v['headword']))
+        G.add(V, 'skos:prefLabel', it(v['headword']))
+        G.add(V, 'dcterms:identifier', s(v['id']))
+        G.add(V, 'skos:inScheme', D)
+        G.add(V, 'skos:topConceptOf', D)
+        G.add(D, 'skos:hasTopConcept', V)
+        G.add(V, 'bj:lettera', s(v['letter']))
+        G.add(V, 'bj:ordine', i(k))
+        prima, ultima = int(v['pages'][0]), int(v['pages'][1])
+        stampato_dizionario(G, V, prima)
+        if ultima != prima:
+            G.add(V, 'bj:paginaFinale', i(ultima))
+        for n in range(prima + 1, ultima + 1):
+            G.add(V, 'prov:wasDerivedFrom', pagina_dizionario(n))
+        if v['kind'] == 'full':
+            G.add(V, 'bj:numeroParole', i(v['words']))
+            G.add(V, 'bj:testoRinvii', s(v['seealso']))
+            sezioni_e_paragrafi(G, V, v)
+        else:
+            G.add(V, 'bj:testoRinvii', s(v['redirect']))
+        autori(G, V, v)
+    for v in dz['voci']:                       # a redirect to one entry only: the USE of a thesaurus
+        mete = {t['voce'] for t in v['targets'] if t['voce']}
+        if v['kind'] == 'redirect' and len(mete) == 1:
+            G.add(voce(mete.pop()), 'skos:altLabel', it(v['headword']))
+
+
+def sezione_di_arrivo(sezioni, path):
+    """The target section of a "→" item: the path itself, or for "IV 0" (the opening of
+    section IV) section IV; "0" (the opening of the entry) is the entry itself."""
+    if path in sezioni:
+        return path
+    if path and path.endswith(' 0') and path[:-2] in sezioni:
+        return path[:-2]
+    return None
+
+
+def collegamenti_voci(G, dz):
+    """Every printed link between entries, reified, and its shortcut (self-links left out);
+    skos:related is stored in both directions (it is symmetric)."""
+    nomi = {v['id']: v['headword'] for v in dz['voci']}
+    sezioni = {v['id']: {x['path'] for x in v.get('sections', [])} for v in dz['voci']}
+    n = Counter()
+    for l in dz['links']:
+        src, T = l['source'], l['target']
+        n[src] += 1
+        V = voce(src)
+        L = iri('voce', '%s/collegamento/%d' % (src, n[src]))
+        tipo, diretta = TIPO_COLLEGAMENTO[l['type']]
+        G.add(L, 'rdf:type', 'bj:CollegamentoVoce')
+        G.add(L, 'rdfs:label', s('%s %s%s' % (nomi[src], '*' if l['type'] == 'star' else '→ ',
+                                               l['form'] + (' ' + l['path'] if l.get('path') else ''))))
+        G.add(L, 'dcterms:identifier', s(locale(L)))
+        G.add(L, 'bj:tipoCollegamento', tipo)
+        G.add(L, 'bj:daVoce', V)
+        G.add(L, 'bj:nellaVoce', V)
+        G.add(L, 'bj:forma', s(l['form']))
+        G.add(L, 'bj:stato', 'bj:risolto' if T else 'bj:irrisolto')
+        if l['type'] == 'star':
+            if l['para']:
+                G.add(L, 'bj:daParagrafo', paragrafo_voce(l['para']))
+            else:
+                G.add(L, 'bj:daSezione', sezione(src, l['sec']))
+            if l['method']:
+                G.add(L, 'bj:metodo', s(l['method']))
+        else:
+            if l['path']:
+                G.add(L, 'bj:percorso', s(l['path']))
+            if l['path_status']:
+                G.add(L, 'bj:esitoPercorso', s(l['path_status']))
+            sec = sezione_di_arrivo(sezioni[T], l['sec']) if T else None
+            if sec:
+                G.add(L, 'bj:aSezione', sezione(T, sec))
+        if not T:
+            continue
+        G.add(L, 'bj:aVoce', voce(T))
+        if T != src:
+            G.link(V, diretta, voce(T))
+            G.link(V, 'skos:related', voce(T))
+            G.link(voce(T), 'skos:related', V)
+    return n
+
+
+def citazioni_voci(G, dz, passaggi):
+    """Every Bible citation of the dictionary: a bj:Citazione from its paragraph (or the
+    section title it stands in) to its passages, as for the BJ notes; the entry cites
+    every verse of a resolved or partial one (bj:voceCitaVersetto, bj:citatoNellaVoce)."""
+    testi = {p['id']: p['text'] for v in dz['voci'] for p in v.get('paragraphs', [])}
+    titoli = {(v['id'], x['path']): x['title'] for v in dz['voci'] for x in v.get('sections', [])}
+    for c in dz['citations']:
+        X = citazione_voce(c['id'])
+        V = voce(c['voce'])
+        G.add(X, 'rdf:type', 'bj:Citazione')
+        riferimento(G, X, dict(c, keynote=False, qualifier=None, alt=None, keynote_notes=[],
+                               keynote_mrefs=[]), passaggi)
+        if c['para']:
+            G.add(X, 'bj:daParagrafo', paragrafo_voce(c['para']))
+            testo = testi[c['para']]
+        else:
+            G.add(X, 'bj:daSezione', sezione(c['voce'], c['sec']))
+            testo = titoli[c['voce'], c['sec']]
+        G.add(X, 'bj:nellaVoce', V)
+        G.add(X, 'bj:posizioneTesto', i(c['offset']))
+        G.add(X, 'bj:lunghezza', i(c['length']))
+        G.add(X, 'bj:posizioneHtml', i(c['html_offset']))
+        G.add(X, 'bj:fineHtml', i(c['html_end']))
+        G.add(X, 'bj:conCf', b(CF.search(testo[:c['offset']])))
+        if '...' in c['flags']:
+            G.add(X, 'bj:eAltrove', b(True))
+        if c['implicit']:
+            G.add(X, 'bj:libroImplicito', i(c['implicit']))
+        if c.get('conversion'):
+            G.add(X, 'bj:conversione', s(c['conversion']))
+        if c.get('reason_kind'):
+            G.add(X, 'bj:tipoMotivo', s(c['reason_kind']))
+        if c['source_status'] != 'ok':
+            G.add(X, 'bj:statoFonte', s(c['source_status']))
+        if c['status'] in ('resolved', 'partial'):
+            for t in c['targets']:
+                G.link(V, 'bj:voceCitaVersetto', verso(t))
+                G.link(verso(t), 'bj:citatoNellaVoce', V)
+
+
+def dizionario(G, dz, passaggi):
+    """The whole dictionary, counted as its own part of the graph (VoID subset)."""
+    G.parte = 'dizionario'
+    opera(G, dz)
+    npagine = pagine_dizionario(G, dz)
+    voci(G, dz)
+    collegamenti_voci(G, dz)
+    citazioni_voci(G, dz, passaggi)
+    G.parte = 'bibbia'
+    return npagine
+
+
 # ---------------------------------------------------------------- output
 
 def esc(x):
@@ -572,7 +930,9 @@ def nt_term(o):
         return '"%d"^^<%s>' % (v, espandi('xsd:integer'))
     if kind == 'b':
         return '"%s"^^<%s>' % ('true' if v else 'false', espandi('xsd:boolean'))
-    if kind in ('it', 'en'):
+    if kind == 'y':
+        return '"%s"^^<%s>' % (v, espandi('xsd:gYear'))
+    if kind in ('it', 'en', 'fr'):
         return '"%s"@%s' % (esc(v), kind)
     return '"%s"' % esc(v)
 
@@ -649,11 +1009,14 @@ def contesto(ont):
     for name, curie in [('isPartOf', 'dcterms:isPartOf'), ('hasTarget', 'oa:hasTarget'),
                         ('hasBody', 'oa:hasBody'), ('hasSource', 'oa:hasSource'),
                         ('motivatedBy', 'oa:motivatedBy'), ('wasDerivedFrom', 'prov:wasDerivedFrom'),
-                        ('cites', 'cito:cites')]:
+                        ('cites', 'cito:cites'), ('creator', 'dcterms:creator'), ('related', 'skos:related'),
+                        ('inScheme', 'skos:inScheme'), ('topConceptOf', 'skos:topConceptOf'),
+                        ('hasTopConcept', 'skos:hasTopConcept')]:
         term(name, {'@id': curie, '@type': '@id'})
     for name, curie in [('label', 'rdfs:label'), ('title', 'dcterms:title'),
                         ('identifier', 'dcterms:identifier'), ('value', 'rdf:value'),
-                        ('format', 'dc:format'), ('language', 'dc:language')]:
+                        ('format', 'dc:format'), ('language', 'dc:language'),
+                        ('prefLabel', 'skos:prefLabel'), ('altLabel', 'skos:altLabel'), ('name', 'foaf:name')]:
         term(name, curie)
     return {'@context': ctx}
 
@@ -661,7 +1024,11 @@ def contesto(ont):
 def void(G, tipi):
     """The VoID description of the data graph: what it is, where it comes from, its
     dumps and vocabularies, and how many triples, resources, classes and properties it
-    has (one partition per class and per property, with IRIs: no blank nodes)."""
+    has (one partition per class and per property, with IRIs: no blank nodes). Two
+    subsets split the triples by the part of rdf.py that made them: the Bible (verses,
+    notes, margins, citations of notes and introductions) and the Dizionario di Teologia
+    Biblica (its resources, the passages only it names, the verse -> entry shortcuts);
+    two linksets count the entry <-> verse shortcuts."""
     D = '<%sdati>' % SITO
     per_prop = Counter(p for po in G.per.values() for p, o in po)
     tipizzati = sum(1 for po in G.per.values() if any(p == 'rdf:type' for p, o in po))
@@ -672,50 +1039,97 @@ def void(G, tipi):
     out = ['# VoID description of ontologia/bj-dati.{ttl,nt}.gz (generated by tools/ontologia/rdf.py).',
            '# Do not edit.']
     out += ['@prefix %s: <%s> .' % kv for kv in PREFISSI.items() if kv[0] in
-            ('bj', 'rdf', 'rdfs', 'xsd', 'owl', 'dcterms', 'skos', 'oa', 'cito', 'prov', 'dc', 'verso')]
+            ('bj', 'rdf', 'rdfs', 'xsd', 'owl', 'dcterms', 'skos', 'oa', 'cito', 'prov', 'dc', 'verso', 'voce',
+             'foaf')]
     out += ['@prefix void: <http://rdfs.org/ns/void#> .', '@prefix vp: <%svoid#> .' % SITO, '']
     out += [D + ' a void:Dataset ;',
             '    dcterms:title "La Bibbia di Gerusalemme: il grafo dei versetti"@it , '
             '"La Bibbia di Gerusalemme: the verse graph"@en ;',
             '    dcterms:description "Versetti, note, rimandi a margine e citazioni della Bibbia di '
             'Gerusalemme (EDB: testo CEI 2008, note e rimandi della Bible de Jérusalem), '
-            'collegati al versetto."@it , "Verses, notes, margin references and citations of La Bibbia '
+            'collegati al versetto, con le voci del Dizionario di Teologia Biblica e le loro citazioni '
+            'bibliche."@it , "Verses, notes, margin references and citations of La Bibbia '
             'di Gerusalemme (EDB: CEI 2008 text, Bible de Jérusalem notes and margins), linked at the '
-            'verse."@en ;',
-            '    dcterms:rights "Testo e note protetti da diritto d\'autore (EDB): solo per uso '
-            'locale, non pubblicare."@it , "The text and notes are copyrighted (EDB): local use only, '
+            'verse, with the entries of the Dizionario di Teologia Biblica and their Bible citations."@en ;',
+            '    dcterms:rights "Testi protetti da diritto d\'autore (EDB, Marietti): solo per uso '
+            'locale, non pubblicare."@it , "The texts are copyrighted (EDB, Marietti): local use only, '
             'do not publish."@en ;',
             '    dcterms:creator "Massimo Nocentini" ;',
-            '    dcterms:source "progetti/<volume>/*.tex (14 volumi corretti / 14 proofread volumes)" ;',
+            '    dcterms:source "progetti/<volume>/*.tex (14 volumi corretti / 14 proofread volumes)" , '
+            '"../dufour/corpus/data (Dizionario di Teologia Biblica)" ;',
             '    void:vocabulary <%sontologia> , <http://www.w3.org/ns/oa#> , <http://purl.org/spar/cito/> , '
             '<http://purl.org/dc/terms/> , <http://www.w3.org/ns/prov#> , '
-            '<http://www.w3.org/2004/02/skos/core#> ;' % SITO,
+            '<http://www.w3.org/2004/02/skos/core#> , <http://xmlns.com/foaf/0.1/> ;' % SITO,
             '    void:uriSpace "%s" ;' % ID,
             '    void:dataDump <%sbj-dati.nt.gz> , <%sbj-dati.ttl.gz> ;' % (SITO, SITO),
             '    void:feature <http://www.w3.org/ns/formats/N-Triples> , <http://www.w3.org/ns/formats/Turtle> ;',
-            '    void:exampleResource verso:John.3.16 , verso:Gen.1.1 ;',
+            '    void:exampleResource verso:John.3.16 , verso:Gen.1.1 , voce:abele ;',
             '    void:triples %d ;' % len(G),
             '    void:distinctSubjects %d ;' % len(G.per),
             '    void:entities %d ;' % tipizzati,
             '    void:classes %d ;' % len(tipi),
             '    void:properties %d ;' % len(per_prop),
+            '    void:subset vp:bibbia , vp:dizionario , vp:voci-versetti , vp:versetti-voci ;',
             '    void:classPartition %s ;' % ' , '.join('vp:classe-' + nome(c) for c in sorted(tipi)),
             '    void:propertyPartition %s .' % ' , '.join('vp:proprieta-' + nome(p) for p in sorted(per_prop))]
     for c in sorted(tipi):
         out.append('vp:classe-%s void:class %s ; void:entities %d .' % (nome(c), c, tipi[c]))
     for p in sorted(per_prop):
         out.append('vp:proprieta-%s void:property %s ; void:triples %d .' % (nome(p), p, per_prop[p]))
+    out += sottoinsiemi(G, nome)
     with open(VOID, 'w', encoding='utf-8') as f:
         f.write('\n'.join(out) + '\n')
     from rdflib import Graph, Literal, URIRef
     g = Graph().parse(VOID, format='turtle')
-    n = g.value(URIRef(D[1:-1]), URIRef('http://rdfs.org/ns/void#triples'))
-    return [] if n == Literal(len(G)) else ['%s: void:triples %s, graph %d' % (VOID, n, len(G))]
+    vt = URIRef('http://rdfs.org/ns/void#triples')
+    n = g.value(URIRef(D[1:-1]), vt)
+    parti = [g.value(URIRef(SITO + 'void#' + x), vt) for x in ('bibbia', 'dizionario')]
+    err = [] if n == Literal(len(G)) else ['%s: void:triples %s, graph %d' % (VOID, n, len(G))]
+    if sum(int(x) for x in parti) != len(G):
+        err.append('%s: subsets hold %s triples, graph %d' % (VOID, parti, len(G)))
+    return err
+
+
+def sottoinsiemi(G, nome):
+    """The two subsets (with their class and property partitions) and the two linksets."""
+    out = ['']
+    titoli = {'bibbia': ('La Bibbia di Gerusalemme: versetti, note, rimandi, citazioni',
+                         'The Jerusalem Bible: verses, notes, margins, citations',
+                         'progetti/<volume>/*.tex'),
+              'dizionario': ('Dizionario di Teologia Biblica (X. Léon-Dufour, Marietti 1976): voci, '
+                             'collegamenti e citazioni bibliche',
+                             'Dizionario di Teologia Biblica (X. Léon-Dufour, Marietti 1976): entries, '
+                             'links and Bible citations',
+                             '../dufour/corpus/data')}
+    for parte, (it_, en, fonte) in titoli.items():
+        tipi = Counter(o for sog, po in G.per.items() if G.parte_di[sog] == parte
+                       for p, o in po if p == 'rdf:type')
+        props = sorted(p for (x, p) in G.per_parte_prop if x == parte)
+        q = 'vp:%s-' % parte
+        out += ['vp:%s a void:Dataset ;' % parte,
+                '    dcterms:title "%s"@it , "%s"@en ;' % (it_, en),
+                '    dcterms:source "%s" ;' % fonte,
+                '    void:triples %d ;' % G.per_parte[parte],
+                '    void:entities %d ;' % sum(tipi.values()),
+                '    void:classPartition %s ;' % ' , '.join(q + 'classe-' + nome(c) for c in sorted(tipi)),
+                '    void:propertyPartition %s .' % ' , '.join(q + 'proprieta-' + nome(p) for p in props)]
+        out += ['%sclasse-%s void:class %s ; void:entities %d .' % (q, nome(c), c, tipi[c]) for c in sorted(tipi)]
+        out += ['%sproprieta-%s void:property %s ; void:triples %d .' % (q, nome(p), p, G.per_parte_prop[parte, p])
+                for p in props]
+        out.append('')
+    for nome_, pred, da, a in (('voci-versetti', 'bj:voceCitaVersetto', 'dizionario', 'bibbia'),
+                               ('versetti-voci', 'bj:citatoNellaVoce', 'bibbia', 'dizionario')):
+        out += ['vp:%s a void:Linkset ;' % nome_,
+                '    void:linkPredicate %s ;' % pred,
+                '    void:subjectsTarget vp:%s ;' % da,
+                '    void:objectsTarget vp:%s ;' % a,
+                '    void:triples %d .' % G.per_parte_prop['dizionario', pred]]
+    return out
 
 
 # ---------------------------------------------------------------- checks
 
-def checks(G, ont, data, coll, passaggi):
+def checks(G, ont, data, coll, dz, passaggi):
     from rdflib import RDF, RDFS, OWL, URIRef
     err = []
     dichiarati = {str(t)[len(BJ):]: set(ont.objects(t, RDF.type)) for t in ont.subjects(RDF.type, None)
@@ -737,7 +1151,7 @@ def checks(G, ont, data, coll, passaggi):
             if isinstance(o, str):
                 if o.startswith('bj:'):
                     usati[o] += 1
-                if o.split(':', 1)[0] in RISORSE + ['id'] and o not in nostri:
+                if o.split(':', 1)[0] in NOSTRI and o not in nostri:
                     err.append('dangling object %s (%s %s)' % (o, sog, p))
             name = p[3:] if p.startswith('bj:') else None
             if name and name in dichiarati:
@@ -758,12 +1172,18 @@ def checks(G, ont, data, coll, passaggi):
                   Paragrafo=sum(len(x['paragraphs']) for x in data['intros']),
                   Capitolo=sum(len(bk['chapters']) for bk in data['books']),
                   Rimando=sum(1 for l in coll['links'] if l['kind'] == 'mref'),
-                  Citazione=sum(1 for l in coll['links'] if l['kind'].endswith('-cites')))
+                  Citazione=sum(1 for l in coll['links'] if l['kind'].endswith('-cites')) + len(dz['citations']),
+                  Voce=len(dz['voci']), VoceRinvio=sum(1 for v in dz['voci'] if v['kind'] == 'redirect'),
+                  SezioneVoce=sum(len(v.get('sections', [])) for v in dz['voci']),
+                  ParagrafoVoce=sum(len(v.get('paragraphs', [])) for v in dz['voci']),
+                  CollegamentoVoce=len(dz['links']), Dizionario=1)
+    attese = {'bj:' + k: n for k, n in attese.items()}
+    attese['foaf:Person'] = len(dz['meta']['authors']) + len(DIZIONARIO['traduttori'])
     for k, n in attese.items():
-        if tipi['bj:' + k] != n:
-            err.append('bj:%s: %d resources, %d in the JSON' % (k, tipi['bj:' + k], n))
-    for l in coll['links']:
-        if l['kind'] == 'note-label' and (l['scope'] == 'book' or l['scope'] == 'chapter' and l['target_chapters']):
+        if tipi[k] != n:
+            err.append('%s: %d resources, %d in the JSON' % (k, tipi[k], n))
+    for l in coll['links'] + dz['citations']:
+        if l.get('kind') == 'note-label' and (l['scope'] == 'book' or l['scope'] == 'chapter' and l['target_chapters']):
             continue                            # targets chapters or the book, not passages
         got = set(v for a, z in l['ranges'] for v in passaggi.fatti[passaggio(a, z)])
         if got != set(l['targets']):
@@ -780,6 +1200,9 @@ def main(a):
     ont = Graph().parse(ONTOLOGIA, format='turtle')
     data = json.load(open(BIBBIA, encoding='utf-8'))
     coll = json.load(open(COLLEGAMENTI, encoding='utf-8'))
+    if not os.path.exists(DUFOUR):
+        sys.exit('%s is missing: run tools/ontologia/dufour.py first' % os.path.relpath(DUFOUR, C))
+    dz = json.load(open(DUFOUR, encoding='utf-8'))
     B = R.Bibbia(data)
     books = {bk['osis']: bk for bk in data['books']}
     order = {v['id']: v['order'] for v in data['verses']}
@@ -795,7 +1218,8 @@ def main(a):
     margini(G, data)
     rimandi(G, [l for l in links if l['kind'] == 'mref'], passaggi)
     citazioni(G, [l for l in links if l['kind'].endswith('-cites')], passaggi)
-    err, tipi, usati = checks(G, ont, data, coll, passaggi)
+    dizionario(G, dz, passaggi)
+    err, tipi, usati = checks(G, ont, data, coll, dz, passaggi)
     scrivi(G)
     err += void(G, tipi)
     with open(CONTESTO, 'w', encoding='utf-8') as f:
@@ -804,9 +1228,9 @@ def main(a):
     if not quiet:
         print('resources: ' + ', '.join('%s %d' % (k, n) for k, n in tipi.most_common()))
         print('bj: properties: ' + ', '.join('%s %d' % kv for kv in usati.most_common() if kv[0][3].islower()))
-    print('triples: %d (%d subjects, %d passages); %s %.1f MB, %s %.1f MB; %.1f s' % (
-        len(G), len(G.per), len(passaggi.fatti), os.path.relpath(TTL, C), os.path.getsize(TTL) / 1e6,
-        os.path.relpath(NT, C), os.path.getsize(NT) / 1e6, time.time() - t0))
+    print('triples: %d (%d subjects, %d passages; dictionary %d triples); %s %.1f MB, %s %.1f MB; %.1f s' % (
+        len(G), len(G.per), len(passaggi.fatti), G.per_parte['dizionario'], os.path.relpath(TTL, C),
+        os.path.getsize(TTL) / 1e6, os.path.relpath(NT, C), os.path.getsize(NT) / 1e6, time.time() - t0))
     for e in err[:30]:
         print('ERROR  ' + e)
     print('checks: %s' % ('ok' if not err else '%d errors' % len(err)))

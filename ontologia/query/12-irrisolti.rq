@@ -1,5 +1,7 @@
-# Riferimenti non risolti (refusi, altre numerazioni, libri non canonici), con il motivo.
-# Unresolved references (misprints, other numberings, non-canonical books), with the reason.
+# Riferimenti non risolti (refusi, altre numerazioni, libri non canonici), con il motivo:
+# rimandi a margine, citazioni nelle note e nelle introduzioni della BJ e nelle voci del dizionario.
+# Unresolved references (misprints, other numberings, non-canonical books), with the reason:
+# BJ margins, citations in BJ notes and introductions, and in the dictionary entries.
 PREFIX bj: <https://massimo-nocentini.github.io/bibbia-gerusalemme/ontologia#>
 PREFIX verso: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/verso/>
 PREFIX libro: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/libro/>
@@ -16,7 +18,8 @@ SELECT ?dove ?tipo ?come_stampato ?motivo WHERE {
   OPTIONAL { ?x bj:daVersetto ?v1 . ?v1 rdfs:label ?l1 ; bj:ordine ?o1 }
   OPTIONAL { ?x bj:daNota ?n . ?n rdfs:label ?l2 ; bj:richiamataDa ?v2 . ?v2 bj:ordine ?o2 }
   OPTIONAL { ?x bj:daParagrafo ?pa . ?pa rdfs:label ?l3 }
-  BIND (COALESCE(?l1, ?l2, ?l3) AS ?dove)
+  OPTIONAL { ?x bj:daSezione ?se . ?se rdfs:label ?l4 }
+  BIND (COALESCE(?l1, ?l2, ?l3, ?l4) AS ?dove)
   BIND (COALESCE(?o1, ?o2, 99999) AS ?o)
 }
 ORDER BY ?o ?dove

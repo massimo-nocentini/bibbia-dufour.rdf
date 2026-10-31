@@ -6,7 +6,10 @@
 // (npm install playwright-core@1.64.0, which drives the cached chromium 1248) and pass
 // that folder with --pw. Checks the load time, the console, the reader and the verse
 // panel (Gv 3,16 -> note -> a margin reference -> back), the search with and without
-// accents, the graph, the matrix, the dark theme, the keyboard and a 390px viewport.
+// accents, the graph, the matrix, the dark theme, the keyboard and a 390px viewport; the
+// Dizionario di Teologia Biblica: the panel section, the ◊ marker and its heat, an entry
+// (#voce) with its paragraph highlighted, the index (#dizionario), the search, the entry
+// cards of the tree, the overview.
 // With --foto, screenshots are written there. Exit status 1 if any check fails.
 import { createRequire } from 'node:module';
 import { dirname, join, resolve } from 'node:path';
@@ -52,7 +55,7 @@ try {
   const { p, errori, tempo, interno } = await apri(ctx);
   metriche.caricamento_ms = tempo;
   metriche.interno = interno;
-  verifica('carica in meno di 3 s', tempo < 3000, `${tempo} ms (dati ${interno.dati} ms, indici ${interno.indici} ms)`);
+  verifica('prima resa in meno di 1 s', tempo < 1000, `${tempo} ms (dati ${interno.dati} ms, indici ${interno.indici} ms)`);
   const numeri = await p.$$eval('.numeri span', xs => xs.map(x => x.textContent.trim()));
   metriche.numeri_indice = numeri;
   verifica('indice dei libri', (await p.$$('.libro')).length === 74, numeri.join(', '));
@@ -114,6 +117,203 @@ try {
   verifica('chip di un capitolo intero apre tutto il passo (F15)', intero && intero[1] === '#Gen.22.1-24', JSON.stringify(intero));
   const frasi = await p.$$eval('#pannello .frase', xs => xs.map(x => x.textContent));
   verifica('frasi di contesto da inizio parola (F15)', frasi.every(f => !/^…\S*[a-zà-ù]\S*\s/.test(f) || /^…[A-ZÀ-Ù«(]|^…\S+\s/.test(f)), frasi[0]?.slice(0, 50));
+
+  // ------------------------------------------------ the Dizionario di Teologia Biblica
+  const Zm = await p.evaluate(() => ({ top: D.diz.meta.top.map(x => [V.id[x[0]], x[1], x[2]]), stretti: D.diz.meta.top_stretti.map(x => [V.id[x[0]], x[1]]), voci: D.diz.voci.length, rinvii: D.diz.meta.rinvii, pct: D.diz.meta.pct }));
+  // the panel of the verse most cited by the dictionary: one entry per voce, counted in the header
+  const [vtop, ntop, vocitop] = Zm.top[0];
+  await p.evaluate(h => { location.hash = '#' + h; }, vtop);
+  await p.waitForSelector('#pannello:not([hidden]) .sez.diz');
+  const pdiz = await p.$eval('#pannello', x => ({
+    n: +x.querySelector('.sez.diz > h3 .n').textContent, voci: x.querySelectorAll('.sez.diz .dvoce').length,
+    contatori: x.querySelector('.contatori').textContent.replace(/\s+/g, ' '), segni: x.querySelectorAll('.sez.diz .frase mark').length,
+    citazioni: [...x.querySelectorAll('.sez.diz .dvoce h4 .n')].reduce((s, y) => s + +y.textContent, 0),
+  }));
+  metriche.pannello_dizionario = Object.assign({ verso: vtop }, pdiz);
+  verifica(`pannello: «Nel Dizionario» per ${vtop}`, pdiz.n === vocitop && pdiz.voci === vocitop && pdiz.citazioni === ntop && pdiz.segni >= vocitop && pdiz.contatori.includes(`${vocitop} voci del Dizionario`), JSON.stringify(pdiz));
+  await p.evaluate(() => document.querySelector('#pannello .sez.diz').scrollIntoView());
+  await foto(p, '26-diz-pannello');
+  // Gen 4,5 is in ABELE «Gen 4, 4 s»: the flag, then the click opens the entry at that paragraph
+  await p.evaluate(() => { location.hash = '#Gen.4.5'; });
+  await p.waitForSelector('#pannello:not([hidden]) .sez.diz');
+  const abele = await p.$eval('#pannello .dvoce:has(a[href="#voce/abele"])', x => ({ fl: [...x.querySelectorAll('.fl')].map(f => f.textContent), href: x.querySelector('.dsez').getAttribute('href') }));
+  verifica('pannello: ABELE cita Gen 4,4 s (segno «s»)', abele.fl.includes('s') && abele.href === '#voce/abele/1?v=Gen.4.5', JSON.stringify(abele));
+  await p.click('#pannello .dvoce:has(a[href="#voce/abele"]) .dsez');
+  await p.waitForSelector('.voce-testo .dpar.sel');
+  const voce = await p.evaluate(() => {
+    const sel = document.querySelector('.dpar.sel'), r = sel.getBoundingClientRect();
+    return { h1: document.querySelector('.voce-pagina h1').textContent, sel: sel.id, inVista: r.top >= 0 && r.top < innerHeight,
+      cd: document.querySelectorAll('.voce-testo a.cd[href]').length, cdSel: [...document.querySelectorAll('a.cd.sel')].map(a => a.textContent),
+      vl: document.querySelectorAll('.voce-testo a.vl').length, firma: document.querySelector('.firma')?.textContent,
+      rinvii: document.querySelectorAll('.rinvii li').length, tab: document.querySelector('.schede a.attiva')?.dataset.vista };
+  });
+  metriche.voce_abele = voce;
+  verifica('#voce/abele/1: paragrafo evidenziato e in vista, citazione segnata', voce.h1 === 'Abele' && voce.sel === 'p1' && voce.inVista && voce.cdSel.includes('Gen 4, 4 s') && voce.tab === 'dizionario', JSON.stringify(voce));
+  verifica('voce: citazioni come link, *parole, firma, vedi anche', voce.cd >= 10 && voce.vl >= 3 && voce.firma === 'P. GRELOT' && voce.rinvii === 6, JSON.stringify(voce));
+  await p.hover('.voce-testo a.cd[href]');
+  await p.waitForSelector('#anteprima:not([hidden])');
+  verifica('voce: anteprima di una citazione al passaggio', /\S/.test(await p.$eval('#anteprima', x => x.textContent)), await p.$eval('#anteprima .ap-rif', x => x.textContent));
+  await foto(p, '27-voce');
+  await p.click('.voce-testo a.vl');
+  await p.waitForFunction(() => /^#voce\/(?!abele)/.test(location.hash));
+  verifica('voce: una *parola apre l’altra voce', true, await hash(p));
+  await p.evaluate(() => { location.hash = '#voce/abba'; });
+  await p.waitForSelector('.rinvio-nota');
+  verifica('voce di rinvio: le sue voci', (await p.$$('.rinvii li a.vl')).length === 11);
+  await p.evaluate(() => { location.hash = '#voce/xyz'; });
+  await p.waitForFunction(() => /non trovata/.test(document.querySelector('#vista h1')?.textContent || ''));
+  verifica('#voce/xyz: voce non trovata', true);
+  await p.evaluate(() => { location.hash = '#voce/dio/5'; });
+  await p.waitForSelector('.dpar.sel');
+  verifica('voce lunga: indice delle sezioni accanto al testo', await p.evaluate(() => getComputedStyle(document.querySelector('.voce-indice')).position === 'sticky' && document.querySelectorAll('.voce-indice li').length > 15));
+  await foto(p, '28-voce-dio');
+  // the index of the entries
+  await p.click('.schede a[data-vista="dizionario"]');
+  await p.waitForSelector('.dvl');
+  const indiceDiz = await p.evaluate(() => ({ tutte: document.querySelectorAll('.dvl').length, rinvii: document.querySelectorAll('.dvl.rinvio').length, lettere: document.querySelectorAll('.lettera').length }));
+  verifica('#dizionario: tutte le voci per lettera, i rinvii distinti', (await hash(p)) === '#dizionario' && indiceDiz.tutte === Zm.voci && indiceDiz.rinvii === Zm.rinvii && indiceDiz.lettere > 15, JSON.stringify(indiceDiz));
+  await foto(p, '29-dizionario');
+  await p.fill('#dq', 'agnello');
+  const filtrate = await p.$$eval('.dvl:not([hidden])', xs => xs.map(x => x.textContent.trim()));
+  verifica('#dizionario: il filtro', filtrate.some(t => t.startsWith('Agnello di Dio')) && filtrate.length < 5, filtrate.join(' | '));
+  // search: the entries are a third group, accents ignored
+  const cercaDiz = async q => {
+    await p.evaluate(q => { location.hash = '#cerca?q=' + encodeURIComponent(q) + '&in=dizionario'; }, q);
+    await p.waitForFunction(q => document.querySelector('#rq')?.value === q && document.querySelector('#esito')?.textContent, q);
+    return p.$eval('#esito', x => x.textContent.replace(/ \(\d+ ms\)/, ''));
+  };
+  const jahve = [await cercaDiz('Jahvè'), await cercaDiz('jahve')];
+  verifica('cerca nel Dizionario, senza accenti', jahve[0] === jahve[1] && /[1-9]\d* paragrafi/.test(jahve[0]), jahve[0]);
+  await p.evaluate(() => { location.hash = '#cerca?q=agnello di dio'; });
+  await p.waitForSelector('.bdiz');
+  const gruppo = await p.$eval('.bdiz', x => ({ chip: [...x.querySelectorAll('.dchips .chip')].map(c => c.textContent), righe: x.querySelectorAll('.r.rd').length }));
+  verifica('cerca: le voci come terzo gruppo', gruppo.chip.some(t => t.startsWith('Agnello di Dio')) && gruppo.righe > 0 && (await p.$$('.risultati .blocco')).length > 1, JSON.stringify(gruppo));
+  await foto(p, '30-cerca-diz');
+  // the reader: ◊ in the margin, its tooltip and label, the heat of the dictionary
+  await p.evaluate(() => { location.hash = '#Isa.53'; });
+  await p.waitForSelector('.testo .v');
+  const md = await p.evaluate(() => ({ n: document.querySelectorAll('.testo .md').length, title: document.querySelector('.testo .md')?.title, aria: document.querySelector('#v' + S.vix.get('Isa.53.12')).getAttribute('aria-label') }));
+  verifica('lettore: ◊ sui versetti citati dal Dizionario', md.n >= 10 && /Dizionario/.test(md.title) && /voci del Dizionario/.test(md.aria), JSON.stringify(md));
+  await p.click('#calore');
+  await p.click('.fonte-calore [data-fonte="diz"]');
+  const caldo = await p.evaluate(() => [document.body.className, getComputedStyle(document.querySelector('.v.d5, .v.d4')).backgroundColor, getComputedStyle(document.querySelector('.lc-diz')).display]);
+  verifica('calore del Dizionario', /calore-diz/.test(caldo[0]) && caldo[1] !== 'rgba(0, 0, 0, 0)' && caldo[2] !== 'none', caldo.join(' · '));
+  await foto(p, '31-calore-diz');
+  await p.keyboard.press('d');
+  verifica('d: torna ai rimandi della BJ', !(await p.evaluate(() => document.body.classList.contains('calore-diz'))));
+  await p.click('#calore');
+  // the tree: a group of entries on the card of a verse; an entry card grows the passages it cites
+  await p.evaluate(h => { location.hash = '#grafo/' + h; }, vtop);
+  await p.waitForSelector('.carta.voce');
+  const gd = await p.evaluate(() => {
+    const c = document.querySelector('.carta.voce');
+    return { gruppo: [...document.querySelectorAll('.ramo-gruppo span')].map(x => x.textContent).find(t => /Nel Dizionario/.test(t)),
+      carte: document.querySelectorAll('.carta.voce').length, href: c.querySelector('.carta-rif').getAttribute('href'), mark: !!c.querySelector('.carta-testo mark'),
+      fondo: getComputedStyle(c.querySelector('svg.contorno .fondo')).fill, tinta: getComputedStyle(document.documentElement).getPropertyValue('--biglietto-diz').trim(),
+      filtro: !!document.querySelector('.grafo-lato input[data-rel="diz"]') };
+  });
+  verifica('albero: gruppo «◊ Nel Dizionario» con schede di voce', gd.gruppo === '◊ Nel Dizionario' && gd.carte === 8 && /^#voce\/[^/]+\/\d+\?v=/.test(gd.href) && gd.mark && gd.filtro, JSON.stringify(gd));
+  const prima2 = await p.$$eval('.carta', xs => xs.length);
+  await p.evaluate(() => document.querySelector('.carta.voce .cresci').click());
+  const dopo2 = await p.evaluate(() => ({ carte: document.querySelectorAll('.carta').length, gruppo: [...document.querySelectorAll('.ramo-gruppo span')].some(x => x.textContent === '◊ La voce cita') }));
+  verifica('albero: ▸ su una voce apre i passi che cita (al più 4)', dopo2.gruppo && dopo2.carte > prima2 && dopo2.carte <= prima2 + 4, `${prima2} -> ${dopo2.carte} schede`);
+  await p.evaluate(() => { const n = S.albNodi.find(x => x.voce !== undefined && x.aperta); S.av.z = 0.85; S.av.x = 300 - n.x * S.av.z; S.av.y = 260 - n.y * S.av.z; applica(); });
+  await foto(p, '32-grafo-diz');
+  await p.evaluate(h => { location.hash = '#grafo/' + h + '?f=diz'; }, vtop);
+  await p.waitForSelector('#ginfo b');
+  verifica('albero: filtro «diz» nell’indirizzo', await p.$$eval('.ramo-gruppo span', xs => xs.map(x => x.textContent).join()) === '◊ Nel Dizionario');
+  await p.evaluate(() => document.querySelector('.carta.voce .carta-rif').click());
+  await p.waitForSelector('.voce-testo .dpar.sel');
+  verifica('albero: il nome di una voce apre la voce al paragrafo', /^#voce\//.test(await hash(p)), await hash(p));
+  // the overview: tiles and the 20 verses most cited, both rankings equal to dufour.json
+  await p.evaluate(() => { location.hash = '#panoramica'; });
+  await p.waitForSelector('#dtop tr');
+  const righeTop = () => p.$$eval('#dtop tr', xs => xs.map(x => [x.querySelector('.rif').textContent, +x.querySelector('.cnt div').textContent]));
+  const rif = id => p.evaluate(id => rif(S.vix.get(id)), id);
+  const t1 = await righeTop();
+  const atteso1 = await Promise.all(Zm.top.map(async ([id, n]) => [await rif(id), n]));
+  await p.click('#dtop-scelta [data-top="stretti"]');
+  const t2 = await righeTop();
+  const atteso2 = await Promise.all(Zm.stretti.map(async ([id, n]) => [await rif(id), n]));
+  const tessereDiz = await p.$$eval('.tessere-diz .tessera', xs => xs.map(x => x.querySelector('b').textContent + ' ' + x.querySelector('span').textContent));
+  metriche.tessere_dizionario = tessereDiz;
+  verifica('panoramica: tessere del Dizionario', tessereDiz.length === 4 && tessereDiz.join().includes(String(Zm.pct).replace('.', ',') + '%'), tessereDiz.join(' · '));
+  verifica('panoramica: i 20 più citati dal Dizionario (come dufour.json)', JSON.stringify(t1) === JSON.stringify(atteso1), t1.slice(0, 3).join(' · '));
+  verifica('panoramica: … e con le sole citazioni brevi', JSON.stringify(t2) === JSON.stringify(atteso2), t2.slice(0, 3).join(' · '));
+  await p.evaluate(() => document.querySelector('.diz-h2').scrollIntoView());
+  await foto(p, '33-panoramica-diz');
+  // ------------------------------------------------ audit 2 of the dictionary
+  const vai_ = async (h, sel) => { await p.evaluate(h => { location.hash = h; }, h); if (sel) await p.waitForSelector(sel); };
+  const vociPannello = async id => { await vai_('#' + id, '#pannello:not([hidden]) .sez.diz'); return p.$$eval('#pannello .dvoce h4 a', xs => xs.map(x => x.getAttribute('href'))); };
+  const es14 = await vociPannello('Exod.14.10'), gv1030 = await vociPannello('John.10.30'), gv316 = await vociPannello('John.3.16');
+  verifica('dati: dopo «= Es 3, 14» FEDE cita Gv 10,30, non Es 14,10 (inciso)', !es14.includes('#voce/fede') && gv1030.includes('#voce/fede'), `Es 14,10: ${es14.length} voci; Gv 10,30: ${gv1030.join(' ')}`);
+  verifica('dati: Gv 3,16 nel paragrafo di FEDE senza sigla (citazione ritrovata)', gv316.includes('#voce/fede'), gv316.length + ' voci');
+  const sir = await vociPannello('Sir.36.6');
+  verifica('dati: «Rinnova i prodigi» (Eccli 36, 5) è Sir 36,6 (vecchia numerazione)', sir.includes('#voce/miracolo'), sir.join(' '));
+  // search: every row marked (a stale lastIndex left rows without <mark>), pages of 50, kept on Back
+  await vai_('#cerca?q=dio&in=dizionario', '.r.rd');
+  const senza = await p.$$eval('.risultati .r .frase', xs => xs.filter(x => !x.querySelector('mark')).length);
+  verifica('cerca: ogni riga ha la parola evidenziata (lastIndex)', senza === 0, `${senza} righe senza <mark>`);
+  await p.click('.bdiz [data-diz]');
+  const dopo50 = await p.$$eval('.r.rd', xs => xs.length);
+  const bottone = await p.$eval('.bdiz [data-diz]', x => x.textContent);
+  verifica('cerca: «mostra altri» a pagine di 50', dopo50 === 75 && /mostra altri 50 paragrafi \(di /.test(bottone), `${dopo50} righe; ${bottone}`);
+  await p.evaluate(() => window.scrollTo(0, 3000));
+  await p.waitForTimeout(300);
+  await p.click('.r.rd:nth-of-type(60) a.dove');
+  await p.waitForSelector('.voce-testo');
+  await p.goBack();
+  await p.waitForSelector('.r.rd');
+  await p.waitForTimeout(200);
+  const ritorno = await p.evaluate(() => ({ righe: document.querySelectorAll('.r.rd').length, y: Math.round(scrollY) }));
+  verifica('cerca: Indietro ritrova le righe aperte e la posizione', ritorno.righe === 75 && ritorno.y > 1000, JSON.stringify(ritorno));
+  await vai_('#cerca?q=agnello di dio', '.bdiz');
+  const uno = await p.$eval('#esito', x => x.textContent);
+  verifica('cerca: singolare («1 voce»)', /\b1 voce\b/.test(uno) && !/\b1 voci\b/.test(uno), uno);
+  // an entry: unresolved citations reachable by keyboard and touch, redirects counted by entry
+  await vai_('#voce/fede', '.voce-testo a.cd.x');
+  const x = await p.$eval('.voce-testo a.cd.x', a => ({ tab: a.tabIndex, role: a.getAttribute('role'), aria: a.getAttribute('aria-label') }));
+  await p.focus('.voce-testo a.cd.x');
+  await p.waitForSelector('#anteprima:not([hidden]) .ap-x');
+  verifica('voce: una citazione non risolta si raggiunge da tastiera e mostra il motivo', x.tab === 0 && x.role === 'button' && /non risolto/.test(x.aria), await p.$eval('#anteprima .ap-x', e => e.textContent));
+  await p.keyboard.press('Escape');
+  await vai_('#voce/abba', '.rinvio-nota');
+  const abba = await p.$eval('.rinvio-nota', e => e.textContent);
+  verifica('voce di rinvio: conta le voci distinte', /queste 9 voci/.test(abba), abba);
+  await vai_('#voce/mediatore', '.rinvii');
+  const med = await p.$$eval('.rinvii li', xs => xs.map(x => x.textContent.trim()));
+  verifica('vedi anche: niente bersagli fantasma («o»), «0» come introd.', !med.includes('o') && !med.some(t => / 0$/.test(t)), med.filter(t => /Ministero|Mosè/.test(t)).join(' | '));
+  await vai_('#voce/monarchia', '.rinvii');
+  verifica('rinvio MONARCHIA → Re', await p.$$eval('.rinvii a.vl', xs => xs.some(a => /^#voce\/re\b/.test(a.getAttribute('href')))));
+  await vai_('#voce/agnello-di-dio/2?v=Isa.53.12', '.dpar.sel a.cd.sel');
+  const segno = await p.$eval('.dpar.sel a.cd.sel', a => { const c = getComputedStyle(a); return { w: c.fontWeight, s: c.boxShadow }; });
+  verifica('voce: la citazione del versetto si distingue nel paragrafo evidenziato', +segno.w >= 600 && segno.s !== 'none', JSON.stringify(segno));
+  await foto(p, '34-voce-sel');
+  await vai_('#voce/spirito-di-dio', '.voce-testo');
+  const titoli = await p.$$eval('#vista [role="heading"]', xs => xs.length);
+  verifica('voce: titoli delle sezioni come intestazioni (role=heading)', titoli > 20, titoli + ' intestazioni');
+  await vai_('#voce/AGNELLO-DI-DIO', '.voce-pagina h1');
+  verifica('#voce/AGNELLO-DI-DIO: indirizzo normalizzato', (await p.$eval('h1', e => e.textContent)) === 'Agnello di Dio' && (await hash(p)) === '#voce/agnello-di-dio');
+  await vai_('#voce/agnello-di-dio/9999', '.voce-pagina .avviso');
+  verifica('#voce/…/9999: dice che il paragrafo non c’è', true, await p.$eval('.avviso', e => e.textContent));
+  // the index: the filter in the address, letters with nothing left disabled, kept on Back
+  await vai_('#dizionario', '.dvl');
+  await p.fill('#dq', 'spirito');
+  const filtro = await p.evaluate(() => ({ h: location.hash, a: document.querySelector('.lettere [data-l="A"]').disabled }));
+  await p.click('.dvl:not([hidden])');
+  await p.waitForSelector('.voce-pagina');
+  await p.goBack();
+  await p.waitForSelector('.dvl:not([hidden])');
+  const torna = await p.evaluate(() => ({ q: document.querySelector('#dq').value, n: document.querySelectorAll('.dvl:not([hidden])').length }));
+  verifica('#dizionario: filtro nell’indirizzo, lettere vuote disattivate, Indietro', filtro.h === '#dizionario?q=spirito' && filtro.a && torna.q === 'spirito' && torna.n < 10, JSON.stringify([filtro, torna]));
+  // the reader: the switch of the heat is there without the flame; it turns the heat on and off
+  await vai_('#Isa.53', '.testo .v');
+  const sw0 = await p.evaluate(() => ({ vis: getComputedStyle(document.querySelector('.legenda-calore')).display, on: document.body.classList.contains('calore'), pr: [...document.querySelectorAll('.fonte-calore button')].map(b => b.getAttribute('aria-pressed')).join() }));
+  await p.click('.fonte-calore [data-fonte="diz"]');
+  const sw1 = await p.evaluate(() => document.body.className);
+  await p.click('.fonte-calore [data-fonte="diz"]');
+  const sw2 = await p.evaluate(() => document.body.classList.contains('calore'));
+  verifica('lettore: «Evidenzia» Rimandi BJ | Dizionario visibile senza la fiamma', sw0.vis === 'flex' && !sw0.on && sw0.pr === 'false,false' && /calore-diz/.test(sw1) && /\bcalore\b/.test(sw1) && !sw2, JSON.stringify([sw0, sw1, sw2]));
 
   // a literal parallel (‖): Mc 1,9 -> its parallel chip -> back
   await p.evaluate(() => { location.hash = '#Mark.1.9'; });
@@ -230,7 +430,7 @@ try {
   await p.evaluate(() => { location.hash = '#grafo/Gen.1.1?f=parallel'; });
   await p.waitForSelector('#ginfo b');
   verifica('filtri del grafo nell’indirizzo', await p.$$eval('.grafo-lato input[data-rel]', xs => xs.filter(x => x.checked).map(x => x.dataset.rel).join()) === 'parallel');
-  await p.evaluate(() => { location.hash = '#grafo/Gen.25.5'; });
+  await p.evaluate(() => { location.hash = '#grafo/Gen.44.1'; });      // no margin, note or dictionary link
   await p.waitForSelector('#ginfo b');
   verifica('grafo senza collegamenti lo dice (F12)', /nessun collegamento/.test(await p.$eval('.carta.radice .conta', x => x.textContent)), await p.$eval('#ginfo', x => x.textContent));
   await foto(p, '23-grafo-vuoto');
@@ -297,7 +497,7 @@ try {
   const rimandi = await p.evaluate(() => D.meta.riepilogo.mref_items);
   verifica('le barre sommano i rimandi a margine (F1)', barre.reduce((a, b) => a + b, 0) === rimandi, `${barre.join('+')} = ${rimandi}`);
   await foto(p, '10-matrice-coppia');
-  const top = await p.$$eval('.classifica tr', xs => xs.length);
+  const top = await p.$$eval('.classifica:not(.diz-top) tr', xs => xs.length);
   verifica('50 versetti più rimandati', top === 50);
 
   // F13: one wording for margin entries and references
@@ -331,9 +531,9 @@ try {
     const rgb = c => { const d = document.createElement('i'); d.style.color = c; document.body.appendChild(d); const v = getComputedStyle(d).color.match(/\d+/g).map(Number); d.remove(); return v; };
     const L = c => { const [r, g, b] = rgb(c).map(x => { x /= 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
     const cr = (a, b) => { const [x, y] = [L(a), L(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
-    return ['--foglio', '--carta', '--sopra'].map(bg => cr('var(--tenue)', `var(${bg})`).toFixed(2));
+    return ['--foglio', '--carta', '--sopra'].map(bg => cr('var(--tenue)', `var(${bg})`).toFixed(2)).concat([cr('var(--r-diz)', 'var(--foglio)').toFixed(2)]);
   });
-  verifica('contrasto del testo tenue ≥ 4,5 (F8, chiaro)', contrasto.every(x => +x >= 4.5), contrasto.join(', '));
+  verifica('contrasto del testo tenue e del Dizionario ≥ 4,5 (F8, chiaro)', contrasto.every(x => +x >= 4.5), contrasto.join(', '));
   await p.evaluate(() => { location.hash = '#Mark.1'; });
   await p.waitForSelector('.testo .v');
   await p.focus('.testo .v[data-i]');
@@ -362,7 +562,7 @@ try {
     const rgb = c => { const d = document.createElement('i'); d.style.color = c; document.body.appendChild(d); const v = getComputedStyle(d).color.match(/\d+/g).map(Number); d.remove(); return v; };
     const L = c => { const [r, g, b] = rgb(c).map(x => { x /= 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
     const cr = (a, b) => { const [x, y] = [L(a), L(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
-    return [cr('var(--tenue)', 'var(--foglio)'), cr('var(--tenue)', 'var(--carta)'), cr('var(--rubrica)', 'var(--sel)')].map(x => x.toFixed(2));
+    return [cr('var(--tenue)', 'var(--foglio)'), cr('var(--tenue)', 'var(--carta)'), cr('var(--rubrica)', 'var(--sel)'), cr('var(--r-diz)', 'var(--foglio)')].map(x => x.toFixed(2));
   });
   verifica('contrasto nel tema scuro ≥ 4,5 (F8)', scuro.every(x => +x >= 4.5), scuro.join(', '));
   await foto(p, '11-scuro');
@@ -373,6 +573,9 @@ try {
   await p.evaluate(() => { location.hash = '#panoramica'; });
   await p.waitForSelector('#mcv');
   await foto(p, '13-panoramica-scuro');
+  await p.evaluate(() => { location.hash = '#voce/agnello-di-dio/3'; });
+  await p.waitForSelector('.dpar.sel');
+  await foto(p, '34-voce-scuro');
   await p.click('#tema');
   verifica('nessun errore in console (desktop)', errori.length === 0, errori.slice(0, 5).join(' | '));
   await ctx.close();
@@ -435,6 +638,23 @@ try {
   await foto(m.p, '25-telefono-pannello-alto');
   const tocco = await m.p.$eval('.testo .nc', x => { const r = x.getBoundingClientRect(), a = getComputedStyle(x, '::after'); return [r.width - parseFloat(a.left) - parseFloat(a.right), r.height - parseFloat(a.top) - parseFloat(a.bottom)]; });
   verifica('390 px: richiamo di nota tocca ≥ 24 px (F9)', tocco.every(x => x >= 24), tocco.map(Math.round).join('×'));
+  // the dictionary on the phone: the tabs on one line, the entry, the index, the panel section
+  await m.p.evaluate(() => { location.hash = '#voce/agnello-di-dio/3?v=Isa.53.7'; });
+  await m.p.waitForSelector('.dpar.sel');
+  const barra = await m.p.evaluate(() => ({ righe: (y => (Math.max(...y) - Math.min(...y) < 12 ? 1 : 2))([...document.querySelectorAll('.schede a, .comandi')].map(x => x.getBoundingClientRect().top)), largo: document.documentElement.scrollWidth,
+    sel: (() => { const r = document.querySelector('.dpar.sel').getBoundingClientRect(); return r.top >= document.querySelector('.barra').getBoundingClientRect().bottom - 2 && r.top < innerHeight; })() }));
+  verifica('390 px: cinque schede su una riga, voce senza scorrimento orizzontale', barra.righe === 1 && barra.largo <= 390 && barra.sel, JSON.stringify(barra));
+  await foto(m.p, '35-telefono-voce');
+  await m.p.evaluate(() => { location.hash = '#dizionario'; });
+  await m.p.waitForSelector('.dvl');
+  verifica('390 px: #dizionario senza scorrimento orizzontale', await m.p.evaluate(() => document.documentElement.scrollWidth) <= 390);
+  await foto(m.p, '36-telefono-dizionario');
+  await m.p.evaluate(() => { location.hash = '#John.1.14'; });
+  await m.p.waitForSelector('#pannello:not([hidden]) .sez.diz .dvoce');
+  await m.p.evaluate(() => document.querySelector('#pannello .sez.diz').scrollIntoView());
+  const md390 = await m.p.evaluate(() => { const r = document.querySelector('#v' + S.vix.get('John.1.14') + ' .md').getBoundingClientRect(); return [Math.round(r.left), document.documentElement.scrollWidth]; });
+  verifica('390 px: ◊ nel margine, sezione del Dizionario nel pannello', md390[0] >= 8 && md390[1] <= 390, md390.join(', '));
+  await foto(m.p, '37-telefono-pannello-diz');
   verifica('nessun errore in console (390 px)', m.errori.length === 0, m.errori.slice(0, 5).join(' | '));
   await tel.close();
 } finally {

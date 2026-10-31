@@ -1,0 +1,34 @@
+# Le voci che citano più versetti in comune con una voce (AGNELLO DI DIO), e se il
+# dizionario le collega (skos:related: «*parola», vedi anche, rinvio).
+# The entries citing the most verses in common with an entry, and whether they are linked.
+# All pairs of entries at once (about 2 minutes with rdflib, 870,000 joined rows; a
+# second in a triple store):
+#   SELECT ?x ?y (COUNT(?v) AS ?n) WHERE { ?v bj:citatoNellaVoce ?x , ?y FILTER (STR(?x) < STR(?y)) }
+#   GROUP BY ?x ?y ORDER BY DESC(?n) LIMIT 25
+PREFIX bj: <https://massimo-nocentini.github.io/bibbia-gerusalemme/ontologia#>
+PREFIX verso: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/verso/>
+PREFIX libro: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/libro/>
+PREFIX voce: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/voce/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX oa: <http://www.w3.org/ns/oa#>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+
+SELECT ?voce ?versetti_comuni ?collegata WHERE {
+  {
+    SELECT ?y (COUNT(?v) AS ?versetti_comuni) WHERE {
+      ?v bj:citatoNellaVoce voce:agnello-di-dio .
+      ?v bj:citatoNellaVoce ?y .
+      FILTER (?y != voce:agnello-di-dio)
+    }
+    GROUP BY ?y
+    ORDER BY DESC(?versetti_comuni)
+    LIMIT 25
+  }
+  ?y skos:prefLabel ?voce .
+  BIND (EXISTS { voce:agnello-di-dio skos:related ?y } AS ?collegata)
+}
+ORDER BY DESC(?versetti_comuni) ?voce

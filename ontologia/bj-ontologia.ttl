@@ -2,6 +2,11 @@
 # a margine della Bible de Jérusalem). Vocabolario OWL 2 scritto a mano: i dati sono
 # generati da tools/ontologia/rdf.py in ontologia/bj-dati.ttl.gz.
 #
+# The last section adds the Dizionario di Teologia Biblica (X. Léon-Dufour, 1976): its
+# entries are SKOS concepts (bj:Voce) whose paragraphs cite verses through the same
+# bj:Citazione / bj:Passaggio pattern as the BJ notes (shortcuts bj:voceCitaVersetto and
+# bj:citatoNellaVoce).
+#
 # The verse (bj:Versetto) is the hub: notes (bj:Nota, W3C Web Annotations), margin
 # references (bj:Rimando, reified, grouped in bj:Margine) and citations inside notes and
 # introductions (bj:Citazione) all point from or to verses, through bj:Passaggio
@@ -19,6 +24,7 @@
 @prefix cito:    <http://purl.org/spar/cito/> .
 @prefix prov:    <http://www.w3.org/ns/prov#> .
 @prefix vann:    <http://purl.org/vocab/vann/> .
+@prefix foaf:    <http://xmlns.com/foaf/0.1/> .
 
 <https://massimo-nocentini.github.io/bibbia-gerusalemme/ontologia>
     a owl:Ontology ;
@@ -44,12 +50,18 @@ oa:motivatedBy a owl:ObjectProperty .
 cito:cites a owl:ObjectProperty .
 cito:hasCitingEntity a owl:ObjectProperty .
 cito:hasCitedEntity a owl:ObjectProperty .
+cito:isCitedBy a owl:ObjectProperty .
+dcterms:creator a owl:ObjectProperty .
+dcterms:contributor a owl:ObjectProperty .
+skos:related a owl:ObjectProperty .
 prov:wasDerivedFrom a owl:ObjectProperty .
 oa:Annotation a owl:Class .
 oa:SpecificResource a owl:Class .
 oa:TextualBody a owl:Class .
 cito:Citation a owl:Class .
 skos:Concept a owl:Class .
+skos:ConceptScheme a owl:Class .
+foaf:Person a owl:Class .
 
 # ------------------------------------------------------------------ classes
 
@@ -153,7 +165,8 @@ bj:Ambito a owl:Class ;
 [] a owl:AllDisjointClasses ;
     owl:members ( bj:Bibbia bj:Testamento bj:Libro bj:Capitolo bj:Divisione bj:Pericope
                   bj:Versetto bj:Pagina bj:Introduzione bj:Paragrafo bj:Nota bj:Margine
-                  bj:Rimando bj:Citazione bj:Passaggio ) .
+                  bj:Rimando bj:Citazione bj:Passaggio
+                  bj:Dizionario bj:Voce bj:SezioneVoce bj:ParagrafoVoce bj:CollegamentoVoce ) .
 
 # ------------------------------------------------------------------ structure
 
@@ -283,10 +296,11 @@ bj:daNota a owl:ObjectProperty , owl:FunctionalProperty ;
 
 bj:daParagrafo a owl:ObjectProperty , owl:FunctionalProperty ;
     rdfs:subPropertyOf cito:hasCitingEntity ;
-    rdfs:domain bj:Citazione ; rdfs:range bj:Paragrafo ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:Citazione bj:CollegamentoVoce ) ] ;
+    rdfs:range [ a owl:Class ; owl:unionOf ( bj:Paragrafo bj:ParagrafoVoce ) ] ;
     rdfs:label "dal paragrafo"@it , "from paragraph"@en ;
-    rdfs:comment "Il paragrafo di introduzione nel cui testo compare la citazione."@it ,
-                 "The introduction paragraph whose text contains the citation."@en .
+    rdfs:comment "Il paragrafo nel cui testo compare la citazione: di un'introduzione della BJ o di una voce del Dizionario di Teologia Biblica (per una voce, anche la parola con «*» di un bj:CollegamentoVoce)."@it ,
+                 "The paragraph whose text contains the citation: of a BJ introduction or of an entry of the Dizionario di Teologia Biblica (for an entry, also the «*» word of a bj:CollegamentoVoce)."@en .
 
 bj:aPassaggio a owl:ObjectProperty ;
     rdfs:subPropertyOf cito:hasCitedEntity ;
@@ -311,7 +325,7 @@ bj:relazione a owl:ObjectProperty , owl:FunctionalProperty ;
                  "The kind of reference given by the margin sign (SKOS concept of the bj:relazioni scheme)."@en .
 
 bj:stato a owl:ObjectProperty , owl:FunctionalProperty ;
-    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:Rimando bj:Citazione ) ] ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:Rimando bj:Citazione bj:CollegamentoVoce ) ] ;
     rdfs:range bj:Stato ;
     rdfs:label "stato"@it , "status"@en ;
     rdfs:comment "L'esito della risoluzione del riferimento (concetto dello schema bj:stati)."@it ,
@@ -334,8 +348,8 @@ bj:interpretazione a owl:DatatypeProperty , owl:FunctionalProperty ;
     rdfs:domain [ a owl:Class ; owl:unionOf ( bj:Rimando bj:Citazione ) ] ;
     rdfs:range xsd:string ;
     rdfs:label "interpretazione"@it , "reading"@en ;
-    rdfs:comment "Per un riferimento senza sigla che non esiste nel libro ereditato: la lettura con cui è stato risolto (il libro corrente, l'ultimo libro nominato nel testo, versetti del capitolo precedente)."@it ,
-                 "For a reference without siglum that does not exist in the book it inherits: the reading that resolved it (the current book, the last book named in the text, verses of the previous chapter)."@en .
+    rdfs:comment "Per un riferimento senza sigla che non esiste nel libro ereditato: la lettura con cui è stato risolto (il libro corrente, l'ultimo libro nominato nel testo, versetti del capitolo precedente). Nel dizionario anche: il libro in vigore prima di un inciso «cfr.», il libro nominato nella prosa, una scelta a mano, il libro di una citazione recuperata dal testo."@it ,
+                 "For a reference without siglum that does not exist in the book it inherits: the reading that resolved it (the current book, the last book named in the text, verses of the previous chapter). In the dictionary also: the book in force before a «cfr.» aside, the book named in the prose, a choice by hand, the book of a citation recovered from the text."@en .
 
 bj:mandaAMargine a owl:ObjectProperty ;
     rdfs:domain [ a owl:Class ; owl:unionOf ( bj:Rimando bj:Citazione ) ] ;
@@ -390,8 +404,8 @@ bj:citaVersetto a owl:ObjectProperty ;
 
 bj:proprietaDiretta a owl:AnnotationProperty ;
     rdfs:label "proprietà diretta"@it , "direct property"@en ;
-    rdfs:comment "Collega un concetto di relazione alla scorciatoia tra versetti che lo materializza."@it ,
-                 "Links a relation concept to the verse-to-verse shortcut that materialises it."@en .
+    rdfs:comment "Collega un concetto di relazione alla scorciatoia tra versetti che lo materializza, o un tipo di collegamento tra voci alla scorciatoia tra voci."@it ,
+                 "Links a relation concept to the verse-to-verse shortcut that materialises it, or a kind of link between entries to the entry-to-entry shortcut."@en .
 
 # ------------------------------------------------------------------ data properties
 
@@ -409,8 +423,8 @@ bj:testoHtml a owl:DatatypeProperty ;
 bj:etichetta a owl:DatatypeProperty ;
     rdfs:range xsd:string ;
     rdfs:label "etichetta"@it , "label as printed"@en ;
-    rdfs:comment "L'etichetta come stampata: numero del versetto (es. «8a»; «25,19» per Nm 25,19, stampato in Nm 26), del capitolo, o etichetta della nota (es. «1,1–2,4a», «c 4»)."@it ,
-                 "The label as printed: verse number (e.g. «8a»; «25,19» for Nm 25,19, printed in Nm 26), chapter number, or note label (e.g. «1,1–2,4a», «c 4»)."@en .
+    rdfs:comment "L'etichetta come stampata: numero del versetto (es. «8a»; «25,19» per Nm 25,19, stampato in Nm 26), del capitolo, o etichetta della nota (es. «1,1–2,4a», «c 4»), o di una sezione di una voce del dizionario («II», «2», «b»)."@it ,
+                 "The label as printed: verse number (e.g. «8a»; «25,19» for Nm 25,19, printed in Nm 26), chapter number, or note label (e.g. «1,1–2,4a», «c 4»), or of a section of a dictionary entry («II», «2», «b»)."@en .
 
 bj:numero a owl:DatatypeProperty ;
     rdfs:range xsd:integer ;
@@ -433,14 +447,14 @@ bj:numeroCapitolo a owl:DatatypeProperty , owl:FunctionalProperty ;
 bj:ordine a owl:DatatypeProperty , owl:FunctionalProperty ;
     rdfs:range xsd:integer ;
     rdfs:label "ordine"@it , "order"@en ;
-    rdfs:comment "La posizione nell'ordine canonico (stampato) del volume, da 1."@it ,
-                 "The position in the canonical (printed) order of the volume, from 1."@en .
+    rdfs:comment "La posizione nell'ordine canonico (stampato) del volume, da 1; per il dizionario, la posizione di una voce nel volume o di una sezione nella sua voce."@it ,
+                 "The position in the canonical (printed) order of the volume, from 1; in the dictionary, the position of an entry in the volume or of a section in its entry."@en .
 
 bj:pagina a owl:DatatypeProperty , owl:FunctionalProperty ;
     rdfs:range xsd:integer ;
     rdfs:label "pagina"@it , "page"@en ;
-    rdfs:comment "Il numero della pagina stampata (pagina del PDF = pagina + 33); la pagina stessa è prov:wasDerivedFrom."@it ,
-                 "The printed page number (PDF page = page + 33); the page itself is prov:wasDerivedFrom."@en .
+    rdfs:comment "Il numero della pagina stampata (della BJ: pagina del PDF = pagina + 33; del dizionario: + 21); la pagina stessa è prov:wasDerivedFrom. Per una voce del dizionario, la prima pagina."@it ,
+                 "The printed page number (of the BJ: PDF page = page + 33; of the dictionary: + 21); the page itself is prov:wasDerivedFrom. For a dictionary entry, its first page."@en .
 
 bj:paginaPdf a owl:DatatypeProperty , owl:FunctionalProperty ;
     rdfs:domain bj:Pagina ; rdfs:range xsd:integer ;
@@ -509,10 +523,11 @@ bj:titoloBreve a owl:DatatypeProperty , owl:FunctionalProperty ;
                  "The short title used in running heads, when different from the title."@en .
 
 bj:livello a owl:DatatypeProperty , owl:FunctionalProperty ;
-    rdfs:domain bj:Divisione ; rdfs:range xsd:integer ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:Divisione bj:SezioneVoce ) ] ;
+    rdfs:range xsd:integer ;
     rdfs:label "livello"@it , "level"@en ;
-    rdfs:comment "Il livello di una divisione: 1 = I., 2 = 1., 3 = A."@it ,
-                 "The level of a division: 1 = I., 2 = 1., 3 = A."@en .
+    rdfs:comment "Il livello di una divisione: 1 = I., 2 = 1., 3 = A.; di una sezione di una voce del dizionario: la profondità, da 1."@it ,
+                 "The level of a division: 1 = I., 2 = 1., 3 = A.; of a section of a dictionary entry: its depth, from 1."@en .
 
 bj:apreCapitolo a owl:DatatypeProperty , owl:FunctionalProperty ;
     rdfs:domain bj:Pericope ; rdfs:range xsd:integer ;
@@ -748,3 +763,306 @@ bj:ambitoLibro a skos:Concept , bj:Ambito ;
     rdfs:label "libro"@it , "book"@en ;
     rdfs:comment "«Nota introduttiva»: il bersaglio è il libro intero."@it ,
                  "«Nota introduttiva»: the target is the whole book."@en .
+
+# ================================================================== the Dizionario di Teologia Biblica
+#
+# X. Léon-Dufour (ed.), Dizionario di Teologia Biblica (Marietti, 5th Italian edition 1976),
+# read from ../dufour/corpus by tools/ontologia/dufour.py. The work is a bj:Dizionario and
+# also the skos:ConceptScheme of its entries; each entry (bj:Voce) is a skos:Concept and
+# the article written about it: sections (bj:SezioneVoce) and paragraphs (bj:ParagrafoVoce)
+# hang off it with dcterms:isPartOf. Every Bible reference printed in a paragraph (or a
+# section title) is a bj:Citazione to bj:Passaggio, as in the BJ notes; the shortcuts
+# bj:voceCitaVersetto / bj:citatoNellaVoce join entries and verses directly. Links between
+# entries («*word», «→» lists) are reified (bj:CollegamentoVoce) and materialised as
+# subproperties of skos:related.
+
+# ------------------------------------------------------------------ classes
+
+bj:Dizionario a owl:Class ;
+    rdfs:label "Dizionario"@it , "Dictionary"@en ;
+    rdfs:comment "Un dizionario biblico come opera: i suoi dati bibliografici (dcterms), i curatori e i traduttori; è anche lo schema di concetti (skos:ConceptScheme) delle sue voci."@it ,
+                 "A biblical dictionary as a work: its bibliographic data (dcterms), editors and translators; it is also the concept scheme (skos:ConceptScheme) of its entries."@en .
+
+bj:Voce a owl:Class ;
+    rdfs:subClassOf skos:Concept ;
+    rdfs:label "Voce"@it , "Entry"@en ;
+    rdfs:comment "Una voce (una «parola») del dizionario: il concetto nominato dal lemma (skos:prefLabel), collegato alle altre voci (skos:related e sottoproprietà), e insieme l'articolo scritto su di esso, con autori (dcterms:creator), pagine, sezioni e paragrafi. Le voci di solo rinvio sono bj:VoceRinvio."@it ,
+                 "An entry (a «word») of the dictionary: the concept named by the headword (skos:prefLabel), linked to the other entries (skos:related and subproperties), and at the same time the article written about it, with authors (dcterms:creator), pages, sections and paragraphs. Entries that only send elsewhere are bj:VoceRinvio."@en .
+
+bj:VoceRinvio a owl:Class ;
+    rdfs:subClassOf bj:Voce ;
+    rdfs:label "Voce di rinvio"@it , "Redirect entry"@en ;
+    rdfs:comment "Una voce senza testo: il lemma seguito da «→» e dalle voci (con le sezioni) a cui rinvia (bj:rinviaAVoce). Quando rinvia a una sola voce, il suo lemma è anche skos:altLabel di quella."@it ,
+                 "An entry without text: the headword followed by «→» and the entries (with their sections) it sends to (bj:rinviaAVoce). When it sends to one entry only, its headword is also an skos:altLabel of that entry."@en .
+
+bj:SezioneVoce a owl:Class ;
+    rdfs:label "Sezione di una voce"@it , "Entry section"@en ;
+    rdfs:comment "Una sezione di una voce con il suo titolo, nella notazione del libro (bj:percorso «VT I 2», «B NT III 2», «introd.»); dcterms:isPartOf la sezione madre o la voce."@it ,
+                 "A section of an entry with its title, in the book's notation (bj:percorso «VT I 2», «B NT III 2», «introd.»); dcterms:isPartOf the parent section or the entry."@en .
+
+bj:ParagrafoVoce a owl:Class ;
+    rdfs:label "Paragrafo di una voce"@it , "Entry paragraph"@en ;
+    rdfs:comment "Un paragrafo del testo di una voce (bj:testo senza «*», bj:testoHtml con il corsivo e i collegamenti alle voci); dcterms:isPartOf la sua sezione, o la voce per i paragrafi prima del primo titolo."@it ,
+                 "A paragraph of an entry's text (bj:testo without «*», bj:testoHtml with italics and links to entries); dcterms:isPartOf its section, or the entry for paragraphs before the first heading."@en .
+
+bj:CollegamentoVoce a owl:Class ;
+    rdfs:subClassOf cito:Citation ;
+    rdfs:label "Collegamento tra voci"@it , "Entry link"@en ;
+    rdfs:comment "Un collegamento stampato da una voce a un'altra, reificato: una parola con «*» nel testo (dal paragrafo o dal titolo di sezione in cui sta), una voce dell'elenco «→» finale (vedi anche) o di una voce di rinvio, con la sezione indicata; il tipo è un concetto dello schema bj:tipiCollegamento."@it ,
+                 "A printed link from an entry to another, reified: a «*» word in the text (from the paragraph or section title it stands in), an item of the closing «→» list (see also) or of a redirect entry, with the section it names; the kind is a concept of the bj:tipiCollegamento scheme."@en .
+
+bj:PaginaDizionario a owl:Class ;
+    rdfs:subClassOf bj:Pagina ;
+    rdfs:label "Pagina del dizionario"@it , "Dictionary page"@en ;
+    rdfs:comment "Una pagina stampata del dizionario (pagina del PDF, contata da 1 = pagina + 21; l'indice da 0 del corpus Dufour è pagina + 20); dcterms:isPartOf il dizionario."@it ,
+                 "A printed page of the dictionary (PDF page, counted from 1 = page + 21; the 0-based index of the Dufour corpus is page + 20); dcterms:isPartOf the dictionary."@en .
+
+bj:TipoCollegamento a owl:Class ;
+    rdfs:subClassOf skos:Concept ;
+    rdfs:label "Tipo di collegamento"@it , "Link kind"@en ;
+    rdfs:comment "Il tipo di un collegamento tra voci: parola con «*», vedi anche, rinvio."@it ,
+                 "The kind of a link between entries: «*» word, see also, redirect."@en .
+
+# ------------------------------------------------------------------ structure of the dictionary
+
+bj:nellaVoce a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:SezioneVoce bj:ParagrafoVoce bj:Citazione bj:CollegamentoVoce ) ] ;
+    rdfs:range bj:Voce ;
+    rdfs:label "nella voce"@it , "in entry"@en ;
+    rdfs:comment "Scorciatoia: la voce a cui appartiene una sezione, un paragrafo, una citazione o un collegamento (come bj:inLibro per i versetti)."@it ,
+                 "Shortcut: the entry a section, paragraph, citation or link belongs to (as bj:inLibro for verses)."@en .
+
+bj:daSezione a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:subPropertyOf cito:hasCitingEntity ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:Citazione bj:CollegamentoVoce ) ] ;
+    rdfs:range bj:SezioneVoce ;
+    rdfs:label "dalla sezione"@it , "from section"@en ;
+    rdfs:comment "La sezione nel cui titolo compare la citazione o la parola con «*» (quando non è in un paragrafo)."@it ,
+                 "The section whose title contains the citation or the «*» word (when it is not in a paragraph)."@en .
+
+bj:curatore a owl:ObjectProperty ;
+    rdfs:subPropertyOf dcterms:contributor ;
+    rdfs:domain bj:Dizionario ; rdfs:range foaf:Person ;
+    rdfs:label "curatore"@it , "editor"@en ;
+    rdfs:comment "Chi ha diretto l'opera («pubblicato sotto la direzione di»)."@it ,
+                 "Who directed the work («published under the direction of»)."@en .
+
+bj:traduttore a owl:ObjectProperty ;
+    rdfs:subPropertyOf dcterms:contributor ;
+    rdfs:domain bj:Dizionario ; rdfs:range foaf:Person ;
+    rdfs:label "traduttore"@it , "translator"@en ;
+    rdfs:comment "Chi ha curato l'edizione italiana."@it ,
+                 "Who edited the Italian edition."@en .
+
+# ------------------------------------------------------------------ links between entries
+
+bj:daVoce a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:subPropertyOf cito:hasCitingEntity ;
+    rdfs:domain bj:CollegamentoVoce ; rdfs:range bj:Voce ;
+    rdfs:label "dalla voce"@it , "from entry"@en ;
+    rdfs:comment "La voce in cui il collegamento è stampato."@it ,
+                 "The entry the link is printed in."@en .
+
+bj:aVoce a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:subPropertyOf cito:hasCitedEntity ;
+    rdfs:domain bj:CollegamentoVoce ; rdfs:range bj:Voce ;
+    rdfs:label "alla voce"@it , "to entry"@en ;
+    rdfs:comment "La voce indicata dal collegamento (manca se non è stata trovata: bj:stato bj:irrisolto)."@it ,
+                 "The entry the link names (absent when it was not found: bj:stato bj:irrisolto)."@en .
+
+bj:aSezione a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:subPropertyOf cito:hasCitedEntity ;
+    rdfs:domain bj:CollegamentoVoce ; rdfs:range bj:SezioneVoce ;
+    rdfs:label "alla sezione"@it , "to section"@en ;
+    rdfs:comment "Per un rinvio o un «vedi anche» con un percorso («VT I 2»): la sezione della voce di arrivo che esso indica."@it ,
+                 "For a redirect or «see also» item with a path («VT I 2»): the section of the target entry it names."@en .
+
+bj:tipoCollegamento a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:CollegamentoVoce ; rdfs:range bj:TipoCollegamento ;
+    rdfs:label "tipo di collegamento"@it , "link kind"@en ;
+    rdfs:comment "Parola con «*», vedi anche, rinvio (concetto dello schema bj:tipiCollegamento)."@it ,
+                 "«*» word, see also, redirect (concept of the bj:tipiCollegamento scheme)."@en .
+
+bj:richiamaVoce a owl:ObjectProperty ;
+    rdfs:subPropertyOf skos:related ;
+    rdfs:domain bj:Voce ; rdfs:range bj:Voce ;
+    rdfs:label "richiama la voce"@it , "stars entry"@en ;
+    rdfs:comment "Scorciatoia: il testo della voce contiene una parola con «*» che rimanda all'altra voce (esclusa la voce stessa)."@it ,
+                 "Shortcut: the entry's text holds a «*» word sending to the other entry (the entry itself excluded)."@en .
+
+bj:vediAncheVoce a owl:ObjectProperty ;
+    rdfs:subPropertyOf skos:related ;
+    rdfs:domain bj:Voce ; rdfs:range bj:Voce ;
+    rdfs:label "vedi anche"@it , "see also"@en ;
+    rdfs:comment "Scorciatoia: l'altra voce è nell'elenco «→» che chiude la voce."@it ,
+                 "Shortcut: the other entry is in the «→» list closing the entry."@en .
+
+bj:rinviaAVoce a owl:ObjectProperty ;
+    rdfs:subPropertyOf skos:related ;
+    rdfs:domain bj:VoceRinvio ; rdfs:range bj:Voce ;
+    rdfs:label "rinvia alla voce"@it , "redirects to"@en ;
+    rdfs:comment "Scorciatoia: la voce di rinvio manda all'altra voce."@it ,
+                 "Shortcut: the redirect entry sends to the other entry."@en .
+
+# ------------------------------------------------------------------ entries and verses
+
+bj:voceCitaVersetto a owl:ObjectProperty ;
+    rdfs:subPropertyOf cito:cites ;
+    owl:inverseOf bj:citatoNellaVoce ;
+    rdfs:domain bj:Voce ; rdfs:range bj:Versetto ;
+    rdfs:label "la voce cita il versetto"@it , "entry cites verse"@en ;
+    rdfs:comment "Scorciatoia: un paragrafo o un titolo della voce cita un passaggio che comprende il versetto (riassume le bj:Citazione risolte o parziali della voce)."@it ,
+                 "Shortcut: a paragraph or title of the entry cites a passage including the verse (sums up the entry's resolved or partial bj:Citazione)."@en .
+
+bj:citatoNellaVoce a owl:ObjectProperty ;
+    rdfs:subPropertyOf cito:isCitedBy ;
+    rdfs:domain bj:Versetto ; rdfs:range bj:Voce ;
+    rdfs:label "citato nella voce"@it , "cited in entry"@en ;
+    rdfs:comment "Scorciatoia: il versetto è citato nella voce del dizionario (inversa di bj:voceCitaVersetto, materializzata)."@it ,
+                 "Shortcut: the verse is cited in the dictionary entry (inverse of bj:voceCitaVersetto, materialised)."@en .
+
+# ------------------------------------------------------------------ data properties of the dictionary
+
+bj:edizione a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Dizionario ; rdfs:range xsd:string ;
+    rdfs:label "edizione"@it , "edition"@en ;
+    rdfs:comment "L'edizione come stampata nel frontespizio."@it ,
+                 "The edition as printed on the title page."@en .
+
+bj:lettera a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Voce ; rdfs:range xsd:string ;
+    rdfs:label "lettera"@it , "letter"@en ;
+    rdfs:comment "La lettera dell'alfabeto sotto cui la voce è stampata."@it ,
+                 "The letter of the alphabet the entry is printed under."@en .
+
+bj:paginaFinale a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Voce ; rdfs:range xsd:integer ;
+    rdfs:label "pagina finale"@it , "last page"@en ;
+    rdfs:comment "L'ultima pagina stampata della voce (la prima è bj:pagina)."@it ,
+                 "The last printed page of the entry (the first is bj:pagina)."@en .
+
+bj:numeroParole a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Voce ; rdfs:range xsd:integer ;
+    rdfs:label "numero di parole"@it , "word count"@en ;
+    rdfs:comment "Le parole del testo della voce (dal corpus Dufour)."@it ,
+                 "The words of the entry's text (from the Dufour corpus)."@en .
+
+bj:firma a owl:DatatypeProperty ;
+    rdfs:domain bj:Voce ; rdfs:range xsd:string ;
+    rdfs:label "firma"@it , "signature"@en ;
+    rdfs:comment "La firma stampata in fondo alla voce («P. GRELOT», «R. FEUILLET e A. VIARD»); gli autori sono dcterms:creator. Una voce firmata per parti (NOME: VT e NT) ha due firme, e ogni parte ha il suo dcterms:creator."@it ,
+                 "The signature printed at the end of the entry («P. GRELOT», «R. FEUILLET e A. VIARD»); the authors are dcterms:creator. An entry signed part by part (NOME: VT and NT) has two signatures, and each part has its own dcterms:creator."@en .
+
+bj:testoRinvii a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Voce ; rdfs:range xsd:string ;
+    rdfs:label "rinvii stampati"@it , "printed cross-references"@en ;
+    rdfs:comment "L'elenco «→» come stampato: il «vedi anche» di una voce o i rinvii di una voce di rinvio."@it ,
+                 "The «→» list as printed: the «see also» of an entry or the targets of a redirect entry."@en .
+
+bj:percorso a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:SezioneVoce bj:CollegamentoVoce ) ] ;
+    rdfs:range xsd:string ;
+    rdfs:label "percorso"@it , "path"@en ;
+    rdfs:comment "Il percorso di una sezione nella notazione del libro («VT I 2», «B NT III 2», «introd.»), o quello stampato in un rinvio."@it ,
+                 "The path of a section in the book's notation («VT I 2», «B NT III 2», «introd.»), or the one printed in a cross-reference."@en .
+
+bj:tipoSezione a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:SezioneVoce ; rdfs:range xsd:string ;
+    rdfs:label "tipo di sezione"@it , "section kind"@en ;
+    rdfs:comment "Come è stampato il titolo: part (A.), testament (VT/NT), roman (I.), num (1.), alpha (a), runin, caps."@it ,
+                 "How the heading is printed: part (A.), testament (VT/NT), roman (I.), num (1.), alpha (a), runin, caps."@en .
+
+bj:forma a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:CollegamentoVoce ; rdfs:range xsd:string ;
+    rdfs:label "forma"@it , "form"@en ;
+    rdfs:comment "La parola o il lemma come stampato nel collegamento («*sofferente» per SOFFERENZA)."@it ,
+                 "The word or headword as printed in the link («*sofferente» for SOFFERENZA)."@en .
+
+bj:metodo a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:CollegamentoVoce ; rdfs:range xsd:string ;
+    rdfs:label "metodo"@it , "method"@en ;
+    rdfs:comment "Per una parola con «*»: come il corpus Dufour l'ha ricondotta alla voce (exact, lemma, stem, manual, ...)."@it ,
+                 "For a «*» word: how the Dufour corpus matched it to the entry (exact, lemma, stem, manual, ...)."@en .
+
+bj:esitoPercorso a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:CollegamentoVoce ; rdfs:range xsd:string ;
+    rdfs:label "esito del percorso"@it , "path status"@en ;
+    rdfs:comment "Per un rinvio con percorso: come il corpus Dufour l'ha trovato nella voce di arrivo (exact, swap, testament, split, none, unresolved, no-target)."@it ,
+                 "For a cross-reference with a path: how the Dufour corpus found it in the target entry (exact, swap, testament, split, none, unresolved, no-target)."@en .
+
+bj:eAltrove a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Citazione ; rdfs:range xsd:boolean ;
+    rdfs:label "e altrove"@it , "and elsewhere"@en ;
+    rdfs:comment "Vero se la citazione del dizionario è seguita da «...» (e altrove); assente altrimenti."@it ,
+                 "True if the dictionary citation is followed by «...» (and elsewhere); absent otherwise."@en .
+
+bj:libroImplicito a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Citazione ; rdfs:range xsd:integer ;
+    rdfs:label "libro implicito"@it , "implicit book"@en ;
+    rdfs:comment "Per una citazione del dizionario senza sigla: 1 il libro è ereditato dalla citazione precedente, 2 è nominato nel testo, 3 è quello del paragrafo precedente (una citazione recuperata dal testo); assente se la sigla è stampata."@it ,
+                 "For a dictionary citation without siglum: 1 the book is inherited from the previous citation, 2 it is named in the text, 3 it is the one of the paragraph before (a citation recovered from the text); absent when the siglum is printed."@en .
+
+bj:conversione a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Citazione ; rdfs:range xsd:string ;
+    rdfs:label "conversione"@it , "conversion"@en ;
+    rdfs:comment "Come una riga di biblerefs.tsv è stata riletta dal testo (lettere di Ester greco, «s» attaccata al versetto, Abdia stampato «Ab», un intervallo tra capitoli diviso dalla fonte, la vecchia divisione dei versetti di Siracide 34-36, correzioni a mano)."@it ,
+                 "How a row of biblerefs.tsv was read again from the text (letters of Greek Esther, an «s» glued to the verse, Obadiah printed «Ab», a range across chapters the source split, the older verse division of Sirach 34-36, corrections by hand)."@en .
+
+bj:tipoMotivo a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Citazione ; rdfs:range xsd:string ;
+    rdfs:label "tipo di motivo"@it , "reason kind"@en ;
+    rdfs:comment "Per una citazione del dizionario non risolta o parziale: out-of-range (capitolo o versetto inesistente), ambiguous-book, extra-canonical, other."@it ,
+                 "For an unresolved or partial dictionary citation: out-of-range (no such chapter or verse), ambiguous-book, extra-canonical, other."@en .
+
+bj:statoFonte a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Citazione ; rdfs:range xsd:string ;
+    rdfs:label "stato nella fonte"@it , "source status"@en ;
+    rdfs:comment "Lo stato della riga in biblerefs.tsv del corpus Dufour, quando non è «ok» (out_of_range, fixed, noncanonical), o recovered per una citazione che la fonte non ha collegato, recuperata dal testo."@it ,
+                 "The status of the row in biblerefs.tsv of the Dufour corpus, when not «ok» (out_of_range, fixed, noncanonical), or recovered for a citation the source did not link, recovered from the text."@en .
+
+bj:ordineReligioso a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain foaf:Person ; rdfs:range xsd:string ;
+    rdfs:label "ordine religioso"@it , "religious order"@en ;
+    rdfs:comment "La sigla dell'ordine o istituto di un collaboratore come stampata («O.P», «S.J»)."@it ,
+                 "The order or institute of a collaborator as printed («O.P», «S.J»)."@en .
+
+bj:sede a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain foaf:Person ; rdfs:range xsd:string ;
+    rdfs:label "sede"@it , "place"@en ;
+    rdfs:comment "La città di un collaboratore come stampata nell'elenco dei collaboratori."@it ,
+                 "A collaborator's city as printed in the list of collaborators."@en .
+
+# ------------------------------------------------------------------ SKOS: kinds of links between entries
+
+bj:tipiCollegamento a skos:ConceptScheme ;
+    rdfs:label "Tipi di collegamento tra voci"@it , "Kinds of links between entries"@en ;
+    rdfs:comment "I modi in cui una voce del dizionario manda a un'altra."@it ,
+                 "The ways an entry of the dictionary sends to another."@en ;
+    skos:hasTopConcept bj:collegamentoAsterisco , bj:collegamentoVediAnche , bj:collegamentoRinvio .
+
+bj:collegamentoAsterisco a skos:Concept , bj:TipoCollegamento ;
+    skos:inScheme bj:tipiCollegamento ; skos:topConceptOf bj:tipiCollegamento ;
+    skos:notation "*" ;
+    skos:prefLabel "parola con asterisco"@it , "starred word"@en ;
+    rdfs:label "parola con asterisco"@it , "starred word"@en ;
+    rdfs:comment "«*parola» nel testo: la parola ha una voce propria (anche flessa: «*pasti» → PASTO)."@it ,
+                 "«*word» in the text: the word has an entry of its own (also inflected: «*pasti» → PASTO)."@en ;
+    bj:proprietaDiretta bj:richiamaVoce .
+
+bj:collegamentoVediAnche a skos:Concept , bj:TipoCollegamento ;
+    skos:inScheme bj:tipiCollegamento ; skos:topConceptOf bj:tipiCollegamento ;
+    skos:notation "→" ;
+    skos:prefLabel "vedi anche"@it , "see also"@en ;
+    rdfs:label "vedi anche"@it , "see also"@en ;
+    rdfs:comment "Una voce, con le sue sezioni, dell'elenco «→» che chiude una voce."@it ,
+                 "An entry, with its sections, of the «→» list closing an entry."@en ;
+    bj:proprietaDiretta bj:vediAncheVoce .
+
+bj:collegamentoRinvio a skos:Concept , bj:TipoCollegamento ;
+    skos:inScheme bj:tipiCollegamento ; skos:topConceptOf bj:tipiCollegamento ;
+    skos:notation "→" ;
+    skos:prefLabel "rinvio"@it , "redirect"@en ;
+    rdfs:label "rinvio"@it , "redirect"@en ;
+    rdfs:comment "Una voce, con le sue sezioni, a cui manda una voce di rinvio."@it ,
+                 "An entry, with its sections, a redirect entry sends to."@en ;
+    bj:proprietaDiretta bj:rinviaAVoce .

@@ -1,0 +1,27 @@
+# Per una voce (ABELE): i versetti che cita e le note della BJ che li commentano o li citano.
+# For an entry: the verses it cites and the BJ notes commenting on or citing the same verses.
+PREFIX bj: <https://massimo-nocentini.github.io/bibbia-gerusalemme/ontologia#>
+PREFIX verso: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/verso/>
+PREFIX libro: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/libro/>
+PREFIX voce: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/voce/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX oa: <http://www.w3.org/ns/oa#>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+
+SELECT ?versetto ?citato_come ?note_che_commentano ?note_che_citano WHERE {
+  {
+    SELECT ?v (GROUP_CONCAT(DISTINCT ?raw; separator=" | ") AS ?citato_come) WHERE {
+      ?c bj:nellaVoce voce:abele ; bj:aPassaggio/bj:comprende ?v ; bj:testo ?raw .
+    }
+    GROUP BY ?v
+  }
+  ?v rdfs:label ?versetto ; bj:ordine ?o .
+  OPTIONAL { SELECT ?v (GROUP_CONCAT(DISTINCT ?l1; separator=" | ") AS ?note_che_commentano) WHERE {
+               ?n1 bj:commenta ?v ; rdfs:label ?l1 } GROUP BY ?v }
+  OPTIONAL { SELECT ?v (GROUP_CONCAT(DISTINCT ?l2; separator=" | ") AS ?note_che_citano) WHERE {
+               ?n2 bj:citaVersetto ?v ; a bj:Nota ; rdfs:label ?l2 } GROUP BY ?v }
+}
+ORDER BY ?o

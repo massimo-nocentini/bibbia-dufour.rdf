@@ -1,0 +1,31 @@
+# I versetti più citati dal dizionario: quante citazioni li comprendono e in quante voci.
+# Le citazioni di capitoli interi o di tratti lunghi contano come quelle di un versetto:
+# per le sole citazioni di al più tre versetti aggiungere nella sottointerrogazione
+#   ?p bj:inizio/bj:ordine ?oa ; bj:fine/bj:ordine ?oz FILTER (?oz - ?oa < 3)
+# (Gv 1,14 passa al primo posto; vedi tools/ontologia/README.md, stage 2b).
+# Verses most cited by the dictionary: citations whose passages include them, and entries.
+PREFIX bj: <https://massimo-nocentini.github.io/bibbia-gerusalemme/ontologia#>
+PREFIX verso: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/verso/>
+PREFIX libro: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/libro/>
+PREFIX voce: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/voce/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX oa: <http://www.w3.org/ns/oa#>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+
+SELECT ?versetto ?citazioni ?voci ?testo WHERE {
+  {
+    SELECT ?v (COUNT(DISTINCT ?c) AS ?citazioni) (COUNT(DISTINCT ?x) AS ?voci) WHERE {
+      ?c bj:nellaVoce ?x ; bj:aPassaggio ?p .
+      ?p bj:comprende ?v .
+    }
+    GROUP BY ?v
+    ORDER BY DESC(?citazioni)
+    LIMIT 25
+  }
+  ?v rdfs:label ?versetto ; bj:testo ?testo .
+}
+ORDER BY DESC(?citazioni) DESC(?voci) ?versetto

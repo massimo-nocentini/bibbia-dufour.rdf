@@ -7,10 +7,14 @@ the first stage whose checks fail.
   estrai.py             progetti/<volume>/*.tex -> ontologia/build/bibbia.json
   riferimenti.py        bibbia.json -> ontologia/build/collegamenti.json (typed links)
   test_riferimenti.py   the reference parser on strings of the corpus
-  rdf.py                both JSON files -> ontologia/bj-dati.{ttl,nt}.gz, bj-contesto.jsonld, bj-void.ttl
+  dufour.py             ../dufour/corpus (Dizionario di Teologia Biblica, read only) + bibbia.json
+                        -> ontologia/build/dufour.json (entries, citations resolved to verses)
+  test_dufour.py        the citations of the dictionary on real rows
+  rdf.py                the three JSON files (Bible, links, dictionary) -> ontologia/bj-dati.{ttl,nt}.gz,
+                        bj-contesto.jsonld, bj-void.ttl
   verifica_rdf.py       parsers, OWL sanity, SPARQL integrity, SHACL (whole graph), JSON-LD
   interroga.py          every ontologia/query/*.rq; rows and timings in ontologia/build/query.md
-  esploratore.py        both JSON files -> ontologia/esplora.html (offline explorer)
+  esploratore.py        the three JSON files -> ontologia/esplora.html (offline explorer)
 
 The headless browser test of the page, tools/ontologia/prova_esploratore.mjs, needs
 playwright-core outside the repository and is not run here (see the README).
@@ -28,6 +32,8 @@ PASSI = [
     ['estrai.py', '-q'],
     ['riferimenti.py', '-q'],
     ['test_riferimenti.py'],
+    ['dufour.py', '-q'],
+    ['test_dufour.py'],
     ['rdf.py', '-q'],
     ['verifica_rdf.py', '-q'],
     ['interroga.py', '--limite', '5', '--riepilogo', os.path.join(C, 'ontologia', 'build', 'query.md')] + QUERY,
