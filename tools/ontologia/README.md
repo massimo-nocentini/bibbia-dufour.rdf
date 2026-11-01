@@ -24,6 +24,8 @@ make ontologia          # the same: vendor/venv/bin/python -I tools/ontologia/co
 | `test_dufour.py` | stage 2b tests: 98 citations of real rows, text, entries, links, numbering evidence, verse index (run by `costruisci.py`) |
 | `paratesto.py` | stage 2c: the front matter and the appendices (`progetti/introduzione-generale`, `progetti/appendici`, read only) → `ontologia/build/paratesto.json` |
 | `test_paratesto.py` | stage 2c tests: index references, misprints, dates of the chronology, woodcuts, canon, abbreviations, dynasties, acrostic letters (run by `costruisci.py`) |
+| `virgolette.py` | stage 2e: the quotations between « and » (direct speech, quoted words) of the text, the notes, the introductions, the front matter and the appendices → `ontologia/build/discorsi.json`; the one detector of the ontology, the explorer and the Tufte edition (`tools/tufte/discorsi.py`) |
+| `test_virgolette.py` | stage 2e tests: the rules on strings, real quotations (Gen 1,3, Dt 5,1–26,19 and its nested ones, Sir 16,22 and Am 7,17, a poem, a note, an index headword, the edition), the counts (run by `costruisci.py`) |
 | `integrazione.py` | stage 2d: the links between the parts, the calendar, measures and maps, every correction as an intervention (hand tables below) → `ontologia/build/integrazione.json` |
 | `test_integrazione.py` | stage 2d tests: reviewed alignments and rejected ones, persons and their exceptions, datings, codices (D by book), measures and the prose misprints, the rows of every correction table (run by `costruisci.py`) |
 | `allineamenti.tsv`, `persone.tsv`, `cronologia-libri.tsv`, `testimoni.tsv`, `calendario.tsv`, `misure.tsv`, `carte.tsv` | the hand tables of stage 2d, each with its header comment (what a row says, who reviewed it) |
@@ -964,3 +966,78 @@ acrostic letters and the verse → index shortcuts.
   «Nella tavola cronologica» on a book page, «citato in N note» for versions and codices,
   `#calendario`, `#misure`, `#carte`, the editor's intervention in the preview of a corrected link.
   `prova_esploratore.mjs`: 50 more checks (221).
+
+## Stage 9: quotations, direct speech and quoted words (session F4, 2026-11-01)
+
+The user asked for direct speech and quoted sentences in italic (done in the Tufte edition by F3), «then
+adjust the interfaces and the ontology in turn».
+
+- **One detector, `virgolette.py`** (stage 2e, after `test_paratesto.py`). The language rules that F3
+  wrote in `tools/tufte/discorsi.py` moved here, the way `contesto.py` became an adapter over
+  `riferimenti.py`: a scope is matched on its own (a book's verses in order, the headings apart; a note;
+  an introduction; a front-matter text; a canon item, the edition, an abbreviation, a chronology entry,
+  an index entry or sub-entry); `«` opens and `»` closes the last one open (`accoppia`, stack
+  matching), only the outermost pairs set the italic and a pair inside another is nested (its parent the
+  innermost pair around it); a `«` left open and a `»` with none open are unbalanced, kept as printed,
+  and the pairs after them are matched as if they were not there; guillemets already in italic (`\emph`,
+  `\detto` in the LaTeX, `<em>` in the HTML) are skipped; a run only in italic already is not set again
+  (`solo_corsivo`). `discorsi.py` keeps only the walk of the LaTeX and the wrapping: regenerating
+  `progetti/bibbia-tufte/libri/` gave the 136 files byte-identical (md5), and `test_genera.py`
+  `test_lettori` compares the two readers book by book: the same 5,948 outermost, 7 nested and 2
+  unbalanced quotations, and the same 341,138 words in italic, word for word (the HTML runs are cut
+  where a note or a margin reference is called, `tagli`, but never inside an `<em>`, as the runs of the
+  LaTeX are; the page checks that the runs and the note calls stay well nested, `bilanciato`).
+  In the HTML of stage 1 a `\detto` of the notes and introductions is `«…»`: a quotation like the typed
+  ones (the volumes print both in italic in guillemets). Writes `build/discorsi.json`: per quotation its
+  id (`<segment where it starts>.<n>`), part, source, the ends (segment, HTML and plain offsets of the
+  `«` and after the `»`), parent, the segments spanned, its words or the reason it is unbalanced.
+  Checks: every end at its guillemet in the HTML and in the plain text of the graph, parents earlier
+  balanced quotations of the same scope, the unbalanced ones of the text exactly Sir 16,22 and Am 7,17.
+- **Counts**: text of the books 5,957 (5,948 outermost, 7 nested in Dt 20–22 inside Moses' discourse
+  Dt 5,1–26,19, 2 unbalanced), notes 10,279 (4 nested), introductions 529, front matter 59 (as the Tufte
+  edition), appendices 25 (the chronology 13, the index of notes 12: its headwords and sub-entries; the
+  Tufte edition has 41 there, since the calendar, the measures and the comments between the references
+  of the index are text of the volume but not of the graph). 16,849 in all; the text spans 16,478
+  verses (Dt 5,1–26,19: 532 verses, 77,654 characters).
+- **The two unbalanced ones**, checked on the page images (`revisione/F4/crops/`), are printed so, not
+  transcription errors: Sir 16,22 (p. 1584) opens `«Chi annuncerà…` and closes `…alla fine».` inside the
+  third stich, printed in italics (an addition of Gr. II and lat., note 16,22c), so the closing
+  guillemet is skipped; Am 7,14 (p. 2201) closes Amos' answer `…sicomòro».`, and 7,17 (p. 2202) closes
+  again `…dalla sua terra”».` (the CEI 2008 runs the answer to 7,17: a misprint of the volume, kept).
+  The reasons say so (`« closed only by a » inside italic text (Sir.16.22)`, `» with no « open: the
+  quotation before it closed in Amos.7.14`).
+- **RDF** (`rdf.py`): each quotation a `bj:Discorso` (a `oa:SpecificResource` of the resource it is read
+  in, `oa:hasSource`: the book, the note, the introduction, the text, the entry) at
+  `id/discorso/<verse id>.<n>` (else `id/discorso/<kind>/<local>.<n>`), with `bj:parte`, `bj:iniziaIn` /
+  `bj:inizioCarattere` (the `«`) and `bj:finisceIn` / `bj:fineCarattere` (after the `»`) in the plain text of
+  the verse, the note's body, the paragraph or the entry, `bj:dentroDi` the quotation around it,
+  `bj:attraversa` every verse it spans, `bj:lunghezza` (characters of its words), `bj:sbilanciato` and
+  `bj:motivo`. The words as `bj:testo` only up to 200 characters (`TESTO_DISCORSO`): 15,087 of 16,847;
+  all of them would add 2.1 MB of literals, the text of the books 1.9 MB of it (43% of the verse text
+  again, Moses' discourse alone 78 KB), recovered from the verses with the offsets; the short ones
+  (a saying, a word, the first answer of a dialogue) are what a query looks for by text. No speaker is
+  inferred. 200,064 triples (3,776,873 → 3,976,937, +5.3%), counted in the subset of the resource
+  (16,765 in `vp:bibbia`, 84 in `vp:paratesto`).
+- **Vocabulary** `bj:Discorso` and 8 properties (`bj:parte`, `bj:iniziaIn`, `bj:finisceIn`,
+  `bj:inizioCarattere`, `bj:fineCarattere`, `bj:dentroDi`, `bj:attraversa`, `bj:sbilanciato`), `bj:lunghezza`
+  and `bj:motivo` open to it, `bj:testo` says when; **shape** `bjf:Discorso` (55 node shapes); **checks**
+  16 SPARQL queries (counts by part equal to the detector's, nested and unbalanced ones, both ends when
+  balanced and one when not, the ends of the text verses in order, the verses spanned between the ends
+  and their number, the offsets inside the text at a `«` and just after a `»`, the end after the start,
+  nesting acyclic in one resource and inside a longer balanced quotation, the words when short);
+  **queries** 33 (the quotations touching Gen 3) and 34 (the 25 longest).
+- **Explorer**: the words of a quotation in italic, the guillemets, verse numbers and note calls upright,
+  an `<em>` inside upright (`.ds`), in the reader (prose, poetry line by line, across verses), the
+  verse panel, the notes (with their `\detto`), the introductions, the front-matter texts, the edition,
+  the canon, the abbreviations, the chronology and the index headwords. The verse runs are in the payload
+  (`V.q`, HTML offsets, merged with the note calls at render); the other texts are wrapped at build time
+  (`virgolette.corsivo`, after the citations). A «Discorsi N» switch above the chapter (key `q`)
+  highlights them; the panel lists the quotations through the verse (where they run, their first words,
+  verses and characters, «dentro il discorso di …», the reason of an unbalanced one); the search has a
+  «Discorsi» filter (only the words between guillemets of the verses). Checks of `esploratore.py`: the
+  detector run again on the packed HTML finds as many quotations per part as `discorsi.json`, every
+  outermost one has italic unless its words are italic already. `prova_esploratore.mjs`: 19 more checks (240)
+  (Gen 1,3, Dt 5,2–4 across verses, Dt 20,3 nested, Sir 16,22 and Am 7,17, Sal 2,3, a note call inside a
+  quotation, notes, introductions, the Presentazione, an index headword, the colophon, the switch and
+  its key, the search, the phone). The page grows 8.84 → 9.09 MB; first render about 600 ms as before.
+

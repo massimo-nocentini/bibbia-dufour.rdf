@@ -1,0 +1,13 @@
+# I 25 discorsi più lunghi del testo: dove cominciano e finiscono, quanti versetti e caratteri.
+# The 25 longest quotations of the text: where they start and end, how many verses and characters.
+PREFIX bj: <https://massimo-nocentini.github.io/bibbia-gerusalemme/ontologia#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?da ?a ?versetti ?caratteri ?inizio WHERE {
+  ?d bj:parte "testo" ; bj:lunghezza ?caratteri ; bj:iniziaIn ?va ; bj:finisceIn ?vz ; rdfs:label ?inizio .
+  ?va rdfs:label ?da ; bj:ordine ?oa .
+  ?vz rdfs:label ?a ; bj:ordine ?oz .
+  BIND (?oz - ?oa + 1 AS ?versetti)
+}
+ORDER BY DESC(?caratteri)
+LIMIT 25

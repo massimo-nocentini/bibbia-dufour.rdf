@@ -14,16 +14,20 @@ the first stage whose checks fail.
                         progetti/appendici/tsv.py made again in ontologia/build/) + bibbia.json
                         -> ontologia/build/paratesto.json (front matter, indices, chronology, dynasties)
   test_paratesto.py     the front matter and the appendices on real rows
+  virgolette.py         bibbia.json + paratesto.json -> ontologia/build/discorsi.json (the quotations between
+                        « and »: direct speech and quoted words, the detector the Tufte edition shares)
+  test_virgolette.py    the detector on strings and on real quotations
   integrazione.py       the hand tables of this folder (allineamenti, persone, cronologia-libri, testimoni,
                         calendario, misure, carte) + the four JSON files -> ontologia/build/integrazione.json
                         (links between the parts, calendar, measures, maps, every correction as an intervention)
   test_integrazione.py  the links and the interventions on real rows
-  rdf.py                the five JSON files (Bible, links, dictionary, front matter and appendices, integration)
+  rdf.py                the six JSON files (Bible, links, dictionary, front matter and appendices, quotations,
+                        integration)
                         -> ontologia/bj-dati.{ttl,nt}.gz, bj-contesto.jsonld, bj-void.ttl
   verifica_rdf.py       parsers, OWL sanity, SPARQL integrity, SHACL (whole graph), JSON-LD
   interroga.py          every ontologia/query/*.rq; rows and timings in ontologia/build/query.md
   statistiche.py        the Size tables and the query table of ontologia/README.md, from bj-void.ttl and query.md
-  esploratore.py        the four JSON files -> ontologia/esplora.html (offline explorer)
+  esploratore.py        the JSON files -> ontologia/esplora.html (offline explorer; quotations in italic)
 
 The headless browser test of the page, tools/ontologia/prova_esploratore.mjs, needs
 playwright-core outside the repository and is not run here (see the README).
@@ -45,6 +49,8 @@ PASSI = [
     ['test_dufour.py'],
     ['paratesto.py', '-q'],
     ['test_paratesto.py'],
+    ['virgolette.py', '-q'],
+    ['test_virgolette.py'],
     ['integrazione.py', '-q'],
     ['test_integrazione.py'],
     ['rdf.py', '-q'],

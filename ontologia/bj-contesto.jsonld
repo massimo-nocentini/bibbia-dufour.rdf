@@ -29,6 +29,7 @@
   "rimando": "https://massimo-nocentini.github.io/bibbia-gerusalemme/id/rimando/",
   "citazione": "https://massimo-nocentini.github.io/bibbia-gerusalemme/id/citazione/",
   "passaggio": "https://massimo-nocentini.github.io/bibbia-gerusalemme/id/passaggio/",
+  "discorso": "https://massimo-nocentini.github.io/bibbia-gerusalemme/id/discorso/",
   "voce": "https://massimo-nocentini.github.io/bibbia-gerusalemme/id/voce/",
   "persona": "https://massimo-nocentini.github.io/bibbia-gerusalemme/id/persona/",
   "pagdiz": "https://massimo-nocentini.github.io/bibbia-gerusalemme/id/dizionario/pagina/",
@@ -65,6 +66,7 @@
   "CollegamentoVoce": "bj:CollegamentoVoce",
   "ColonnaCronologia": "bj:ColonnaCronologia",
   "Datazione": "bj:Datazione",
+  "Discorso": "bj:Discorso",
   "Divisione": "bj:Divisione",
   "Dizionario": "bj:Dizionario",
   "Edizione": "bj:Edizione",
@@ -183,6 +185,10 @@
   },
   "apreLibro": {
    "@id": "bj:apreLibro",
+   "@type": "@id"
+  },
+  "attraversa": {
+   "@id": "bj:attraversa",
    "@type": "@id"
   },
   "categoriaManoscritto": "bj:categoriaManoscritto",
@@ -306,6 +312,10 @@
    "@id": "bj:datazioneLibro",
    "@type": "@id"
   },
+  "dentroDi": {
+   "@id": "bj:dentroDi",
+   "@type": "@id"
+  },
   "dentroVersetto": {
    "@id": "bj:dentroVersetto",
    "@type": "xsd:boolean"
@@ -349,9 +359,17 @@
    "@id": "bj:fine",
    "@type": "@id"
   },
+  "fineCarattere": {
+   "@id": "bj:fineCarattere",
+   "@type": "xsd:integer"
+  },
   "fineHtml": {
    "@id": "bj:fineHtml",
    "@type": "xsd:integer"
+  },
+  "finisceIn": {
+   "@id": "bj:finisceIn",
+   "@type": "@id"
   },
   "firma": "bj:firma",
   "forma": "bj:forma",
@@ -402,9 +420,17 @@
    "@id": "bj:indicaVersetto",
    "@type": "@id"
   },
+  "iniziaIn": {
+   "@id": "bj:iniziaIn",
+   "@type": "@id"
+  },
   "inizio": {
    "@id": "bj:inizio",
    "@type": "@id"
+  },
+  "inizioCarattere": {
+   "@id": "bj:inizioCarattere",
+   "@type": "xsd:integer"
   },
   "interpretando": "bj:interpretando",
   "interpretazione": "bj:interpretazione",
@@ -560,6 +586,7 @@
    "@type": "@id"
   },
   "parolaPrecedente": "bj:parolaPrecedente",
+  "parte": "bj:parte",
   "parziale": "bj:parziale",
   "percorso": "bj:percorso",
   "poesia": {
@@ -685,6 +712,10 @@
    "@type": "@id"
   },
   "risolto": "bj:risolto",
+  "sbilanciato": {
+   "@id": "bj:sbilanciato",
+   "@type": "xsd:boolean"
+  },
   "schemaNumerazione": {
    "@id": "bj:schemaNumerazione",
    "@type": "@id"

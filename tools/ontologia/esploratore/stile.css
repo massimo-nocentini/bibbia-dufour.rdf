@@ -906,3 +906,19 @@ details.sez.chiusa[open] > summary h3::after { content: ' ▾'; }
   .calendario-mesi td { display: block; border-top: 0; padding: .1rem .4rem; }
   .calendario-mesi tr { display: block; border-top: 1px solid var(--linea); padding: .3rem 0; }
 }
+
+/* quotations (tools/ontologia/virgolette.py): the words between « and » in italic, as in the Tufte edition;
+   the guillemets, verse numbers and note calls upright, an <em> inside upright; highlighted on request */
+.ds { font-style: italic; }
+.ds em { font-style: normal; }
+.ds .nc, .ds sup { font-style: normal; }
+body.discorsi .testo .ds, body.discorsi .citazione .ds, body.discorsi .nota-testo .ds, body.discorsi .intro-testo .ds {
+  background: color-mix(in srgb, var(--richiamo) 13%, transparent); border-radius: 2px;
+  -webkit-box-decoration-break: clone; box-decoration-break: clone;
+}
+.legenda-calore [data-discorsi] .n { font-variant-numeric: tabular-nums; color: var(--tenue); margin-left: .25rem; }
+.ds-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: .45rem; }
+.ds-lista li { line-height: 1.45; }
+.ds-lista .frase { font-family: var(--serif); }
+.ds-lista small { color: var(--tenue); }
+.ds-lista .sbil { color: var(--rubrica); font-style: normal; }

@@ -421,8 +421,8 @@ bj:proprietaDiretta a owl:AnnotationProperty ;
 
 bj:testo a owl:DatatypeProperty ;
     rdfs:label "testo"@it , "text"@en ;
-    rdfs:comment "Il testo semplice (senza marcatura): di un versetto o paragrafo (in italiano, «a capo» \\n a fine riga poetica), o di un riferimento come stampato."@it ,
-                 "The plain text (no markup): of a verse or paragraph (Italian, \\n at poetry line ends), or of a reference as printed."@en .
+    rdfs:comment "Il testo semplice (senza marcatura): di un versetto o paragrafo (in italiano, «a capo» \\n a fine riga poetica), o di un riferimento come stampato; di un discorso, le parole tra le virgolette quando sono al più 200 caratteri (i più lunghi si leggono nei versetti, da bj:inizioCarattere a bj:fineCarattere)."@it ,
+                 "The plain text (no markup): of a verse or paragraph (Italian, \\n at poetry line ends), or of a reference as printed; of a quotation, the words between the guillemets when they are at most 200 characters (the longer ones are read in the verses, from bj:inizioCarattere to bj:fineCarattere)."@en .
 
 bj:testoHtml a owl:DatatypeProperty ;
     rdfs:range xsd:string ;
@@ -582,10 +582,10 @@ bj:fineHtml a owl:DatatypeProperty , owl:FunctionalProperty ;
                  "Where the citation ends in the HTML text (exclusive offset)."@en .
 
 bj:lunghezza a owl:DatatypeProperty , owl:FunctionalProperty ;
-    rdfs:domain bj:Citazione ; rdfs:range xsd:integer ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:Citazione bj:Discorso ) ] ; rdfs:range xsd:integer ;
     rdfs:label "lunghezza"@it , "length"@en ;
-    rdfs:comment "La lunghezza in caratteri della citazione nel testo semplice."@it ,
-                 "The length in characters of the citation in the plain text."@en .
+    rdfs:comment "La lunghezza in caratteri della citazione nel testo semplice; di un discorso, le parole tra le virgolette (i versetti uniti da uno spazio)."@it ,
+                 "The length in characters of the citation in the plain text; of a quotation, the words between the guillemets (the verses joined by a space)."@en .
 
 bj:parolaPrecedente a owl:DatatypeProperty , owl:FunctionalProperty ;
     rdfs:range xsd:string ;
@@ -635,11 +635,11 @@ bj:numeroAlternativo a owl:DatatypeProperty , owl:FunctionalProperty ;
                  "Another numbering printed with the reference (e.g. «3,96(29)»), or the number of a numbering entry."@en .
 
 bj:motivo a owl:DatatypeProperty , owl:FunctionalProperty ;
-    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:Rimando bj:Citazione ) ] ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:Rimando bj:Citazione bj:Discorso ) ] ;
     rdfs:range xsd:string ;
     rdfs:label "motivo"@it , "reason"@en ;
-    rdfs:comment "Perché il riferimento non è (del tutto) risolto (es. «no verse 2Mac 12,46»); i refusi restano come stampati."@it ,
-                 "Why the reference is not (fully) resolved (e.g. «no verse 2Mac 12,46»); misprints are kept as printed."@en .
+    rdfs:comment "Perché il riferimento non è (del tutto) risolto (es. «no verse 2Mac 12,46»); i refusi restano come stampati. Di un discorso sbilanciato, perché la sua virgoletta non ha la compagna."@it ,
+                 "Why the reference is not (fully) resolved (e.g. «no verse 2Mac 12,46»); misprints are kept as printed. Of an unbalanced quotation, why its guillemet has no partner."@en .
 
 bj:titoletto a owl:DatatypeProperty , owl:FunctionalProperty ;
     rdfs:domain bj:Paragrafo ; rdfs:range rdf:langString ;
@@ -2225,3 +2225,58 @@ bj:motivoAltro a skos:Concept ;
     rdfs:comment "Un altro motivo (il testo è in bj:motivo)."@it ,
                  "Another reason (the text is in bj:motivo)."@en .
 
+# ------------------------------------------------------------------ quotations: direct speech and quoted words (F4)
+
+bj:Discorso a owl:Class ;
+    rdfs:subClassOf oa:SpecificResource ;
+    rdfs:label "Discorso o citazione tra virgolette"@it , "Quotation (direct speech or quoted words)"@en ;
+    rdfs:comment "Il testo tra « e » (tools/ontologia/virgolette.py: le stesse regole del corsivo dell'edizione Tufte): un discorso diretto o parole citate, nel testo dei libri (anche su più versetti), in una nota (anche \\detto), in un'introduzione, nelle pagine iniziali o nelle appendici. È una oa:SpecificResource il cui oa:hasSource è la risorsa in cui è letto (il libro, la nota, l'introduzione, il testo preliminare, la voce); bj:iniziaIn / bj:finisceIn e bj:inizioCarattere / bj:fineCarattere dicono dove sono la « e la » (dopo). Chi parla non è indicato."@it ,
+                 "The text between « and » (tools/ontologia/virgolette.py: the rules of the italic of the Tufte edition): direct speech or quoted words, in the text of the books (also across verses), in a note (\\detto too), an introduction, the front matter or the appendices. An oa:SpecificResource whose oa:hasSource is the resource it is read in (the book, the note, the introduction, the front-matter text, the entry); bj:iniziaIn / bj:finisceIn and bj:inizioCarattere / bj:fineCarattere say where the « and (after) the » are. The speaker is not given."@en .
+
+bj:parte a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Discorso ; rdfs:range xsd:string ;
+    rdfs:label "parte del volume"@it , "part of the volume"@en ;
+    rdfs:comment "Dove è il discorso: testo (dei libri), nota, introduzione, preliminari (le pagine iniziali), appendici."@it ,
+                 "Where the quotation is: testo (the text of the books), nota (a note), introduzione, preliminari (the front matter), appendici (the appendices)."@en .
+
+bj:iniziaIn a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Discorso ;
+    rdfs:label "inizia in"@it , "starts in"@en ;
+    rdfs:comment "La risorsa nel cui testo è la « di apertura: un versetto, una nota (il testo del suo corpo), un paragrafo, la voce (manca se la « non c'è: discorso sbilanciato)."@it ,
+                 "The resource whose text holds the opening «: a verse, a note (the text of its body), a paragraph, the entry (absent when there is no «: an unbalanced quotation)."@en .
+
+bj:finisceIn a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Discorso ;
+    rdfs:label "finisce in"@it , "ends in"@en ;
+    rdfs:comment "La risorsa nel cui testo è la » di chiusura (manca se la » non c'è)."@it ,
+                 "The resource whose text holds the closing » (absent when there is no »)."@en .
+
+bj:inizioCarattere a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Discorso ; rdfs:range xsd:integer ;
+    rdfs:label "carattere d'inizio"@it , "start character"@en ;
+    rdfs:comment "La posizione (da 0) della « nel testo semplice di bj:iniziaIn (bj:testo; rdf:value del corpo di una nota; skos:prefLabel di una voce d'indice, bj:etichetta di una sottovoce, bj:significato di un'abbreviazione)."@it ,
+                 "The offset (from 0) of the « in the plain text of bj:iniziaIn (bj:testo; the rdf:value of a note's body; skos:prefLabel of an index entry, bj:etichetta of a sub-entry, bj:significato of an abbreviation)."@en .
+
+bj:fineCarattere a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Discorso ; rdfs:range xsd:integer ;
+    rdfs:label "carattere di fine"@it , "end character"@en ;
+    rdfs:comment "La posizione subito dopo la » nel testo semplice di bj:finisceIn (esclusa)."@it ,
+                 "The offset just after the » in the plain text of bj:finisceIn (exclusive)."@en .
+
+bj:dentroDi a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Discorso ; rdfs:range bj:Discorso ;
+    rdfs:label "dentro il discorso"@it , "inside the quotation"@en ;
+    rdfs:comment "Il discorso più interno che contiene questo (Dt 5,1–26,19: Mosè cita le parole del Signore). Manca per i discorsi più esterni, i soli in corsivo."@it ,
+                 "The innermost quotation holding this one (Dt 5,1–26,19: Moses quotes the words of the Lord). Absent for the outermost quotations, the only ones set in italic."@en .
+
+bj:attraversa a owl:ObjectProperty ;
+    rdfs:domain bj:Discorso ; rdfs:range bj:Versetto ;
+    rdfs:label "attraversa"@it , "spans"@en ;
+    rdfs:comment "Ogni versetto in cui corre un discorso del testo dei libri, il primo e l'ultimo compresi (in ordine canonico)."@it ,
+                 "Every verse a quotation of the text of the books runs through, the first and the last included (canonical order)."@en .
+
+bj:sbilanciato a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Discorso ; rdfs:range xsd:boolean ;
+    rdfs:label "sbilanciato"@it , "unbalanced"@en ;
+    rdfs:comment "Vero per una « senza la sua » o una » senza la sua «, lasciate come stampate (bj:motivo dice perché): Sir 16,22 (la » è nel terzo stico, in corsivo) e Am 7,17 (il volume chiude la risposta di Amos già a 7,14)."@it ,
+                 "True for a « without its » or a » without its «, kept as printed (bj:motivo says why): Sir 16,22 (the » is in the third stich, in italics) and Am 7,17 (the volume closes Amos' answer already at 7,14)."@en .

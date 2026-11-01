@@ -12,7 +12,9 @@
 // cards of the tree, the overview; the front matter and the appendices: the acrostic letters in
 // the margin, the panel sections (index of notes, pastoral themes, chronology), #indice-note,
 // #temi, #cronologia (sections, dynasties), #introduzione-generale (texts, canon, abbreviations,
-// woodcuts), the search and the overview tiles.
+// woodcuts), the search and the overview tiles; the quotations in italic (session F4: Gen 1,3, Dt 5 across
+// verses, Dt 20,3 nested, Sir 16,22 and Am 7,17 unbalanced, Sal 2,3 poetry, notes, introductions, front matter,
+// appendices, the «Discorsi» switch and the search in the quoted words).
 // With --foto, screenshots are written there. Exit status 1 if any check fails.
 import { createRequire } from 'node:module';
 import { dirname, join, resolve } from 'node:path';
@@ -853,6 +855,87 @@ try {
   verifica('E19: l’anteprima di una correzione dice la fonte', /CORREZIONI_INDICI/.test(await p.$eval('#anteprima .ap-corr', x => x.textContent)));
   await foto(p, '68-correzione');
   await p.click('#tema');
+
+  // ------------------------------------------------ session F4: quotations in italic (tools/ontologia/virgolette.py)
+  await p.evaluate(() => tema('light'));
+  const verso_ = id => p.evaluate(id => '#v' + S.vix.get(id), id);
+  const corsivo_ = sel => p.$$eval(sel, xs => xs.map(x => [x.textContent, getComputedStyle(x).fontStyle]));
+  const t4 = Date.now();
+  await vai_('#Gen.1.3', '#pannello:not([hidden]) .pan-testa');
+  metriche.lettore_gen_1_ms = Date.now() - t4;
+  const g13 = await corsivo_(`${await verso_('Gen.1.3')} .ds`);
+  const g13t = await p.$eval(await verso_('Gen.1.3'), x => x.textContent);
+  verifica('F4: Gen 1,3 «Sia la luce!» in corsivo, le virgolette diritte', g13.length === 1 && g13[0][0] === 'Sia la luce!' &&
+    g13[0][1] === 'italic' && g13t.includes('«Sia la luce!»') && await p.$eval(await verso_('Gen.1.3'), x => getComputedStyle(x).fontStyle) === 'normal',
+    JSON.stringify(g13));
+  const pan13 = await p.$$eval('#pannello .sez.discorsi li', xs => xs.map(x => x.textContent.replace(/\s+/g, ' ').trim()));
+  verifica('F4: il pannello di Gen 1,3 elenca il discorso', pan13.length === 1 && /Gen 1,3/.test(pan13[0]) && /Sia la luce/.test(pan13[0]), pan13.join(' | '));
+  const nGen1 = await p.$eval('[data-discorsi] .n', x => +x.textContent);
+  verifica('F4: «Discorsi» con il conto del capitolo (Gen 1)', nGen1 >= 10, String(nGen1));
+  await p.click('[data-discorsi]');
+  const evid = await p.evaluate(id => ({ on: document.body.classList.contains('discorsi'), bg: getComputedStyle(document.querySelector(id + ' .ds')).backgroundColor }), await verso_('Gen.1.3'));
+  verifica('F4: il pulsante evidenzia i discorsi', evid.on && evid.bg !== 'rgba(0, 0, 0, 0)', JSON.stringify(evid));
+  await foto(p, 'F4-01-gen-1-discorsi');
+  await p.evaluate(() => tema('dark'));
+  await foto(p, 'F4-01b-gen-1-discorsi-scuro');
+  await p.evaluate(() => tema('light'));
+  await p.keyboard.press('q');
+  verifica('F4: il tasto q spegne l’evidenza', !(await p.evaluate(() => document.body.classList.contains('discorsi'))));
+  // a discourse across verses (Dt 5,1-26,19): every word of Dt 5,2-4 italic, and the verse numbers upright
+  await vai_('#Deut.5.1', '#pannello:not([hidden]) .sez.discorsi');
+  const dt = await p.evaluate(ids => ids.map(id => {
+    const v = document.querySelector('#v' + S.vix.get(id)), corpo = [...v.childNodes].filter(n => !(n.classList && (n.classList.contains('vn') || n.classList.contains('mm') || n.classList.contains('md') || n.classList.contains('pg'))));
+    const fuori = corpo.map(n => (n.nodeType === 3 ? n.textContent : n.matches('.ds, sup') ? '' : n.textContent)).join('').replace(/[\s«»“”.,;:!?’]/g, '');
+    return [id, fuori, getComputedStyle(v.querySelector('.vn')).fontStyle];
+  }), ['Deut.5.2', 'Deut.5.3', 'Deut.5.4']);
+  verifica('F4: Dt 5: il discorso resta in corsivo da un versetto all’altro', dt.every(([, f, n]) => f === '' && n === 'normal'), JSON.stringify(dt));
+  const dt1 = await p.$$eval('#pannello .sez.discorsi li', xs => xs.map(x => x.textContent.replace(/\s+/g, ' ').trim()));
+  verifica('F4: Dt 5,1 nel pannello: il discorso di Mosè fino a 26,19 (532 versetti)', dt1.some(t => /Dt 5(,1)?–26(,19)?/.test(t) && /532 versetti/.test(t)), dt1.join(' | '));
+  await vai_('#Deut.20.3', '#pannello:not([hidden]) .sez.discorsi');
+  const dt20 = await p.$$eval('#pannello .sez.discorsi li', xs => xs.map(x => x.textContent.replace(/\s+/g, ' ').trim()));
+  const dt20i = await corsivo_(`${await verso_('Deut.20.3')} .ds`);
+  verifica('F4: Dt 20,3: il discorso annidato «dentro il discorso di Dt 5–26», in corsivo', dt20.length === 2 &&
+    dt20.some(t => /dentro il discorso di Dt 5(,1)?–26(,19)?/.test(t)) && dt20i.length >= 1 && dt20i.every(x => x[1] === 'italic') && dt20i.some(x => x[0].includes('«')),
+    dt20.join(' | '));
+  await foto(p, 'F4-02-dt-20-annidato');
+  // unbalanced: Sir 16,22 left as printed (no italic run; the third stich in italics, as printed); the reason in the panel
+  await vai_('#Sir.16.22', '#pannello:not([hidden]) .sez.discorsi');
+  const sir4 = await p.evaluate(id => { const v = document.querySelector(id); return { ds: v.querySelectorAll('.ds').length, em: v.querySelectorAll('em').length, righe: v.querySelectorAll('.r').length, testo: v.textContent }; }, await verso_('Sir.16.22'));
+  const sirp = await p.$eval('#pannello .sez.discorsi .sbil', x => x.textContent);
+  verifica('F4: Sir 16,22 sbilanciato: lasciato come stampato, il motivo nel pannello', sir4.ds === 0 && sir4.em === 1 && sir4.righe === 3 &&
+    sir4.testo.includes("«Chi") && /corsivo/.test(sirp), JSON.stringify(sir4) + ' ' + sirp);
+  const sirn = await p.$$eval('#pannello .nota-testo .ds', xs => xs.map(x => [x.textContent, getComputedStyle(x).fontStyle]));
+  verifica('F4: nelle note le citazioni (anche \\detto) in corsivo', sirn.some(([t, f]) => t === 'decreto' && f === 'italic'), JSON.stringify(sirn.slice(0, 3)));
+  await foto(p, 'F4-03-sir-16-22');
+  await vai_('#Amos.7.17', '#pannello:not([hidden]) .sez.discorsi');
+  verifica('F4: Am 7,17: la » senza apertura e il motivo (7,14)', /7\.14|7,14/.test(await p.$eval('#pannello .sez.discorsi .sbil', x => x.textContent)));
+  // poetry: Sal 2,3, italic on both lines (a margin reference may split a line), no run across the line break
+  await vai_('#Ps.2.3', '#pannello:not([hidden])');
+  const s23 = await p.evaluate(id => { const v = document.querySelector(id); return { r: [...v.querySelectorAll('.r')].map(r => r.querySelectorAll('.ds').length), fuori: [...v.querySelectorAll('.ds')].filter(x => !x.closest('.r')).length }; }, await verso_('Ps.2.3'));
+  verifica('F4: poesia (Sal 2,3): corsivo in ogni rigo, nessun tratto a cavallo dei righi', s23.r.length === 2 && s23.r.every(n => n >= 1) && s23.fuori === 0, JSON.stringify(s23));
+  // note calls inside a quotation stay upright (Sal 2,6 «Io» + note)
+  await vai_('#Ps.2.6', '#pannello:not([hidden])');
+  const nc = await p.evaluate(id => { const v = document.querySelector(id), b = v.querySelector('.nc'); return b ? [getComputedStyle(b).fontStyle, !!b.closest('.ds')] : null; }, await verso_('Ps.2.6'));
+  verifica('F4: il richiamo di nota dentro un discorso resta diritto e fuori dal corsivo', nc && nc[0] === 'normal' && !nc[1], JSON.stringify(nc));
+  // introductions, front matter, appendices
+  await vai_('#intro/intro-pentateuco', '.intro-testo');
+  const ni = await p.$$eval('.intro-testo .ds', xs => xs.length);
+  verifica('F4: introduzioni: le citazioni in corsivo', ni >= 5, String(ni));
+  await vai_('#introduzione-generale/presentazione', '.intro-testo.corsivo');
+  const np_ = await p.$$eval('#vista .ds', xs => xs.map(x => x.textContent));
+  verifica('F4: Presentazione: le citazioni in corsivo', np_.length >= 5, np_.slice(0, 3).join(' | '));
+  await vai_('#indice-note/403', '.voce-ix h1');
+  verifica('F4: indice delle note: «Padre nostro» in corsivo', await p.$eval('.voce-ix h1', x => x.querySelector('.ds')?.textContent) === 'Padre nostro');
+  await vai_('#introduzione-generale', '.colofone');
+  verifica('F4: dati editoriali: «editio princeps» in corsivo', await p.$$eval('.colofone .ds', xs => xs.some(x => x.textContent === 'editio princeps')));
+  // the search in the quoted words only
+  await vai_('#cerca?q=luce&in=discorsi', '#risultati .r');
+  const cl = await p.evaluate(() => ({ esito: document.querySelector('#esito').textContent, gen: [...document.querySelectorAll('#risultati .r a.dove')].some(a => a.getAttribute('href') === '#Gen.1.3'), ds: document.querySelectorAll('#risultati .r .ds mark, #risultati .r .ds').length, tutti: 0 }));
+  await vai_('#cerca?q=luce&in=versetti', '#risultati .r');
+  cl.tutti = await p.$$eval('#risultati .blocco h3 small', xs => xs.length);
+  verifica('F4: cerca «luce» nei discorsi: Gen 1,3, meno versetti che in tutto il testo', cl.gen && cl.ds > 0 && /tra virgolette/.test(cl.esito), JSON.stringify(cl));
+  await vai_('#cerca?q=luce&in=discorsi', '#risultati .r');
+  await foto(p, 'F4-04-cerca-discorsi');
   verifica('nessun errore in console (desktop)', errori.length === 0, errori.slice(0, 5).join(' | '));
   await ctx.close();
 
@@ -974,6 +1057,15 @@ try {
     verifica(`390 px: ${h} senza scorrimento orizzontale`, await m.p.evaluate(() => document.documentElement.scrollWidth) <= 390);
     await foto(m.p, n);
   }
+  // F4: the reader with its quotations on the phone, light and dark, highlighted
+  await m.p.evaluate(() => { location.hash = '#Gen.3'; });
+  await m.p.waitForSelector('#vista .lettore .ds');
+  verifica('F4: 390 px, Gen 3 con i discorsi senza scorrimento orizzontale', await m.p.evaluate(() => document.documentElement.scrollWidth) <= 390);
+  await m.p.tap('[data-discorsi]');
+  await foto(m.p, 'F4-11-telefono-gen-3-chiaro');
+  await m.p.evaluate(() => tema('dark'));
+  await foto(m.p, 'F4-12-telefono-gen-3-scuro');
+  await m.p.evaluate(() => { tema('light'); discorsi_(false); });
   verifica('nessun errore in console (390 px)', m.errori.length === 0, m.errori.slice(0, 5).join(' | '));
   await tel.close();
 } finally {

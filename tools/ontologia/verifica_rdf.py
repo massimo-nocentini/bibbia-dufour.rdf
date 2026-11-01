@@ -20,6 +20,8 @@ bj-contesto.jsonld:
             the index entries and the titles with their «» () [] balanced (ALLOW: printed so)
   warnings  (not failures) the references of the index of the notes with no BJ note at or over
             their verse and no correction: the candidates of new misprints of the index
+            the quotations (bj:Discorso): counts by part equal to virgolette.py's, nesting acyclic, spans
+            inside existing verses, offsets inside the text at their guillemets
   SHACL     pyshacl with bj-forme.ttl on the whole graph (about 4.5 minutes)
   JSON-LD   a few resources (John 3,16, the entry ABELE) serialised with the context and
             parsed back unchanged
@@ -37,8 +39,8 @@ from multiprocessing import Pool
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-from rdf import BJ, BIBBIA, COLLEGAMENTI, CONTESTO, DUFOUR, INTEGRAZIONE, NT, ONTOLOGIA, PARATESTO, PREFISSI, TTL, \
-    link_paratesto  # noqa: E402
+from rdf import BJ, BIBBIA, COLLEGAMENTI, CONTESTO, DISCORSI, DUFOUR, INTEGRAZIONE, NT, ONTOLOGIA, PARATESTO, \
+    PREFISSI, TESTO_DISCORSO, TTL, link_paratesto  # noqa: E402
 import grafo  # noqa: E402
 
 FORME = os.path.join(os.path.dirname(ONTOLOGIA), 'bj-forme.ttl')
@@ -189,7 +191,66 @@ def integrita(data, coll, dz, P, I):
          'SELECT (COUNT(?r) AS ?n) WHERE { ?r bj:relazione bj:citatoDopo ; bj:stato bj:risolto ;'
          ' bj:daVersetto ?a ; bj:aPassaggio/bj:comprende ?b FILTER (?a != ?b)'
          ' FILTER NOT EXISTS { ?a bj:citatoIn ?b } }', 0),
-    ] + integrita_dizionario(dz) + integrita_paratesto(P, data) + integrita_integrazione(I, P)
+    ] + integrita_dizionario(dz) + integrita_paratesto(P, data) + integrita_integrazione(I, P) + \
+        integrita_discorsi(data)
+
+
+# the plain text a quotation's offsets count in: bj:testo (verses, paragraphs, the edition, canon items, chronology
+# entries), the body of a note, the meaning of an abbreviation, the label of an index entry or sub-entry
+TESTO_DI = ('{ ?r bj:testo ?t } UNION { ?r oa:hasBody/rdf:value ?t } UNION { ?r bj:significato ?t } UNION'
+            ' { ?r a bj:VoceIndice ; skos:topConceptOf ?s1 ; skos:prefLabel ?t } UNION'
+            ' { ?r a bj:VoceIndice ; skos:broader ?s2 ; bj:etichetta ?t }')
+
+
+def integrita_discorsi(data):
+    """The quotations (bj:Discorso, discorsi.json of virgolette.py): counts by part equal to the detector's,
+    nesting and unbalanced ones, spans inside existing verses, offsets inside the text at a guillemet."""
+    Q = json.load(open(DISCORSI, encoding='utf-8'))['discorsi']
+    order = {v['id']: v['order'] for v in data['verses']}
+    out = [('quotations: %s' % parte, conta('bj:Discorso', '; bj:parte "%s" ' % parte),
+            sum(1 for x in Q if x['part'] == parte)) for parte in ('testo', 'nota', 'introduzione', 'preliminari',
+                                                                     'appendici')]
+    testo = [x for x in Q if x['part'] == 'testo']
+    out += [
+        ('quotations: nested ones (bj:dentroDi)', 'SELECT (COUNT(*) AS ?n) WHERE { ?x bj:dentroDi ?y }',
+         sum(1 for x in Q if x['parent'] is not None)),
+        ('quotations: unbalanced ones', conta('bj:Discorso', '; bj:sbilanciato true ; bj:motivo ?m '),
+         sum(1 for x in Q if x.get('unbalanced'))),
+        ('quotations: both ends when balanced, one when unbalanced',
+         'SELECT (COUNT(?x) AS ?n) WHERE { ?x a bj:Discorso { FILTER NOT EXISTS { ?x bj:sbilanciato true }'
+         ' FILTER NOT EXISTS { ?x bj:iniziaIn ?a ; bj:inizioCarattere ?o ; bj:finisceIn ?z ; bj:fineCarattere ?f } }'
+         ' UNION { ?x bj:sbilanciato true ; bj:iniziaIn ?a ; bj:finisceIn ?z } }', 0),
+        ('quotations: the ends of those of the text are verses, the start not after the end',
+         'SELECT (COUNT(?x) AS ?n) WHERE { ?x bj:parte "testo" { ?x bj:iniziaIn ?v FILTER NOT EXISTS { ?v a bj:Versetto } }'
+         ' UNION { ?x bj:finisceIn ?v FILTER NOT EXISTS { ?v a bj:Versetto } } UNION'
+         ' { ?x bj:iniziaIn/bj:ordine ?a ; bj:finisceIn/bj:ordine ?z FILTER (?a > ?z) } }', 0),
+        ('quotations: verses spanned (bj:attraversa), all verses',
+         'SELECT (COUNT(*) AS ?n) WHERE { ?x bj:attraversa ?v . ?v a bj:Versetto }',
+         sum(order[x['segments'][-1]] - order[x['segments'][0]] + 1 for x in testo)),
+        ('quotations: verses spanned lie between the ends, which are spanned',
+         'SELECT (COUNT(*) AS ?n) WHERE { { ?x bj:iniziaIn/bj:ordine ?a ; bj:finisceIn/bj:ordine ?z ;'
+         ' bj:attraversa/bj:ordine ?o FILTER (?o < ?a || ?o > ?z) } UNION { ?x bj:parte "testo" ; bj:iniziaIn ?v'
+         ' FILTER NOT EXISTS { ?x bj:attraversa ?v } } UNION { ?x bj:parte "testo" ; bj:finisceIn ?v'
+         ' FILTER NOT EXISTS { ?x bj:attraversa ?v } } }', 0),
+        ('quotations: the start offset inside the text, at a «',
+         'SELECT (COUNT(?x) AS ?n) WHERE { ?x bj:iniziaIn ?r ; bj:inizioCarattere ?o FILTER NOT EXISTS { %s'
+         ' FILTER (?o >= 0 && ?o < STRLEN(?t) && SUBSTR(STR(?t), ?o + 1, 1) = "«") } }' % TESTO_DI, 0),
+        ('quotations: the end offset inside the text, just after a »',
+         'SELECT (COUNT(?x) AS ?n) WHERE { ?x bj:finisceIn ?r ; bj:fineCarattere ?o FILTER NOT EXISTS { %s'
+         ' FILTER (?o >= 1 && ?o <= STRLEN(?t) && SUBSTR(STR(?t), ?o, 1) = "»") } }' % TESTO_DI, 0),
+        ('quotations: in one resource the end after the start',
+         'SELECT (COUNT(?x) AS ?n) WHERE { ?x bj:iniziaIn ?r ; bj:finisceIn ?r ; bj:inizioCarattere ?a ;'
+         ' bj:fineCarattere ?z FILTER (?z <= ?a + 1) }', 0),
+        ('quotations: nesting acyclic, in the same resource, inside a balanced quotation that holds it',
+         'SELECT (COUNT(?x) AS ?n) WHERE { { ?x bj:dentroDi+ ?x } UNION { ?x bj:dentroDi ?p ; oa:hasSource ?s1 .'
+         ' ?p oa:hasSource ?s2 FILTER (?s1 != ?s2) } UNION { ?x bj:dentroDi ?p . ?p bj:sbilanciato true } UNION'
+         ' { ?x bj:dentroDi ?p ; bj:lunghezza ?l . ?p bj:lunghezza ?lp FILTER (?lp <= ?l) } }', 0),
+        ('quotations: the words when at most %d characters, of their length' % TESTO_DISCORSO,
+         'SELECT (COUNT(?x) AS ?n) WHERE { ?x a bj:Discorso ; bj:lunghezza ?l { FILTER (?l <= %d)'
+         ' FILTER NOT EXISTS { ?x bj:testo ?t } } UNION { ?x bj:testo ?t FILTER (?l > %d || STRLEN(?t) != ?l) } }'
+         % (TESTO_DISCORSO, TESTO_DISCORSO), 0),
+    ]
+    return out
 
 
 def integrita_dizionario(dz):

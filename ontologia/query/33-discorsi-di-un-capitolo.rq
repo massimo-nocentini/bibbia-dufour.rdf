@@ -1,0 +1,20 @@
+# I discorsi e le citazioni tra virgolette che toccano Gen 3 (bj:Discorso, nel testo): dove
+# cominciano e finiscono, le parole (se brevi), quanti caratteri, il discorso che li contiene.
+# The quotations between guillemets that touch Gen 3 (bj:Discorso, in the text): where they
+# start and end, their words (when short), how many characters, the quotation holding them.
+PREFIX bj: <https://massimo-nocentini.github.io/bibbia-gerusalemme/ontologia#>
+PREFIX capitolo: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/capitolo/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?da ?a ?parole ?caratteri ?dentro WHERE {
+  { SELECT DISTINCT ?d WHERE { ?d bj:attraversa ?v . ?v dcterms:isPartOf capitolo:Gen.3 } }
+  ?d bj:iniziaIn ?va ; bj:finisceIn ?vz ; bj:inizioCarattere ?o ; bj:lunghezza ?caratteri .
+  ?va rdfs:label ?da ; bj:ordine ?oa .
+  ?vz rdfs:label ?a .
+  OPTIONAL { ?d bj:testo ?t }
+  OPTIONAL { ?d bj:dentroDi/rdfs:label ?p }
+  BIND (IF(BOUND(?t), ?t, "(lungo: si legge nei versetti)") AS ?parole)
+  BIND (IF(BOUND(?p), ?p, "") AS ?dentro)
+}
+ORDER BY ?oa ?o

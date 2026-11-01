@@ -343,6 +343,20 @@ function normalizza(s) {         // one output char per input char, so offsets m
   for (const c of s) o += c.length === 2 ? normCar(c) + ' ' : normCar(c);
   return o;
 }
+function indiceDiscorsi(I) {
+  // the words between the guillemets of each verse (the outermost quotations), for the search «Discorsi»
+  if (I.dq) return;
+  I.dq = new Map();
+  for (const r of D.ds) {
+    if (r[2]) continue;                       // nested ones are inside an outer one; unbalanced: no words
+    for (let i = r[0]; i <= r[1]; i++) {
+      const h = V.h[i];
+      const t = testoPiano(h.slice(i === r[0] ? r[4] + 1 : 0, i === r[1] ? r[5] - 1 : h.length)).trim();
+      if (t) I.dq.set(i, I.dq.has(i) ? I.dq.get(i) + ' … ' + t : t);
+    }
+  }
+  I.dqn = new Map([...I.dq].map(([i, t]) => [i, normalizza(t)]));
+}
 function indiceRicerca() {
   if (S.cerca) return S.cerca;
   const t = performance.now();
@@ -872,13 +886,43 @@ function cronLibro(b) {
   const riga = ([n, t]) => { const v = A.cron.voci[n - 1]; return `<li><a href="${hashCron(n)}">${v[7] ? esc(v[7]) : esc(A.cron.sez[v[0] - 1][1].split('.')[0])}</a> <small>${DATAZIONE[t]}</small><span class="frase">${esc(v[11].length > 150 ? v[11].slice(0, 149) + '…' : v[11])}</span></li>`; };
   return `<div class="h2">Nella tavola cronologica <span class="n">${xs.length}</span></div>${elencoBreve(xs.map(riga), 4)}`;
 }
+// quotations (tools/ontologia/virgolette.py): V.q[i] the HTML runs of verse i set in italic (the words
+// between « and » of the outermost quotations, split where a note or a margin reference is called, as in
+// the Tufte edition: the guillemets, verse numbers and note calls stay upright, an <em> inside turns
+// upright); D.ds the quotations of the text [first verse, last verse, flags 1 nested 2 unbalanced,
+// characters, HTML offset of the «, after the » (-1 when missing), parent row, reason]
+function corsivoVerso(i, extra = []) {
+  // the verse HTML with its runs in <i class="ds"> and the insertions extra [[offset, html]]: at one
+  // offset a run closes before a note call, and opens after it
+  const h = V.h[i], r = V.q[i] || [];
+  const ins = extra.map(([o, x]) => [o, 1, x]);
+  for (let j = 0; j < r.length; j += 2) ins.push([r[j], 2, '<i class="ds">'], [r[j + 1], 0, '</i>']);
+  if (!ins.length) return h;
+  ins.sort((x, y) => x[0] - y[0] || x[1] - y[1]);
+  let out = '', p = 0;
+  for (const [o, , x] of ins) { out += h.slice(p, o) + x; p = o; }
+  return out + h.slice(p);
+}
+function discorsiDi(a, z = a) {
+  // the rows of D.ds touching verses a..z
+  const out = [];
+  D.ds.forEach((r, k) => { if (r[0] <= z && r[1] >= a) out.push(k); });
+  return out;
+}
+function fraseDiscorso(r, max = 90) {
+  // the words of a quotation (from its verses), cut at max characters
+  let t = '';
+  for (let i = r[0]; i <= r[1] && t.length < max; i++) {
+    const h = V.h[i];
+    t += (t ? ' ' : '') + testoPiano(h.slice(i === r[0] && r[4] >= 0 ? r[4] + 1 : 0, i === r[1] && r[5] >= 0 ? r[5] - 1 : h.length)).trim();
+  }
+  return t.length > max ? t.slice(0, max - 1).trimEnd() + '…' : t;
+}
 function chiamate(i, lettere) {
-  // the verse HTML with a superscript letter where each note is called
-  let h = V.h[i];
+  // the verse HTML with a superscript letter where each note is called, and its quotations in italic
   const note = (S.noteAt[i] || []).map(k => [D.note[k][1], k]).sort((x, y) => x[0] - y[0] || x[1] - y[1]);
   const segni = note.map(([o, k]) => [o, `<sup><button type="button" class="nc" data-n="${k}" title="Nota ${esc(D.note[k][3] + D.note[k][2])}" aria-label="Nota ${esc(D.note[k][3] + D.note[k][2])}">${lettere(k)}</button></sup>`]);
-  for (let j = segni.length - 1; j >= 0; j--) h = h.slice(0, segni[j][0]) + segni[j][1] + h.slice(segni[j][0]);
-  return h;
+  return corsivoVerso(i, segni);
 }
 function segnoMargine(i) {
   const ms = S.mrefAt[i];
@@ -937,11 +981,13 @@ function mostraCapitolo(b, c) {
   const freccia = (x, seg, tit) => x ? `<a href="${capRif(x)}" title="${tit}: ${esc(capNome(x))}" aria-label="${tit}">${seg}</a>` : `<span>${seg}</span>`;
   const titCap = lab === 'Prol' ? 'Prologo' : (L.c.length === 1 ? '' : lab);
   const calo = document.body.classList.contains('calore');
+  const nds = discorsiDi(s, e).length;
   pagina(`<article class="lettore">
     <div class="testata"><div><div class="sopratitolo"><a href="#${L.o}">${esc(D.vol[L.v][1])}</a></div>
       <h1><a href="#${L.o}">${esc(L.t)}</a><span class="cap">${esc(titCap)}</span></h1></div>
       <div class="sfoglia">${freccia(prec, '‹', 'Capitolo precedente')}<a href="#${L.o}" title="Tutti i capitoli">${L.c.length > 1 ? '⋯' : '≡'}</a>${freccia(succ, '›', 'Capitolo successivo')}</div></div>
     <div class="legenda-calore"><span class="lc-et" id="lc-et">Evidenzia</span><div class="segmenti fonte-calore" role="group" aria-labelledby="lc-et"><button type="button" data-fonte="bj" aria-pressed="${calo && !S.caloreDiz}">Rimandi BJ</button><button type="button" data-fonte="diz" aria-pressed="${calo && !!S.caloreDiz}">Dizionario</button></div>
+      ${nds ? `<div class="segmenti"><button type="button" data-discorsi aria-pressed="${document.body.classList.contains('discorsi')}" title="Evidenzia i discorsi diretti e le citazioni tra virgolette (sempre in corsivo; tasto q)">Discorsi <span class="n">${nds}</span></button></div>` : ''}
       <span class="lc-bj">rimandi entranti: <i style="background:color-mix(in srgb,var(--caldo) 7%,transparent)"></i>1–2 <i style="background:color-mix(in srgb,var(--caldo) 20%,transparent)"></i>6–10 <i style="background:color-mix(in srgb,var(--caldo) 38%,transparent)"></i>21+</span>
       <span class="lc-diz" title="citazioni di al più ${STRETTA} versetti">citazioni brevi del Dizionario: <i style="background:color-mix(in srgb,var(--r-diz) 9%,transparent)"></i>1 <i style="background:color-mix(in srgb,var(--r-diz) 22%,transparent)"></i>3–4 <i style="background:color-mix(in srgb,var(--r-diz) 40%,transparent)"></i>10+</span></div>
     <div class="testo" lang="it">${h}</div>
@@ -1056,12 +1102,13 @@ function mostraPannello(i) {
   const E = entranti(i);
   const nEntr = Object.values(E.rel).reduce((s, x) => s + x.length, 0);
   const DZ = dizDi(i);
+  const DS = discorsiDi(i);
   let h = `<div class="pan-testa"><button type="button" class="maniglia" data-maniglia aria-label="Allarga o riduci il pannello"></button><div><h2 class="rif" tabindex="-1">${esc(rif(i))}</h2><div class="libro-tit">${esc(L.t)} · p. ${V.pg[i]}</div></div>
     <div class="azioni"><a class="bottone" href="#grafo/${V.id[i]}" title="Rete dei collegamenti (g)">Grafo</a>
     <button class="bottone" type="button" data-chiudi title="Chiudi (Esc)" aria-label="Chiudi">✕</button></div></div>
     <div class="pan-corpo">
-    <div class="citazione">${V.h[i] || '<span class="omesso">(versetto omesso nel testo CEI)</span>'}</div>
-    <div class="contatori"><span>${conta(qui.length + altre.length, 'nota', 'note')}</span><span>${conta(nUscita, 'rimando', 'rimandi')} in uscita</span><span>${conta(nEntr, 'rimando entrante', 'rimandi entranti')}</span><span>${conta(E.note.length + E.intro.length, 'citazione', 'citazioni')}</span><span>${conta(DZ.length, 'voce', 'voci')} del Dizionario</span></div>`;
+    <div class="citazione">${corsivoVerso(i) || '<span class="omesso">(versetto omesso nel testo CEI)</span>'}</div>
+    <div class="contatori"><span>${conta(qui.length + altre.length, 'nota', 'note')}</span>${DS.length ? `<span>${conta(DS.length, 'discorso', 'discorsi')}</span>` : ''}<span>${conta(nUscita, 'rimando', 'rimandi')} in uscita</span><span>${conta(nEntr, 'rimando entrante', 'rimandi entranti')}</span><span>${conta(E.note.length + E.intro.length, 'citazione', 'citazioni')}</span><span>${conta(DZ.length, 'voce', 'voci')} del Dizionario</span></div>`;
 
   h += `<section class="sez"><h3>Note della BJ <span class="n">${qui.length + altre.length}</span></h3>`;
   if (!qui.length && !altre.length) h += '<p class="vuoto">Nessuna nota riguarda questo versetto.</p>';
@@ -1134,7 +1181,18 @@ function mostraPannello(i) {
   }
   let app = sezioneIndice('note', i) + sezioneIndice('temi', i) + sezioneCronologia(i);
   if (DZ.length && window.innerWidth <= 720) app = app.replace(/<section class="sez ([^"]+)"><h3([^>]*)>([\s\S]*?)<\/h3>([\s\S]*?)<\/section>/g, '<details class="sez $1 chiusa"><summary><h3$2>$3</h3></summary>$4</details>');
-  h += '</section>' + sezionePersone(i) + app + sezioneDiz(i, DZ) + '</div>';
+  let ds = '';
+  if (DS.length) {
+    // the quotations through this verse: where they run, their first words, nested or unbalanced
+    ds = `<section class="sez discorsi"><h3>Discorsi e citazioni tra virgolette <span class="n">${DS.length}</span></h3><ul class="ds-lista">${DS.map(k => {
+      const r = D.ds[k], nv = r[1] - r[0] + 1;
+      const dove = chip([r[0], r[1]], esc(rif(r[0], r[1])), ` data-ds="${k}"`);
+      const testo = r[2] & 2 ? `<span class="sbil">${r[4] >= 0 ? '«' : '»'} ${esc(r[7])}</span>` : `«<i class="ds">${esc(fraseDiscorso(r))}</i>»`;
+      const info = r[2] & 2 ? '' : `${quanti(nv, 'versetto', 'versetti')} · ${quanti(r[3], 'carattere', 'caratteri')}${r[2] & 1 ? ` · dentro il discorso di ${esc(rif(D.ds[r[6]][0], D.ds[r[6]][1]))}` : ''}`;
+      return `<li>${dove} <span class="frase">${testo}</span>${info ? ` <small>${info}</small>` : ''}</li>`;
+    }).join('')}</ul></section>`;
+  }
+  h += '</section>' + sezionePersone(i) + app + sezioneDiz(i, DZ) + ds + '</div>';
   p.innerHTML = h;
   collegaCitazioni(p);
   p.hidden = false;
@@ -1251,7 +1309,7 @@ function mostraCerca(par) {
     <div class="ricerca-campi">
       <input type="search" id="rq" value="${esc(q)}" placeholder="Parola o frase…" aria-label="Testo da cercare" spellcheck="false">
       <div class="segmenti" role="group" aria-label="Dove cercare">
-        ${[['tutto', 'Tutto'], ['versetti', 'Versetti'], ['note', 'Note'], ['dizionario', 'Dizionario'], ['apparati', 'Appendici']].map(([v, t]) => `<button type="button" data-in="${v}" aria-pressed="${v === dove}">${t}</button>`).join('')}
+        ${[['tutto', 'Tutto'], ['versetti', 'Versetti'], ['discorsi', 'Discorsi'], ['note', 'Note'], ['dizionario', 'Dizionario'], ['apparati', 'Appendici']].map(([v, t]) => `<button type="button" data-in="${v}" aria-pressed="${v === dove}"${v === 'discorsi' ? ' title="Solo nelle parole tra virgolette dei versetti: discorsi diretti e citazioni"' : ''}>${t}</button>`).join('')}
       </div>
       <select id="rt" aria-label="Testamento"><option value="">Tutta la Bibbia</option><option value="AT"${T === 'AT' ? ' selected' : ''}>Antico Testamento</option><option value="NT"${T === 'NT' ? ' selected' : ''}>Nuovo Testamento</option></select>
       <select id="rb" aria-label="Libro"><option value="">Tutti i libri</option>${opz}</select>
@@ -1323,6 +1381,15 @@ function aggiornaRisultati(q, dove, T, bsel) {
     const w = new Map(dpar.map(j => [j, (nomi.has(I.dk[j][0]) ? 1e6 : 0) + colpi(j)]));
     dpar.sort((a, b) => w.get(b) - w.get(a) || a - b);
   }
+  if (dove === 'discorsi') {
+    indiceDiscorsi(I);
+    for (const [i, n] of I.dqn) {
+      if (!ok(S.vb[i]) || !tutti(n)) continue;
+      if (!per.has(S.vb[i])) per.set(S.vb[i], []);
+      per.get(S.vb[i]).push([2, i]);
+      nv++;
+    }
+  }
   if (dove === 'tutto' || dove === 'versetti') {
     for (let i = 0; i < S.n; i++) {
       if (!ok(S.vb[i]) || !tutti(I.vn[i])) continue;
@@ -1346,7 +1413,8 @@ function aggiornaRisultati(q, dove, T, bsel) {
   const ms = performance.now() - t0;
   const nd = dpar.length + dv.length + np;
   const parti = [];
-  if (dove !== 'dizionario' && dove !== 'apparati') parti.push(`${conta(nv, 'versetto', 'versetti')} e ${conta(nn, 'nota', 'note')} in ${conta(per.size, 'libro', 'libri')}`);
+  if (dove === 'discorsi') parti.push(`${conta(nv, 'versetto', 'versetti')} con le parole cercate tra virgolette, in ${conta(per.size, 'libro', 'libri')}`);
+  else if (dove !== 'dizionario' && dove !== 'apparati') parti.push(`${conta(nv, 'versetto', 'versetti')} e ${conta(nn, 'nota', 'note')} in ${conta(per.size, 'libro', 'libri')}`);
   if (conDiz) parti.push(`${conta(dv.length, 'voce', 'voci')} e ${conta(dpar.length, 'paragrafo', 'paragrafi')} del Dizionario`);
   if (conPar) parti.push(`<b>${num(np)}</b> nell’Introduzione generale e nelle appendici`);
   const anche = [...new Set(ts.flatMap(t => t.alt.filter(x => x !== t.t)))];
@@ -1355,6 +1423,7 @@ function aggiornaRisultati(q, dove, T, bsel) {
   const libri = [...per.keys()].sort((a, b) => a - b);
   const riga = ([tipo, k]) => {
     if (tipo === 0) return `<div class="r"><a class="dove" href="${hashVerso(k)}" data-r="${k}-${k}">${esc(rif(k))}</a><div class="frase">${evidenzia(I.vp[k], I.vn[k], ts)}</div></div>`;
+    if (tipo === 2) return `<div class="r"><a class="dove" href="${hashVerso(k)}" data-r="${k}-${k}">${esc(rif(k))}</a><div class="frase">«<i class="ds">${evidenzia(I.dq.get(k), I.dqn.get(k), ts)}</i>»</div></div>`;
     const x = D.note[k];
     return `<div class="r rn"><a class="dove" href="${hashVerso(x[0])}" data-nota="${k}">nota ${esc(x[3] + x[2])}<small>${esc(rif(x[0]))}</small></a><div class="frase">${evidenzia(I.np[k], I.nn[k], ts)}</div></div>`;
   };
@@ -1381,8 +1450,8 @@ function aggiornaRisultati(q, dove, T, bsel) {
   else h += `<div class="altri-gruppi">${hDiz}${hP}</div>`;
   for (const b of libri) {
     const xs = per.get(b);
-    xs.sort((x, y) => (x[0] ? D.note[x[1]][0] : x[1]) - (y[0] ? D.note[y[1]][0] : y[1]) || x[0] - y[0]);
-    const nvb = xs.filter(x => !x[0]).length;
+    xs.sort((x, y) => (x[0] === 1 ? D.note[x[1]][0] : x[1]) - (y[0] === 1 ? D.note[y[1]][0] : y[1]) || x[0] - y[0]);
+    const nvb = xs.filter(x => x[0] !== 1).length;
     const lim = righe > 600 ? 3 : 25;
     h += `<section class="blocco"><h3><a href="#${D.libri[b].o}">${esc(D.libri[b].t)}</a><small>${quanti(nvb, 'versetto', 'versetti')} · ${quanti(xs.length - nvb, 'nota', 'note')}</small></h3>${xs.slice(0, lim).map(riga).join('')}`;
     if (xs.length > lim) h += `<button class="altro" type="button" data-libro="${b}">mostra altri ${xs.length - lim}</button>`;
@@ -1755,7 +1824,7 @@ function mostraVoceIndice(id, arg) {
       const x = D.note[nk], piano = testoPiano(x[5]);
       return `<details class="nota ix-nota"><summary><span class="etichetta">${esc(etichettaNota(x))}</span><span class="assaggio">${esc(piano.slice(0, 160))}</span></summary><div class="nota-testo">${x[5]}<div class="contatori"><a href="${hashVerso(x[0])}" data-nota="${nk}">apri ${esc(rif(x[0]))} con la nota</a><span>copre <b>${esc(rifRuns(x[6]))}</b></span><span>p. ${x[7]}</span></div></div></details>`;
     }).join('');
-    h += `<div class="ix-riga${sv ? ' sv' : ''}" id="sv${sv}">${s ? `<span class="ix-sv">${esc(s[1])}</span>` : ''}<div><span class="chips">${riga}</span>${schede}</div></div>`;
+    h += `<div class="ix-riga${sv ? ' sv' : ''}" id="sv${sv}">${s ? `<span class="ix-sv">${s[3] || esc(s[1])}</span>` : ''}<div><span class="chips">${riga}</span>${schede}</div></div>`;
   }
   const nr = items.filter(it => it[0] <= 1).length;
   const vicine = [A.indici[id][k - 1], A.indici[id][k + 1]];
@@ -1878,7 +1947,7 @@ function mostraPreliminari(arg) {
   const voce = (x, k) => `<a class="pre-testo" href="#introduzione-generale/${esc(x[0])}"><b>${esc(x[1])}</b>${x[2] ? `<i>${esc(x[2])}</i>` : ''}<span>${x[4] ? esc(x[4]) + ' · ' : ''}p. ${esc(x[3])}</span></a>`;
   pagina(`<div class="pagina preliminari"><div class="sopratitolo">Introduzione generale · pp. ii–xxviii</div>
     <h1>${esc(E.t)}</h1><p class="sotto">${esc(E.pub)}, ${esc(E.luogo)} · ISBN ${esc(E.isbn)} · ${E.stampe.map(s => `${esc(s[0])}: ${esc(s[1])}`).join('; ')}</p>
-    <details class="colofone"><summary>Dati editoriali (p. iv)</summary><p>${E.colofone.map(esc).join('<br>')}</p></details>
+    <details class="colofone"><summary>Dati editoriali (p. iv)</summary><p>${E.colh.join('<br>')}</p></details>
     <div class="h2">Presentazione e prefazioni</div><div class="pre-testi">${A.testi.filter(x => x[7] === 'presentazione' || x[7] === 'prefazione').map(voce).join('')}</div>
     <div class="h2">Il canone e le abbreviazioni</div><div class="pre-testi">${A.testi.filter(x => x[7] === 'canone').map(voce).join('')}
       <a class="pre-testo" href="#introduzione-generale/abbreviazioni"><b>Abbreviazioni e codici</b><span>${num(A.abbr.filter(a => a[2] === 'libro').length)} sigle dei libri, ${num(A.abbr.filter(a => a[2].startsWith('codice') || a[2] === 'papiro').length)} codici e papiri · pp. xxii–xxiv</span></a></div>
@@ -1926,7 +1995,7 @@ function mostraAbbreviazioni() {
     const libri = a[4].map(b => `<a href="#${D.libri[b].o}">${esc(D.libri[b].t)}</a>`).join(', ');
     const ns = a[5] ? G.cod[a[5]] || [] : (G.ver.find(v => v[2] === A.abbr.indexOf(a) + 1) || [, , , []])[3];
     const citato = ns.length ? `<details class="altri citato"><summary class="altro">citato in ${quanti(ns.length, 'nota', 'note')}</summary><span class="chips">${ns.slice(0, 400).map(k => `<a class="chip" href="${hashVerso(D.note[k][0])}" data-nota="${k}" data-r="${D.note[k][0]}-${D.note[k][0]}">${esc(etichettaNota(D.note[k]))}</a>`).join('')}${ns.length > 400 ? ` <small>e altre ${num(ns.length - 400)}</small>` : ''}</span></details>` : '';
-    return `<tr><td class="ab-f">${esc(a[0])}</td><td>${esc(a[1])}${libri && a[2] === 'libro' && a[4].length > 1 ? ` <small>(${libri})</small>` : ''}${a[5] && a[5] !== a[0] ? ` <small class="greg">Gregory-Aland ${esc(a[5])}</small>` : ''}${citato}</td></tr>`;
+    return `<tr><td class="ab-f">${esc(a[0])}</td><td>${a[6] || esc(a[1])}${libri && a[2] === 'libro' && a[4].length > 1 ? ` <small>(${libri})</small>` : ''}${a[5] && a[5] !== a[0] ? ` <small class="greg">Gregory-Aland ${esc(a[5])}</small>` : ''}${citato}</td></tr>`;
   };
   const libro = a => a[4].length === 1 ? `<a href="#${D.libri[a[4][0]].o}">${esc(a[1])}</a>` : esc(a[1]);
   const gruppi = TIPI_ABBR.map(([t, tit]) => {
@@ -2641,6 +2710,7 @@ function guida() {
     <tr><td><kbd>g</kbd></td><td>grafo del versetto selezionato</td></tr>
     <tr><td><kbd>h</kbd></td><td>evidenzia i versetti più rimandati</td></tr>
     <tr><td><kbd>d</kbd></td><td>evidenzia invece i più citati dal Dizionario (e viceversa)</td></tr>
+    <tr><td><kbd>q</kbd></td><td>evidenzia i discorsi diretti e le citazioni tra virgolette (sempre in corsivo)</td></tr>
     <tr><td><kbd>t</kbd></td><td>tema chiaro / scuro</td></tr>
     <tr><td><kbd>Tab</kbd> <kbd>Invio</kbd></td><td>scorre versetti e richiami di nota, li apre</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>chiude pannello, anteprima, guida</td></tr></table>
@@ -2662,6 +2732,12 @@ function premiFonte() {
   // the switch above the text: the source pressed while the heat is on, none when it is off
   const on = document.body.classList.contains('calore');
   $$('.fonte-calore button').forEach(b => b.setAttribute('aria-pressed', String(on && (b.dataset.fonte === 'diz') === !!S.caloreDiz)));
+}
+function discorsi_(on) {
+  // the switch «Discorsi» above the text: the quotations (always in italic) highlighted
+  document.body.classList.toggle('discorsi', on);
+  $$('[data-discorsi]').forEach(b => b.setAttribute('aria-pressed', String(on)));
+  memo.set('discorsi', on ? '1' : '0');
 }
 function fonteCalore(diz) {
   // what the heat shows: margin references of the BJ or citations of the dictionary
@@ -2706,6 +2782,7 @@ function eventi() {
   document.addEventListener('click', e => {
     if (e.detail === 0) S.fuocoPannello = true;   // activated from the keyboard: focus follows to the panel
     if (e.target.closest('[data-maniglia]')) { $('#pannello').classList.toggle('alto'); return; }
+    if (e.target.closest('[data-discorsi]')) { discorsi_(!document.body.classList.contains('discorsi')); return; }
     const fonte = e.target.closest('[data-fonte]');
     if (fonte) {
       // the switch above the text: a source turns the heat on, the pressed one turns it off
@@ -2818,6 +2895,7 @@ function eventi() {
       case 'g': if (S.sel !== null && S.sel !== undefined && S.vista === 'lettore') location.hash = '#grafo/' + V.id[S.sel]; break;
       case 'h': calore_(!document.body.classList.contains('calore')); break;
       case 'd': fonteCalore(!S.caloreDiz); calore_(true); break;
+      case 'q': discorsi_(!document.body.classList.contains('discorsi')); break;
       case 't': tema(scuro() ? 'light' : 'dark'); break;
       case '?': guida(); break;
       default: return;
@@ -2844,6 +2922,7 @@ async function avvia() {
   eventi();
   calore_(memo.get('calore') === '1');
   fonteCalore(memo.get('fonte') === 'diz');
+  discorsi_(memo.get('discorsi') === '1');
   instrada();
   const t2 = performance.now();
   window.__esploratore = { dati: Math.round(t1 - T0), indici: Math.round(t2 - t1), pronto: Math.round(t2 - T0) };

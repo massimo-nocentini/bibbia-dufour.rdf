@@ -647,3 +647,26 @@ bjf:Intervento a sh:NodeShape ;
                 [ sh:path prov:wasDerivedFrom ; sh:maxCount 1 ;
                   sh:or ( [ sh:class bj:Pagina ] [ sh:class bj:PaginaAppendice ] ) ] ,
                 [ sh:path prov:wasAttributedTo ; sh:minCount 1 ; sh:maxCount 1 ; sh:class foaf:Person ] .
+
+# quotations: the text between « and » (tools/ontologia/virgolette.py, F4)
+bjf:Discorso a sh:NodeShape ;
+    sh:targetClass bj:Discorso ;
+    sh:property [ sh:path dcterms:identifier ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ] ,
+                [ sh:path rdfs:label ; sh:minCount 1 ; sh:maxCount 1 ; sh:languageIn ( "it" ) ] ,
+                [ sh:path bj:parte ; sh:minCount 1 ; sh:maxCount 1 ;
+                  sh:in ( "testo" "nota" "introduzione" "preliminari" "appendici" ) ] ,
+                [ sh:path oa:hasSource ; sh:minCount 1 ; sh:maxCount 1 ; sh:nodeKind sh:IRI ] ,
+                [ sh:path bj:iniziaIn ; sh:maxCount 1 ; sh:nodeKind sh:IRI ] ,
+                [ sh:path bj:finisceIn ; sh:maxCount 1 ; sh:nodeKind sh:IRI ] ,
+                [ sh:path bj:inizioCarattere ; sh:maxCount 1 ; sh:datatype xsd:integer ; sh:minInclusive 0 ] ,
+                [ sh:path bj:fineCarattere ; sh:maxCount 1 ; sh:datatype xsd:integer ; sh:minInclusive 1 ] ,
+                [ sh:path bj:dentroDi ; sh:maxCount 1 ; sh:class bj:Discorso ] ,
+                [ sh:path bj:attraversa ; sh:class bj:Versetto ] ,
+                [ sh:path bj:lunghezza ; sh:maxCount 1 ; sh:datatype xsd:integer ; sh:minInclusive 0 ] ,
+                [ sh:path bj:testo ; sh:maxCount 1 ; sh:datatype rdf:langString ; sh:maxLength 200 ] ,
+                [ sh:path bj:sbilanciato ; sh:maxCount 1 ; sh:in ( true ) ] ,
+                [ sh:path bj:motivo ; sh:maxCount 1 ; sh:datatype xsd:string ] ;
+    # balanced: both ends and a length; unbalanced: its reason
+    sh:or ( [ sh:property [ sh:path bj:iniziaIn ; sh:minCount 1 ] , [ sh:path bj:finisceIn ; sh:minCount 1 ] ,
+                          [ sh:path bj:lunghezza ; sh:minCount 1 ] , [ sh:path bj:sbilanciato ; sh:maxCount 0 ] ]
+            [ sh:property [ sh:path bj:sbilanciato ; sh:minCount 1 ] , [ sh:path bj:motivo ; sh:minCount 1 ] ] ) .

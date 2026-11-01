@@ -47,6 +47,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 C = os.path.dirname(os.path.dirname(HERE))
 sys.path.insert(0, os.path.join(C, 'tools', 'progetti'))
 from progetti import PROGETTI  # noqa: E402
+sys.path.insert(0, HERE)
+import virgolette  # noqa: E402
 
 BUILD = os.path.join(C, 'ontologia', 'build')
 OUT = os.path.join(C, 'ontologia', 'esplora.html')
@@ -304,7 +306,7 @@ def payload(data, links, summary):
         if not r and n['target_book']:
             c = books[bix[n['target_book']]]['c']
             r = [c[0][1], c[-1][2]]
-        html = avvolgi(n['html'], nspans[k], 'data-c', errors, n['id'])
+        html = virgolette.corsivo([(n['id'], avvolgi(n['html'], nspans[k], 'data-c', errors, n['id']))])[0]
         notes.append([vix[n['anchor']], n['html_offset'], n['label'] or '', n['sign'] or '',
                       SCOPI.index(n['scope']), html, r, n['page']])
 
@@ -312,6 +314,8 @@ def payload(data, links, summary):
     for x in data['intros']:
         pars = [[p['n'], p['page'], avvolgi(p['html'], ispans.get((x['id'], p['n']), []), 'data-i', errors,
                                              '%s.%d' % (x['id'], p['n']))] for p in x['paragraphs']]
+        for p, h in zip(pars, virgolette.corsivo([(p[0], p[2]) for p in pars])):
+            p[2] = h
         intros.append([x['id'], x['title'], x['heading'], [v[0] for v in volumi()].index(x['volume']),
                        [bix[o] for o in x['books']], pars])
 
@@ -323,11 +327,112 @@ def payload(data, links, summary):
         sum(p[2].count('<a class="ci"') for x in intros for p in x[5])
     if wrapped != len(ncites) + len(icites):
         errors.append('wrapped citations %d != %d' % (wrapped, len(ncites) + len(icites)))
+    V_, ds = discorsi_versetti(data, vix, errors)
     meta = dict(totali=data['meta']['totals'], riepilogo=summary,
                 relazioni=RELAZIONI, stati=STATI, scopi=SCOPI, gruppi=[g for g, _ in GRUPPI])
-    P = dict(meta=meta, vol=volumi(), libri=books, V=versetti(data), peri=peri, div=divs,
-             note=notes, mref=mrefs, ml=mlinks, nc=ncites, ic=icites, intro=intros)
+    P = dict(meta=meta, vol=volumi(), libri=books, V=dict(versetti(data), q=V_), peri=peri, div=divs,
+             note=notes, mref=mrefs, ml=mlinks, nc=ncites, ic=icites, intro=intros, ds=ds)
     return P, errors, posto
+
+
+# ---------------------------------------------------------------- quotations (virgolette.py)
+
+def discorsi_versetti(data, vix, errors):
+    """The quotations of the text of the books. V.q: {verse index: HTML runs in italic [a, b, ...]} (split
+    where a note or a margin reference is called, as the runs of the Tufte edition); ds: one row per
+    quotation of build/discorsi.json [first verse, last verse, flags (1 nested, 2 unbalanced), length,
+    HTML offset of the «, HTML offset after the » (-1 when missing), parent row or -1, reason]."""
+    Q = json.load(open(os.path.join(BUILD, 'discorsi.json'), encoding='utf-8'))['discorsi']
+    rows, riga = [], {}
+    for n, x in enumerate(Q):
+        if x['part'] != 'testo':
+            continue
+        riga[n] = len(rows)
+        rows.append([vix[x['segments'][0]], vix[x['segments'][-1]],
+                     (1 if x['parent'] is not None else 0) | (2 if x.get('unbalanced') else 0),
+                     len(x.get('text', '')), x['start']['html'] if x['start'] else -1,
+                     x['end']['html'] if x['end'] else -1, -1 if x['parent'] is None else x['parent'],
+                     motivo_discorso(x.get('unbalanced'))])
+    for r in rows:
+        r[6] = riga.get(r[6], -1)
+    q, trovati = {}, 0
+    calls = {}
+    for n in data['notes']:
+        calls.setdefault(n['anchor'], []).append(n['html_offset'])
+    libro = None
+    segs = []
+    for v in data['verses'] + [None]:
+        if v is None or v['book'] != libro:
+            if segs:
+                found = virgolette.trova(segs)
+                trovati += len(found)
+                ids = [k for k, _ in segs]
+                for k, r in enumerate(virgolette.corse(segs, found, virgolette.tagli(data, ids))):
+                    if r:
+                        q[str(vix[ids[k]])] = r
+                        # as app.js renders it (corsivoVerso): runs and note calls, well nested
+                        ins = sorted([(o, 1, '<sup>n</sup>') for o in calls.get(ids[k], [])] +
+                                     [(r[j], 2, '<i class="ds">') for j in range(0, len(r), 2)] +
+                                     [(r[j], 0, '</i>') for j in range(1, len(r), 2)])
+                        h, out, p = segs[k][1], '', 0
+                        for o, _, x in ins:
+                            out, p = out + h[p:o] + x, o
+                        if not virgolette.bilanciato(out + h[p:]):
+                            errors.append('%s: the italic runs are not well nested' % ids[k])
+            if v is None:
+                break
+            libro, segs = v['book'], []
+        segs.append((v['id'], v['html']))
+    if trovati != len(rows):
+        errors.append('quotations of the text: %d found, %d in discorsi.json' % (trovati, len(rows)))
+    return q, rows
+
+
+def controlla_discorsi(P, errors):
+    """The quotations the page sets in italic are those of discorsi.json, part by part: the detector run
+    again on the packed HTML (citations and runs wrapped) finds as many as stage 2e, and every outermost
+    balanced one outside the verses holds a run in italic unless its words are all italic already."""
+    from collections import Counter
+    Q = json.load(open(os.path.join(BUILD, 'discorsi.json'), encoding='utf-8'))['discorsi']
+    want = Counter(x['part'] for x in Q)
+    A = P['par']
+    scopi = {'nota': [[n[5]] for n in P['note']],
+             'introduzione': [[p[2] for p in x[5]] for x in P['intro']],
+             'preliminari': [[p[2] for p in x[8]] for x in A['testi']] + [A['ed']['colh']] +
+             [[v[2]] for c in A['canoni'] for v in c[2]] + [[a[6]] for a in A['abbr'] if a[6]],
+             'appendici': [[v[6]] for v in A['cron']['voci']] + [[h] for vs in A['indici'].values() for v in vs
+                                                                for h in [v[1]] + [x[3] for x in v[5] if len(x) > 3]]}
+    got = Counter(testo=len(P['ds']))
+    for k, scope in scopi.items():
+        for hs in scope:
+            sg = list(enumerate(hs))
+            for y in virgolette.trova(sg):
+                got[k] += 1
+                if y['padre'] is not None or y['sbilanciata']:
+                    continue
+                (ka, oa), (kb, ob) = y['apre'], y['chiude']
+                inner = ''.join(hs[j][oa + 1 if j == ka else 0:ob if j == kb else None] for j in range(ka, kb + 1))
+                if not all(virgolette.bilanciato(h) for h in hs):
+                    errors.append('%s: tags not well nested: %r' % (k, hs[0][:80]))
+                if '<i class="ds">' not in inner and not virgolette.solo_corsivo(
+                        re.sub(r'<[^>]+>', '', re.sub(r'<em>.*?</em>', '', inner))):
+                    errors.append('a quotation of the %s not in italic: %r' % (k, inner[:80]))
+    for k in want:
+        if got[k] != want[k]:
+            errors.append('quotations (%s): %d on the page, %d in discorsi.json' % (k, got[k], want[k]))
+
+
+def motivo_discorso(reason):
+    """Why a quotation is unbalanced, in Italian (virgolette.motivo)."""
+    if not reason:
+        return ''
+    m = re.match(r'« closed only by a » inside italic text \((.+)\)', reason)
+    if m:
+        return 'la « si chiude solo dentro un testo in corsivo (%s): virgolette lasciate come stampate' % m.group(1)
+    m = re.match(r'» with no « open: the quotation before it closed in (.+)$', reason)
+    if m:
+        return 'la » non ha una « aperta: il discorso prima di lei si chiude già in %s (così nel volume)' % m.group(1)
+    return 'virgoletta senza compagna: ' + reason
 
 
 # ---------------------------------------------------------------- the links between the parts (integrazione.json)
@@ -457,14 +562,16 @@ def paratesto(P, data, vix, errors):
     for x in P['testi']:
         pars = [[p['n'], p['page'], avvolgi(p['html'], pspans.get((x['id'], p['n']), []), 'data-p', errors,
                                             '%s.%d' % (x['id'], p['n']))] for p in x['paragraphs']]
+        for p, h in zip(pars, virgolette.corsivo([(p[0], p[2]) for p in pars])):
+            p[2] = h
         testi.append([x['id'], x['title'], x['subtitle'] or '', x['page'], x['signature'] or '', x['qualifica'] or [],
                       1 if x['italic'] else 0, x['kind'], pars])
     canoni = [[c['id'], [[g['n'], g['html'], g['parent'] or 0] for g in c['groups']],
-               [[v['n'], v['group'], v['html'], [bix[b] for b in v['books']], v['chapters'],
+               [[v['n'], v['group'], corsivo1(v['html']), [bix[b] for b in v['books']], v['chapters'],
                  1 if v['deuterocanonical'] else 0, 1 if v['apocryphal'] else 0] for v in c['items']]]
               for c in P['canoni']]
-    abbr = [[x['form'], x['meaning'], x['kind'], x['page'], [bix[b] for b in x['books']], x.get('gregory') or '']
-            for x in P['abbreviazioni']]
+    abbr = [[x['form'], x['meaning'], x['kind'], x['page'], [bix[b] for b in x['books']], x.get('gregory') or '',
+             corsivo1(esch(x['meaning'])) if '«' in x['meaning'] else ''] for x in P['abbreviazioni']]
     xilo = [[bix[x['book']], x['name'], x['raw'], runs(vix[t] for r in x['refs'] for t in r['targets'])]
             for x in P['xilografie']]
     indici = {}
@@ -484,14 +591,15 @@ def paratesto(P, data, vix, errors):
                               NOTA_KIND.index(l['nota']) if l.get('nota') else -1,
                               [fix['raw'], tgt(fix['targets']), [nix[n] for n in fix.get('notes', [])], fix['why']]
                               if fix else 0, extra])
-            voci.append([v['n'], v['html'], v['lemma'], v['style'], v['page'],
-                         [[s['k'], s['label'], s['name']] for s in v['sub']], items])
+            voci.append([v['n'], corsivo1(v['html']), v['lemma'], v['style'], v['page'],
+                         [[s['k'], s['label'], s['name']] + ([corsivo1(s['html'])] if '«' in s['html'] else [])
+                          for s in v['sub']], items])
         indici[ix['id']] = voci
     cr = P['cronologia']
     col = [c['id'] for c in cr['columns']]
     cvoci = []
     for v in cr['voci']:
-        h = avvolgi(v['html'], cspans.get(v['n'], []), 'data-t', errors, 'cronologia.%d' % v['n'])
+        h = corsivo1(avvolgi(v['html'], cspans.get(v['n'], []), 'data-t', errors, 'cronologia.%d' % v['n']))
         cvoci.append([v['section'], v['row'], v['margin'] or '', v['page'], col.index(v['column']), v['order'], h,
                       v['date'] or '', v['start'], v['end'], 1 if v['circa'] else 0, v['text']])
     cron = dict(intro=[p['html'] for p in cr['intro']], sez=[[x['n'], x['title']] for x in cr['sections']],
@@ -506,9 +614,19 @@ def paratesto(P, data, vix, errors):
     meta = dict(note=s['index_note'], temi=s['index_temi'], cron=s['chronology_entries'], datate=s['chronology_dated'],
                 ccit=len(cron_cit), pcit=len(pc), corr=s['corrections'], persone=s['persons'])
     return dict(meta=meta, ed=dict(t=ed['title'], pub=ed['publisher'], luogo=ed['place'], isbn=ed['isbn'],
-                                   stampe=[[x['label'], x['date']] for x in ed['printings']], colofone=ed['colophon']),
+                                   stampe=[[x['label'], x['date']] for x in ed['printings']], colofone=ed['colophon'],
+                                   colh=virgolette.corsivo([(k, esch(r)) for k, r in enumerate(ed['colophon'])])),
                 testi=testi, pc=pc, canoni=canoni, abbr=abbr, xilo=xilo, indici=indici, cron=cron, din=din,
                 ebr=EBRAICO)
+
+
+def corsivo1(h):
+    """One HTML string, a scope of its own, with its quotations in <i class="ds"> (virgolette.corsivo)."""
+    return virgolette.corsivo([(0, h)])[0] if '«' in h else h
+
+
+def esch(t):
+    return t.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
 
 
 # ---------------------------------------------------------------- the dictionary (dufour.json)
@@ -710,6 +828,7 @@ def main(a):
     P['diz'] = dizionario(dz, vix, errors)
     P['par'] = paratesto(pt, data, vix, errors)
     P['int'] = integrazione(ig, data, dz, pt, vix, posto, errors)
+    controlla_discorsi(P, errors)
     page, nraw, ngz, js = pagina(P)
     if '</script' in js.lower():
         errors.append('app.js contains "</script"')

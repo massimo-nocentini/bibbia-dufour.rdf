@@ -34,6 +34,13 @@ with the shortcuts bj:voceCitaVersetto and its inverse bj:citatoNellaVoce. Data 
 id/voce/<slug>, id/voce/<slug>/sezione/<path>, .../paragrafo/<n>, .../citazione/<n>,
 .../collegamento/<n>, id/persona/<id>, id/dizionario/pagina/<n>, id/dizionario.
 
+The quotations (build/discorsi.json, virgolette.py: the text between « and », by the rules of the italic
+of the Tufte edition) are bj:Discorso: id/discorso/<verse id>.<n> for the text of the books, else
+id/discorso/<kind>/<local>.<n> (nota/Gen.1.2.1, paragrafo/pentateuco.3.1, ...), with their ends
+(bj:iniziaIn, bj:inizioCarattere, bj:finisceIn, bj:fineCarattere), bj:parte, oa:hasSource, bj:dentroDi,
+bj:attraversa (the verses spanned), bj:lunghezza, bj:testo when at most TESTO_DISCORSO characters,
+bj:sbilanciato and bj:motivo; they count in the subset of the resource they are read in.
+
 No blank nodes: every resource has an IRI under ID, so the graph can be compared as a
 set of triples. Output is deterministic (same order, gzip without timestamps).
 
@@ -57,12 +64,15 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 C = os.path.dirname(os.path.dirname(HERE))
 sys.path.insert(0, HERE)
 import riferimenti as R  # noqa: E402
+import virgolette  # noqa: E402
 
 OUT = os.path.join(C, 'ontologia')
 BIBBIA = os.path.join(OUT, 'build', 'bibbia.json')
 COLLEGAMENTI = os.path.join(OUT, 'build', 'collegamenti.json')
 PARATESTO = os.path.join(OUT, 'build', 'paratesto.json')
 DUFOUR = os.path.join(OUT, 'build', 'dufour.json')
+DISCORSI = os.path.join(OUT, 'build', 'discorsi.json')
+TESTO_DISCORSO = 200        # a quotation's words as bj:testo only up to this many characters (README)
 ONTOLOGIA = os.path.join(OUT, 'bj-ontologia.ttl')
 TTL = os.path.join(OUT, 'bj-dati.ttl.gz')
 NT = os.path.join(OUT, 'bj-dati.nt.gz')
@@ -74,7 +84,7 @@ BJ = SITO + 'ontologia#'
 ID = SITO + 'id/'
 # data namespaces: one per kind of resource (id/verso/John.3.16, id/libro/John, ...)
 RISORSE = ['testamento', 'libro', 'capitolo', 'divisione', 'pericope', 'verso', 'pagina', 'introduzione',
-           'paragrafo', 'nota', 'corpo', 'margine', 'rimando', 'citazione', 'passaggio']
+           'paragrafo', 'nota', 'corpo', 'margine', 'rimando', 'citazione', 'passaggio', 'discorso']
 # the dictionary: id/voce/<slug>[/sezione|paragrafo|citazione|collegamento/...], people, pages
 RISORSE_DIZIONARIO = [('voce', ID + 'voce/'), ('persona', ID + 'persona/'),
                       ('pagdiz', ID + 'dizionario/pagina/')]
@@ -1424,6 +1434,61 @@ def paratesto(G, P, passaggi, prima):
     return pg
 
 
+# ---------------------------------------------------------------- quotations (virgolette.py, discorsi.json)
+
+def discorsi(G, Q, data, books):
+    """Every quotation of discorsi.json as a bj:Discorso: its ends (resource and plain offsets), the part
+    and the resource it is read in, the quotation around it, the verses it spans, its words when short,
+    the unbalanced ones with their reason. Counted in the part of the graph of the resource it is in."""
+    V = {v['id']: v for v in data['verses']}
+    order = [v['id'] for v in data['verses']]
+    pos = {v: k for k, v in enumerate(order)}
+    ids = [virgolette.risorsa(x['id']).replace('verso:', 'discorso:', 1) if '/' not in x['id'] else
+           'discorso:' + x['id'] for x in Q]
+
+    def etichetta(seg):
+        if '/' not in seg and seg != 'edizione':
+            return etichetta_versetto(V[seg], books[V[seg]['book']])
+        return next(o[1] for p, o in G.per[virgolette.risorsa(seg)] if p == 'rdfs:label')
+
+    for x, D in zip(Q, ids):
+        G.parte = 'paratesto' if x['part'] in ('preliminari', 'appendici') else 'bibbia'
+        a, z = x['segments'][0], x['segments'][-1]
+        if x['part'] == 'testo':
+            dove = etichetta_passaggio(V[a], V[z], books)
+        else:
+            dove = etichetta(a) + ('' if a == z else ' – ' + etichetta(z))
+        if x.get('unbalanced'):
+            what = '« senza chiusura' if x['start'] else '» senza apertura'
+        else:
+            t = x['text']
+            what = '«%s»' % (t if len(t) <= 60 else t[:59].rstrip() + '…')
+        G.add(D, 'rdf:type', 'bj:Discorso')
+        G.add(D, 'rdfs:label', it('%s: %s' % (dove, what)))
+        G.add(D, 'dcterms:identifier', s(x['id']))
+        G.add(D, 'bj:parte', s(x['part']))
+        G.add(D, 'oa:hasSource', virgolette.risorsa(x['source']))
+        if x['start']:
+            G.add(D, 'bj:iniziaIn', virgolette.risorsa(x['start']['seg']))
+            G.add(D, 'bj:inizioCarattere', i(x['start']['testo']))
+        if x['end']:
+            G.add(D, 'bj:finisceIn', virgolette.risorsa(x['end']['seg']))
+            G.add(D, 'bj:fineCarattere', i(x['end']['testo']))
+        if x['parent'] is not None:
+            G.add(D, 'bj:dentroDi', ids[x['parent']])
+        if x['part'] == 'testo':
+            for v in order[pos[a]:pos[z] + 1]:
+                G.add(D, 'bj:attraversa', verso(v))
+        if x.get('unbalanced'):
+            G.add(D, 'bj:sbilanciato', b(True))
+            G.add(D, 'bj:motivo', s(x['unbalanced']))
+        else:
+            G.add(D, 'bj:lunghezza', i(len(x['text'])))
+            if len(x['text']) <= TESTO_DISCORSO:
+                G.add(D, 'bj:testo', it(x['text']))
+    G.parte = 'bibbia'
+
+
 # ---------------------------------------------------------------- the links between the parts (integrazione.json)
 
 MOTIVAZIONE = {'editing': 'oa:editing', 'linking': 'oa:linking', 'describing': 'oa:describing',
@@ -1979,7 +2044,7 @@ def sottoinsiemi(G, nome):
 
 # ---------------------------------------------------------------- checks
 
-def checks(G, ont, data, coll, dz, passaggi, P, I):
+def checks(G, ont, data, coll, dz, passaggi, P, I, Q):
     from rdflib import RDF, RDFS, OWL, URIRef
     err = []
     dichiarati = {str(t)[len(BJ):]: set(ont.objects(t, RDF.type)) for t in ont.subjects(RDF.type, None)
@@ -2042,7 +2107,7 @@ def checks(G, ont, data, coll, dz, passaggi, P, I):
                   Allineamento=len(I['allineamenti']), Datazione=len(I['datazioni']),
                   Versione=len(I['testimoni']['versioni']), Mese=len(I['mesi']), Festa=len(I['feste']),
                   Unita=len(I['misure']), Carta=len(I['carte']), Intervento=len(I['interventi']),
-                  SchemaNumerazione=len(I['schemi']), Calendario=1, TavolaMisure=1)
+                  SchemaNumerazione=len(I['schemi']), Calendario=1, TavolaMisure=1, Discorso=len(Q))
     attese = {'bj:' + k: n for k, n in attese.items()}
     autori = {x['author']['id'] for x in P['testi'] if x['author']} | {P['edizione']['direction'][0],
                                                                         P['edizione']['editor'][0]}
@@ -2108,7 +2173,11 @@ def main(a):
     tipi_link = {l['id']: l['kind'] for l in links}
     tipi_link.update((l['id'], l['kind']) for l in link_paratesto(P) + I['links'])
     integrazione(G, I, P, dz, data, passaggi, pg, tipi_link)
-    err, tipi, usati = checks(G, ont, data, coll, dz, passaggi, P, I)
+    if not os.path.exists(DISCORSI):
+        sys.exit('%s is missing: run tools/ontologia/virgolette.py first' % os.path.relpath(DISCORSI, C))
+    Q = json.load(open(DISCORSI, encoding='utf-8'))['discorsi']
+    discorsi(G, Q, data, books)
+    err, tipi, usati = checks(G, ont, data, coll, dz, passaggi, P, I, Q)
     scrivi(G)
     err += void(G, tipi)
     with open(CONTESTO, 'w', encoding='utf-8') as f:
