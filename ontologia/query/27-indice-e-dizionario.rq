@@ -1,0 +1,30 @@
+# Gli allineamenti delle voci dell'indice delle note e dei temi con il Dizionario: la proprietà SKOS,
+# il metodo, chi l’ha rivisto e i versetti in comune; qui per le voci che contengono «Amore».
+# The alignments of the entries of the index of notes and of the themes with the dictionary: the SKOS
+# property, the method, the reviewer and the shared verses; here for the entries holding «Amore».
+PREFIX bj: <https://massimo-nocentini.github.io/bibbia-gerusalemme/ontologia#>
+PREFIX verso: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/verso/>
+PREFIX libro: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/libro/>
+PREFIX indice: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/indice/>
+PREFIX voce: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/voce/>
+PREFIX cronologia: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/cronologia/>
+PREFIX dinastia: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/dinastia/>
+PREFIX manoscritto: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/manoscritto/>
+PREFIX misura: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/misura/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX oa: <http://www.w3.org/ns/oa#>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+
+SELECT ?indice ?voce ?relazione ?arrivo ?metodo ?revisore ?comuni WHERE {
+  ?a a bj:Allineamento ; bj:allineamentoDa ?x ; bj:allineamentoA ?y ; bj:proprietaMapping ?p ;
+     bj:metodoAllineamento ?metodo ; bj:revisore ?revisore ; bj:versettiComuni ?comuni .
+  ?x skos:prefLabel ?voce FILTER (CONTAINS(?voce, "Amore"))
+  ?x skos:inScheme/dcterms:identifier ?indice .
+  ?y skos:prefLabel ?arrivo .
+  BIND (STRAFTER(STR(?p), "#") AS ?relazione)
+}
+ORDER BY ?indice ?voce ?arrivo

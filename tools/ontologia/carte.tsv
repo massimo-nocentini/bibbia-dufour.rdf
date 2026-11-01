@@ -1,0 +1,17 @@
+# The maps of the volume (session F2, from R2-18): the eight of the appendices (progetti/appendici/appendici/
+# carte.tex, pp. 59-67 unnumbered, PDF 3060-3068; 3066 blank) and the two of the endpapers
+# (progetti/introduzione-generale/introduzione-generale/mappe.tex, PDF 5-6). titolo: as printed in the
+# box; sottotitolo: the inset or legend; pdf: the PDF page; immagine: the image file; periodo: the time
+# shown; libri: the books whose story the map shows (OSIS); passi: the passages it draws, as printed
+# references read here (CEI sigla).
+id	titolo	sottotitolo	parte	pdf	immagine	periodo	libri	passi
+antico-oriente	L’antico Oriente		appendici	3060	progetti/appendici/figure/antico-oriente.png	II-I millennio a.C.	Gen 2Kgs	
+esodo	Egitto, penisola del Sinai e Palestina al tempo dell’esodo		appendici	3061	progetti/appendici/figure/esodo.png	XIII sec. a.C.	Exod Num Deut	Es 12,37–19,2; Nm 33
+tribu	Divisione delle tribù sotto Giosuè		appendici	3062	progetti/appendici/figure/tribu.png	XII sec. a.C.	Josh	Gs 13–21
+v-satrapia	Parte sud della V satrapia (Transeufratena)	riquadro: La Giudea sotto Neemia	appendici	3063	progetti/appendici/figure/v-satrapia.png	V sec. a.C.	Ezra Neh	Ne 3
+viaggi-paolo-1	Viaggi di san Paolo	Primo viaggio, secondo viaggio	appendici	3064	progetti/appendici/figure/viaggi-paolo-1.png	I sec. d.C.	Acts	At 13–14; 15,36–18,22
+viaggi-paolo-2	Viaggi di san Paolo	Terzo viaggio, viaggio della prigionia	appendici	3065	progetti/appendici/figure/viaggi-paolo-2.png	I sec. d.C.	Acts	At 18,23–21,17; 27–28
+palestina-nt	Palestina del Nuovo Testamento		appendici	3067	progetti/appendici/figure/palestina-nt.jpg	I sec. d.C.	Matt Mark Luke John	
+gerusalemme-nt	Gerusalemme del Nuovo Testamento		appendici	3068	progetti/appendici/figure/gerusalemme-nt.jpg	I sec. d.C.	Matt Mark Luke John Acts	
+palestina-at	Palestina dell’Antico Testamento		preliminari	5	progetti/introduzione-generale/figure/palestina-at.jpg		Josh Judg 1Sam 2Sam 1Kgs 2Kgs	
+gerusalemme-at	Gerusalemme dell’Antico Testamento		preliminari	6	progetti/introduzione-generale/figure/gerusalemme-at.jpg		2Sam 1Kgs 2Kgs Neh	

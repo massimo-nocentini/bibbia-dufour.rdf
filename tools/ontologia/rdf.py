@@ -84,6 +84,10 @@ RISORSE_PARATESTO = [('testopre', ID + 'testo/'), ('canone', ID + 'canone/'), ('
                      ('indice', ID + 'indice/'), ('cronologia', ID + 'cronologia/'), ('dinastia', ID + 'dinastia/'),
                      ('acr', ID + 'acrostico/'), ('pagprel', ID + 'preliminari/pagina/'),
                      ('pagapp', ID + 'appendici/pagina/')]
+# the links between the parts and the corrections (integrazione.json, stage 2d)
+RISORSE_INTEGRAZIONE = [('allineamento', ID + 'allineamento/'), ('intervento', ID + 'intervento/'),
+                        ('versione', ID + 'versione/'), ('schemanum', ID + 'numerazione/'),
+                        ('calendario', ID + 'calendario/'), ('misura', ID + 'misura/'), ('carta', ID + 'carta/')]
 PREFISSI = dict([
     ('bj', BJ), ('rdf', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#'),
     ('rdfs', 'http://www.w3.org/2000/01/rdf-schema#'), ('xsd', 'http://www.w3.org/2001/XMLSchema#'),
@@ -92,8 +96,9 @@ PREFISSI = dict([
     ('oa', 'http://www.w3.org/ns/oa#'), ('cito', 'http://purl.org/spar/cito/'),
     ('prov', 'http://www.w3.org/ns/prov#'), ('id', ID)] + [(r, ID + r + '/') for r in RISORSE]
     + RISORSE_DIZIONARIO + [('foaf', 'http://xmlns.com/foaf/0.1/')] + RISORSE_PARATESTO
-    + [('schema', 'https://schema.org/')])
-NOSTRI = RISORSE + ['id'] + [k for k, _ in RISORSE_DIZIONARIO + RISORSE_PARATESTO]   # prefixes of described resources
+    + [('schema', 'https://schema.org/')] + RISORSE_INTEGRAZIONE + [('unit', 'http://qudt.org/vocab/unit/')])
+NOSTRI = RISORSE + ['id'] + [k for k, _ in RISORSE_DIZIONARIO + RISORSE_PARATESTO + RISORSE_INTEGRAZIONE]
+INTEGRAZIONE = os.path.join(OUT, 'build', 'integrazione.json')   # prefixes of described resources
 
 RELAZIONE = {'related': 'bj:correlato', 'parallel': 'bj:parallelo', 'doublet': 'bj:doppione',
              'quoted-later': 'bj:citatoDopo', 'numbering': 'bj:numerazione', 'comment': 'bj:commento'}
@@ -133,6 +138,7 @@ TIPO_COLLEGAMENTO = {'star': ('bj:collegamentoAsterisco', 'bj:richiamaVoce'),
 # a literal is a tuple (kind, value): s string, it/en/fr text in that language, i integer,
 # b boolean, y year (xsd:gYear)
 XSD = {'i': 'xsd:integer', 'b': 'xsd:boolean'}
+LINGUE = ('it', 'en', 'fr', 'he-Latn', 'grc-Latn', 'la')     # language-tagged literals (kind = the tag)
 PN_LOCAL = re.compile(r'[A-Za-z0-9_]([A-Za-z0-9_.\-]*[A-Za-z0-9_\-])?$')
 
 
@@ -257,12 +263,48 @@ def etichetta_passaggio(va, vz, books):
     return '%s–%s' % (a, vz['label'])
 
 
+# the kinds of reason of an unresolved or partial reference (R2-11), from its text or the dictionary's kind
+MOTIVI = [(r'extra-canonical', 'bj:motivoExtracanonico'), (r'^no (?:chapter|verse)|out-of-range', 'bj:motivoFuoriIntervallo'),
+          (r'misprinted range|reversed', 'bj:motivoIntervalloErrato'), (r'not understood', 'bj:motivoNonCompreso'),
+          (r'Vulgate|numbering|no CEI', 'bj:motivoAltraNumerazione'), (r'ambiguous', 'bj:motivoLibroAmbiguo')]
+QUALIFICATORI = {}          # qualifier of a reference -> the version it names (integrazione.json)
+
+
+def categoria_motivo(reason, kind=None):
+    for pat, c in MOTIVI:
+        if re.search(pat, kind or '') or re.search(pat, reason):
+            return c
+    return 'bj:motivoAltro'
+
+
+def nome_sottovoce(lemma, label, _minuscole={}):
+    """The self-contained label of an index sub-entry (R2-08): «Lemma: label», the leading dash of the
+    print dropped and an inner one (the headword's place) replaced by it; a first word that the
+    Bible text writes in lower case is lowered («Amicizia: tra Davide e Giònata»)."""
+    t = label.strip()
+    t = re.sub(r'^[-–]\s*', '', t)
+    segno = re.compile(r'(?<=[\s’\'(«])[-–](?=[\s,;.)»]|$)')
+    if len(segno.findall(t)) == 1:              # one dash stands for the headword; several are dashes of the text
+        t = segno.sub(lambda m: lemma, t)
+    w = re.match(r'(\w+)(.*)$', t, re.S)
+    if w and w.group(1)[0].isupper() and w.group(1)[1:].islower() and _minuscole.get(w.group(1).lower(), 0) > \
+            _minuscole.get(w.group(1), 0):
+        t = w.group(1).lower() + w.group(2)
+    return '%s: %s' % (lemma, t) if t else lemma
+
+
+def conta_minuscole(data):
+    c = Counter(m for v in data['verses'] for m in re.findall(r'\w+', v['text']))
+    nome_sottovoce.__defaults__[0].update(c)
+
+
 # ---------------------------------------------------------------- structure
 
 def struttura(G, data):
     G.add('id:bibbia', 'rdf:type', 'bj:Bibbia')
     G.add('id:bibbia', 'dcterms:title', it('La Bibbia di Gerusalemme'))
     G.add('id:bibbia', 'rdfs:label', it('La Bibbia di Gerusalemme'))
+    G.add('id:bibbia', 'dcterms:identifier', s('bibbia'))
     G.add('id:bibbia', 'dcterms:publisher', s('EDB'))
     G.add('id:bibbia', 'dcterms:description', it(
         'Testo CEI 2008 con le note e i rimandi a margine della Bible de Jérusalem'))
@@ -305,6 +347,7 @@ def pagine(G, data):
         P = pagina(n)
         G.add(P, 'rdf:type', 'bj:Pagina')
         G.add(P, 'rdfs:label', s('p. %d' % n))
+        G.add(P, 'dcterms:identifier', s('pagina.%d' % n))
         G.add(P, 'bj:numero', i(n))
         G.add(P, 'bj:paginaPdf', i(n + PAGINA_PDF))
 
@@ -409,7 +452,10 @@ def versetti(G, data, books):
             A = iri('acr', '%s.%d' % (v['id'], k))
             G.add(V, 'bj:haLetteraAcrostica', A)
             G.add(A, 'rdf:type', 'bj:LetteraAcrostica')
-            G.add(A, 'rdfs:label', s('%s (%s)' % ('(%s)' % nome if tonda else nome, etichetta_versetto(v, bk))))
+            G.add(A, 'rdfs:label', it('%s (%s)' % ('(%s)' % nome if tonda else nome, etichetta_versetto(v, bk))))
+            G.add(A, 'dcterms:identifier', s('acr:%s.%d' % (v['id'], k)))
+            G.add(A, 'bj:inVersetto', V)
+            stampato(G, A, v['page'])
             G.add(A, 'bj:testo', s(nome))
             G.add(A, 'bj:letteraEbraica', s(ALFABETO[nome][1]))
             G.add(A, 'bj:posizioneAlfabeto', i(ALFABETO[nome][0]))
@@ -564,10 +610,13 @@ def riferimento(G, X, l, passaggi):
         G.add(X, 'bj:estensione', s(ext[0]))
     if l['qualifier']:
         G.add(X, 'bj:qualificatore', s(l['qualifier']))
+        if l['qualifier'] in QUALIFICATORI:         # the version it names (R2-16)
+            G.add(X, 'bj:secondoVersione', QUALIFICATORI[l['qualifier']])
     if l['alt']:
         G.add(X, 'bj:numeroAlternativo', s(l['alt']))
     if l['reason']:
         G.add(X, 'bj:motivo', s(l['reason']))
+        G.add(X, 'bj:categoriaMotivo', categoria_motivo(l['reason'], l.get('reason_kind')))
     if l.get('inferred'):
         G.add(X, 'bj:interpretazione', s(l['inferred']))
     elif l.get('corrected'):                    # read in the sense of the sentence (riferimenti.py)
@@ -731,6 +780,7 @@ def pagine_dizionario(G, dz):
         P = pagina_dizionario(n)
         G.add(P, 'rdf:type', 'bj:PaginaDizionario')
         G.add(P, 'rdfs:label', s('DTB p. %d' % n))
+        G.add(P, 'dcterms:identifier', s('pagdiz.%d' % n))
         G.add(P, 'bj:numero', i(n))
         G.add(P, 'bj:paginaPdf', i(n + PAGINA_PDF_DIZIONARIO))
         G.add(P, 'dcterms:isPartOf', 'id:dizionario')
@@ -973,22 +1023,27 @@ class PaginePar:
             n = romano(page)
             self.G.add(P, 'rdf:type', 'bj:PaginaPreliminare')
             self.G.add(P, 'rdfs:label', s('p. %s' % page))
+            self.G.add(P, 'dcterms:identifier', s('pagprel.%s' % page))
             self.G.add(P, 'bj:etichetta', s(page))
             self.G.add(P, 'bj:numero', i(n))
             self.G.add(P, 'bj:paginaPdf', i(n + PDF_PRELIMINARI))
             self.G.add(P, 'dcterms:isPartOf', 'id:edizione')
 
     def appendice(self, X, page):
-        P = iri('pagapp', page)
         self.G.add(X, 'bj:pagina', i(page))
-        self.G.add(X, 'prov:wasDerivedFrom', P)
+        self.G.add(X, 'prov:wasDerivedFrom', self.pagina_appendice(page))
+
+    def pagina_appendice(self, page):
+        P = iri('pagapp', page)
         if P not in self.fatte:
             self.fatte.add(P)
             self.G.add(P, 'rdf:type', 'bj:PaginaAppendice')
             self.G.add(P, 'rdfs:label', s('appendici, p. %d' % page))
+            self.G.add(P, 'dcterms:identifier', s('pagapp.%d' % page))
             self.G.add(P, 'bj:numero', i(page))
             self.G.add(P, 'bj:paginaPdf', i(page + PDF_APPENDICI))
             self.G.add(P, 'dcterms:isPartOf', 'id:edizione')
+        return P
 
 
 def persona_semplice(G, pid, nome, cognome):
@@ -1022,7 +1077,7 @@ def edizione_bj(G, ed, pg):
     for x in ed['rights']:
         G.add(E, 'dcterms:rights', it(x))
     G.add(E, 'bj:stampatore', s(ed['printer']))
-    G.add(E, 'bj:testo', s('\n'.join(ed['colophon'])))
+    G.add(E, 'bj:testo', it('\n'.join(ed['colophon'])))
     G.add(E, 'bj:direzioneEditoriale', persona_semplice(G, *ed['direction']))
     G.add(E, 'bj:curatore', persona_semplice(G, *ed['editor']))
     pg.preliminare(E, 'iv')
@@ -1030,6 +1085,7 @@ def edizione_bj(G, ed, pg):
         S = iri('id', 'edizione/stampa/%d' % k)
         G.add(S, 'rdf:type', 'bj:Stampa')
         G.add(S, 'rdfs:label', it('%s: %s' % (x['label'], x['date'])))
+        G.add(S, 'dcterms:identifier', s('edizione.stampa.%d' % k))
         G.add(S, 'bj:dataStampata', s(x['date']))
         G.add(S, 'dcterms:date', ('ym', x['month']))
         G.add(S, 'bj:ordine', i(k))
@@ -1084,6 +1140,7 @@ def canoni(G, P, pg):
         for g in c['groups']:
             X = iri('canone', '%s/gruppo/%d' % (c['id'], g['n']))
             G.add(X, 'rdf:type', 'bj:GruppoCanone')
+            G.add(X, 'dcterms:identifier', s('canone.%s.gruppo.%d' % (c['id'], g['n'])))
             G.add(X, 'rdfs:label', it(g['title']))
             G.add(X, 'dcterms:title', it(g['title']))
             html(G, X, g['title'], g['html'])
@@ -1092,6 +1149,7 @@ def canoni(G, P, pg):
         for k, v in enumerate(c['items'], 1):
             X = iri('canone', '%s/voce/%d' % (c['id'], k))
             G.add(X, 'rdf:type', 'bj:VoceCanone')
+            G.add(X, 'dcterms:identifier', s('canone.%s.voce.%d' % (c['id'], k)))
             G.add(X, 'rdfs:label', it(v['text']))
             G.add(X, 'bj:testo', it(v['text']))
             html(G, X, v['text'], v['html'])
@@ -1116,9 +1174,10 @@ def abbreviazioni(G, P, pg):
     for x in P['abbreviazioni']:
         A = iri('abbreviazione', x['n'])
         G.add(A, 'rdf:type', 'bj:Abbreviazione')
-        G.add(A, 'rdfs:label', s('%s = %s' % (x['form'], x['meaning'][:80])))
+        G.add(A, 'rdfs:label', it('%s = %s' % (x['form'], x['meaning'][:80].rstrip())))
+        G.add(A, 'dcterms:identifier', s('abbreviazione.%d' % x['n']))
         G.add(A, 'skos:notation', s(x['form']))
-        G.add(A, 'bj:significato', s(x['meaning']))
+        G.add(A, 'bj:significato', it(x['meaning']))
         G.add(A, 'bj:tipoAbbreviazione', s(x['kind']))
         G.add(A, 'bj:ordine', i(x['n']))
         pg.preliminare(A, x['page'])
@@ -1129,6 +1188,8 @@ def abbreviazioni(G, P, pg):
             G.add(A, 'bj:abbreviaManoscritto', M)
             G.add(M, 'rdf:type', 'bj:Manoscritto')
             G.add(M, 'rdfs:label', s(x['form']))
+            G.add(M, 'dcterms:identifier', s('manoscritto.%s' % manoscritto_id(x)))
+            pg.preliminare(M, x['page'])
             G.add(M, 'skos:notation', s(x['letter'] or x['form']))
             if x.get('gregory'):
                 G.add(M, 'bj:numeroGregoryAland', s(x['gregory']))
@@ -1136,10 +1197,12 @@ def abbreviazioni(G, P, pg):
             G.add(M, 'bj:descrizione', s(x['meaning']))
 
 
-def xilografie(G, P, passaggi):
+def xilografie(G, P, passaggi, prima):
     for x in P['xilografie']:
         X = iri('xilografia', x['book'])
         G.add(X, 'rdf:type', 'bj:Xilografia')
+        G.add(X, 'dcterms:identifier', s('xilografia.%s' % x['book']))
+        stampato(G, X, prima[x['book']])            # printed at the head of its book (R2-11)
         G.add(X, 'rdfs:label', it('Xilografia di %s (%s)' % (x['name'], x['raw'])))
         G.add(X, 'bj:testo', s('%s (%s)' % (x['name'], x['raw'])))
         G.add(X, 'bj:apreLibro', iri('libro', x['book']))
@@ -1160,6 +1223,7 @@ def citazione_par(G, l, passaggi, extra):
     if 'offset' in l:
         G.add(X, 'bj:posizioneTesto', i(l['offset']))
         G.add(X, 'bj:lunghezza', i(l['length']))
+    if l.get('html_offset') is not None:
         G.add(X, 'bj:posizioneHtml', i(l['html_offset']))
         G.add(X, 'bj:fineHtml', i(l['html_end']))
     G.add(X, 'bj:conCf', b(l['cf']))
@@ -1210,8 +1274,9 @@ def indici(G, P, passaggi, pg):
             for sv in v['sub']:
                 W = voce_indice(ix['id'], v['n'], sv['k'])
                 G.add(W, 'rdf:type', 'bj:VoceIndice')
-                G.add(W, 'skos:prefLabel', it(sv['name']))
-                G.add(W, 'rdfs:label', it(sv['name']))
+                G.add(W, 'skos:prefLabel', it(nome_sottovoce(v['lemma'], sv['label'])))
+                G.add(W, 'rdfs:label', it(nome_sottovoce(v['lemma'], sv['label'])))
+                G.add(W, 'skos:altLabel', it(sv['name']))
                 G.add(W, 'bj:etichetta', s(sv['label']))
                 G.add(W, 'skos:inScheme', S)
                 G.add(W, 'skos:broader', V)
@@ -1271,6 +1336,7 @@ def cronologia(G, P, pg):
     cr = P['cronologia']
     T = iri('cronologia', 'tavola')
     G.add(T, 'rdf:type', 'bj:TavolaCronologica')
+    G.add(T, 'dcterms:identifier', s('cronologia'))
     G.add(T, 'rdfs:label', it('Tavola cronologica'))
     G.add(T, 'dcterms:title', it('Tavola cronologica'))
     G.add(T, 'dcterms:isPartOf', 'id:edizione')
@@ -1279,6 +1345,7 @@ def cronologia(G, P, pg):
     for x in cr['sections']:
         X = iri('cronologia', 'sezione/%d' % x['n'])
         G.add(X, 'rdf:type', 'bj:SezioneCronologia')
+        G.add(X, 'dcterms:identifier', s('cronologia.sezione.%d' % x['n']))
         G.add(X, 'rdfs:label', it(x['title']))
         G.add(X, 'dcterms:title', it(x['title']))
         G.add(X, 'bj:ordine', i(x['n']))
@@ -1286,7 +1353,8 @@ def cronologia(G, P, pg):
     for v in cr['voci']:
         X = iri('cronologia', 'voce/%d' % v['n'])
         G.add(X, 'rdf:type', 'bj:EventoCronologia')
-        G.add(X, 'rdfs:label', it(v['text'] if len(v['text']) <= 90 else v['text'][:89] + '…'))
+        G.add(X, 'dcterms:identifier', s('cronologia.%d' % v['n']))
+        G.add(X, 'rdfs:label', it(v['text'] if len(v['text']) <= 90 else v['text'][:89].rstrip() + '…'))
         G.add(X, 'bj:testo', it(v['text']))
         html(G, X, v['text'], v['html'])
         G.add(X, 'dcterms:isPartOf', iri('cronologia', 'sezione/%d' % v['section']))
@@ -1311,6 +1379,7 @@ def cronologia(G, P, pg):
 def dinastie(G, P, pg):
     T = iri('dinastia', 'tavola')
     G.add(T, 'rdf:type', 'bj:TavolaGenealogica')
+    G.add(T, 'dcterms:identifier', s('dinastie'))
     G.add(T, 'rdfs:label', it('Dinastie Asmonea e Erodiana'))
     G.add(T, 'dcterms:title', it('Dinastie Asmonea e Erodiana'))
     G.add(T, 'dcterms:isPartOf', 'id:edizione')
@@ -1338,7 +1407,7 @@ def dinastie(G, P, pg):
             G.link(X, 'schema:spouse', iri('dinastia', y))
 
 
-def paratesto(G, P, passaggi):
+def paratesto(G, P, passaggi, prima):
     """The front matter and the appendices, counted as their own part of the graph."""
     G.parte = 'paratesto'
     pg = PaginePar(G)
@@ -1346,13 +1415,300 @@ def paratesto(G, P, passaggi):
     testi_preliminari(G, P, pg)
     canoni(G, P, pg)
     abbreviazioni(G, P, pg)
-    xilografie(G, P, passaggi)
+    xilografie(G, P, passaggi, prima)
     citazioni_par(G, P, passaggi)
     indici(G, P, passaggi, pg)
     cronologia(G, P, pg)
     dinastie(G, P, pg)
     G.parte = 'bibbia'
     return pg
+
+
+# ---------------------------------------------------------------- the links between the parts (integrazione.json)
+
+MOTIVAZIONE = {'editing': 'oa:editing', 'linking': 'oa:linking', 'describing': 'oa:describing',
+               'interpretando': 'bj:interpretando'}
+REGOLA = {k: 'bj:regola' + ''.join(w.capitalize() for w in k.split('-')) for k in (
+    'manuale', 'aggiunta', 'numerazione', 'refuso', 'catena', 'puntatore', 'capitolo', 'elenco', 'inizio', 'ester',
+    'introduzione', 'nudo', 'lettura', 'indice', 'prosa', 'rimando', 'pagina-estranea', 'nota-editoriale', 'paragrafo',
+    'forma', 'conversione')}
+SCHEMA_DI = {'numerazioni.tsv': None}
+CURATORE = ('massimo-nocentini', 'Massimo', 'Nocentini')
+
+
+def decimale(x):
+    """An xsd:decimal literal from a printed number («22,5») or a float (a ratio)."""
+    if x is None:
+        return None
+    if isinstance(x, str):
+        x = float(x.replace(',', '.'))
+    t = ('%.6f' % x).rstrip('0')
+    return ('d', t + '0' if t.endswith('.') else t)
+
+
+def chiave_indice(k):
+    """note.204.1 -> the IRI of the index entry or sub-entry."""
+    p = k.split('.')
+    return voce_indice(p[0], int(p[1]), int(p[2]) if len(p) > 2 else 0)
+
+
+def integrazione(G, I, P, dz, data, passaggi, pg, tipi_link):
+    """The links between the parts (alignments, persons, datings, witnesses), the calendar, the
+    measures and the maps, the corrections in one model and the numbering schemes, counted as the
+    fourth part of the graph (VoID subset vp:integrazione)."""
+    G.parte = 'integrazione'
+    bix = {b['osis']: b for b in data['books']}
+    # alignments (R2-12, R2-13, R2-10): reified, with the SKOS mapping triple as the shortcut
+    INV = {'closeMatch': 'closeMatch', 'relatedMatch': 'relatedMatch', 'exactMatch': 'exactMatch',
+           'broadMatch': 'narrowMatch', 'narrowMatch': 'broadMatch'}
+    for x in I['allineamenti']:
+        A = iri('allineamento', '%d' % x['riga'])
+        da = chiave_indice(x['da'])
+        a = voce(x['a'][5:]) if x['a'].startswith('voce:') else chiave_indice(x['a'])
+        G.add(A, 'rdf:type', 'bj:Allineamento')
+        G.add(A, 'rdfs:label', s('%s %s %s' % (x['da'], x['relazione'], x['a'])))
+        G.add(A, 'dcterms:identifier', s('allineamenti.tsv#%d' % x['riga']))
+        G.add(A, 'bj:allineamentoDa', da)
+        G.add(A, 'bj:allineamentoA', a)
+        G.add(A, 'bj:proprietaMapping', 'skos:' + x['relazione'])
+        G.add(A, 'bj:metodoAllineamento', s(x['metodo']))
+        G.add(A, 'bj:revisore', s(x['chi']))
+        if x['nota']:
+            G.add(A, 'rdfs:comment', it(x['nota']))
+        G.add(A, 'bj:versettiComuni', i(len(x['comuni'])))
+        for t in x['comuni']:
+            G.add(A, 'bj:versettoComune', verso(t))
+        G.add(A, 'bj:tabellaFonte', s('tools/ontologia/allineamenti.tsv'))
+        G.add(A, 'bj:rigaFonte', s(str(x['riga'])))
+        G.link(da, 'skos:' + x['relazione'], a)
+        G.link(a, 'skos:' + INV[x['relazione']], da)
+    # persons (R2-14)
+    for x in I['persone']['versetti']:
+        G.link(verso(x['verso']), 'bj:nominaPersona', iri('dinastia', x['persona']))
+        G.link(iri('dinastia', x['persona']), 'bj:nominatoIn', verso(x['verso']))
+    for x in I['persone']['indice']:
+        G.link(citazione(x['citazione']) if x.get('citazione') else chiave_indice(x['voce']), 'bj:indicaPersona',
+               iri('dinastia', x['persona']))
+    for x in I['persone']['cronologia']:
+        G.link(iri('cronologia', 'voce/%d' % x['voce']), 'bj:riguardaPersona', iri('dinastia', x['persona']))
+    # chronology <-> books (R2-15): reified, with the shortcuts both ways
+    for x in I['datazioni']:
+        D = iri('cronologia', 'datazione/%s' % x['id'])
+        E = iri('cronologia', 'voce/%d' % x['voce'])
+        G.add(D, 'rdf:type', 'bj:Datazione')
+        G.add(D, 'rdfs:label', s('cronologia %d: %s %s' % (x['voce'], x['tipo'], ' '.join(x['libri']))))
+        G.add(D, 'dcterms:identifier', s('cronologia.datazione.%s' % x['id']))
+        G.add(D, 'bj:datazioneDi', E)
+        G.add(D, 'bj:tipoDatazione', s(x['tipo']))
+        for b_ in x['libri']:
+            G.add(D, 'bj:datazioneLibro', iri('libro', b_))
+            G.link(E, 'bj:riguardaLibro', iri('libro', b_))
+            G.link(iri('libro', b_), 'bj:nellaCronologia', E)
+        if x['riga']:
+            G.add(D, 'bj:tabellaFonte', s('tools/ontologia/cronologia-libri.tsv'))
+            G.add(D, 'bj:rigaFonte', s(str(x['riga'])))
+            G.add(D, 'rdfs:comment', it(x['nota']))
+    # versions and codices (R2-16)
+    T = I['testimoni']
+    for v in T['versioni']:
+        V = iri('versione', v['id'])
+        G.add(V, 'rdf:type', 'bj:Versione')
+        G.add(V, 'rdfs:label', it(v['nome']))
+        G.add(V, 'skos:prefLabel', it(v['nome']))
+        G.add(V, 'dcterms:identifier', s('versione.%s' % v['id']))
+        if v['abbreviazione']:
+            G.add(iri('abbreviazione', v['abbreviazione']), 'bj:abbreviaVersione', V)
+    for nid, vs in T['note_versioni']:
+        for v in vs:
+            G.link(nota(nid), 'bj:citaTestimone', iri('versione', v))
+    for nid, cs in T['note_codici']:
+        for c in cs:
+            G.link(nota(nid), 'bj:citaTestimone', iri('manoscritto', c))
+    # the citations of the calendar, the measures and the maps
+    for l in I['links']:
+        X = citazione_par(G, dict(l, html_offset=None), passaggi, [])
+        if l.get('corrected') == 'prosa':
+            G.add(X, 'bj:testoCorretto', s(l['corrected_raw']))
+            G.add(X, 'bj:correzione', s(l['why']))
+    def cita(X, ids):
+        for lid in ids:
+            l = linkx[lid]
+            G.add(citazione(lid), 'bj:daVoceTavola', X)
+            if l['status'] in ('resolved', 'partial'):
+                for t in l['targets']:
+                    G.link(X, 'bj:citaVersetto', verso(t))
+    linkx = {l['id']: l for l in I['links']}
+    # the calendar (R2-18)
+    C_ = 'id:calendario'
+    G.add(C_, 'rdf:type', 'skos:ConceptScheme')
+    G.add(C_, 'rdf:type', 'bj:Calendario')
+    G.add(C_, 'rdfs:label', it('Calendario e feste annuali'))
+    G.add(C_, 'dcterms:title', it('Calendario'))
+    G.add(C_, 'dcterms:identifier', s('calendario'))
+    G.add(C_, 'dcterms:isPartOf', 'id:edizione')
+    pg.appendice(C_, 25)
+    for k, m in enumerate(I['mesi'], 1):
+        M = iri('calendario', 'mese/%s' % m['id'])
+        G.add(M, 'rdf:type', 'bj:Mese')
+        G.add(M, 'skos:prefLabel', it(m['nome']))
+        G.add(M, 'rdfs:label', it(m['nome']))
+        G.add(M, 'skos:notation', s(m['id']))
+        G.add(M, 'dcterms:identifier', s('calendario.mese.%s' % m['id']))
+        G.add(M, 'skos:inScheme', C_)
+        G.add(C_, 'skos:hasTopConcept', M)
+        G.add(M, 'skos:topConceptOf', C_)
+        G.add(M, 'bj:ordine', i(k))
+        G.add(M, 'bj:meseSolare', s(m['solare']))
+        G.add(M, 'bj:nomeMacedone', it(m['macedone']))
+        G.add(M, 'skos:altLabel', it(m['macedone']))
+        for a in m['altri']:
+            G.add(M, 'bj:nomeAntico', it(a))
+            G.add(M, 'skos:altLabel', it(a))
+        pg.appendice(M, m['pagina'])
+        cita(M, m['links'])
+        for t in I['mesi_versetti'].get(m['id'], []):
+            G.link(verso(t), 'bj:nominaMese', M)
+    for f in I['feste']:
+        F = iri('calendario', 'festa/%s' % f['id'])
+        G.add(F, 'rdf:type', 'bj:Festa')
+        G.add(F, 'skos:prefLabel', it(f['nome']))
+        G.add(F, 'rdfs:label', it(f['nome']))
+        G.add(F, 'dcterms:identifier', s('calendario.festa.%s' % f['id']))
+        G.add(F, 'skos:inScheme', C_)
+        for a in f['altri']:
+            G.add(F, 'skos:altLabel', it(a))
+        G.add(F, 'bj:nelMese', iri('calendario', 'mese/%s' % f['mese']))
+        if f['giorno']:
+            G.add(F, 'bj:giorno', s(f['giorno']))
+        pg.appendice(F, f['pagina'])
+        cita(F, f['links'])
+        for a in f['anche']:
+            T_ = voce(a[5:]) if a.startswith('voce:') else chiave_indice(a)
+            G.link(F, 'skos:relatedMatch', T_)
+            G.link(T_, 'skos:relatedMatch', F)
+    # the measures and coins (R2-18)
+    M_ = 'id:misure'
+    G.add(M_, 'rdf:type', 'skos:ConceptScheme')
+    G.add(M_, 'rdf:type', 'bj:TavolaMisure')
+    G.add(M_, 'rdfs:label', it('Tavola delle misure e delle monete'))
+    G.add(M_, 'dcterms:title', it('Tavola delle misure e delle monete'))
+    G.add(M_, 'dcterms:identifier', s('misure'))
+    G.add(M_, 'dcterms:isPartOf', 'id:edizione')
+    pg.appendice(M_, 26)
+    for x in I['misure']:
+        U = iri('misura', x['id'])
+        G.add(U, 'rdf:type', 'bj:Unita')
+        G.add(U, 'skos:prefLabel', it(x['nome']))
+        G.add(U, 'rdfs:label', it(x['nome']))
+        G.add(U, 'dcterms:identifier', s('misura.%s' % x['id']))
+        G.add(U, 'skos:inScheme', M_)
+        G.add(M_, 'skos:hasTopConcept', U)
+        G.add(U, 'skos:topConceptOf', M_)
+        G.add(U, 'bj:tipoMisura', s(x['tipo']))
+        if x['originale'] and x['originale'] != x['nome']:
+            G.add(U, 'skos:altLabel', (x['lingua'], x['originale']))
+        if x['valore']:
+            G.add(U, 'bj:valoreStampato', s(x['valore']))
+            G.add(U, 'bj:valore', decimale(x['valore']))
+            G.add(U, 'bj:unitaQudt', 'unit:' + x['unita'].split(':')[1])
+        if x['rapporto']:
+            G.add(U, 'bj:rapporto', s(x['rapporto']))
+            if x['rapporto_decimale'] is not None:
+                G.add(U, 'bj:rapportoDecimale', decimale(x['rapporto_decimale']))
+        if x['base'] and x['base'] != x['id']:
+            G.add(U, 'bj:rapportoA', iri('misura', x['base']))
+        if x['equivale']:
+            G.link(U, 'bj:equivaleA', iri('misura', x['equivale']))
+        G.add(U, 'bj:approssimativo', b(True))
+        if x['nota']:
+            G.add(U, 'rdfs:comment', it(x['nota']))
+        pg.appendice(U, x['pagina'])
+        cita(U, x['links'])
+        for t in I['misure_versetti'].get(x['id'], []):
+            G.link(verso(t), 'bj:nominaMisura', U)
+    # the maps (R2-18)
+    for x in I['carte']:
+        K = iri('carta', x['id'])
+        G.add(K, 'rdf:type', 'bj:Carta')
+        G.add(K, 'rdfs:label', it(x['titolo']))
+        G.add(K, 'dcterms:title', it(x['titolo']))
+        G.add(K, 'dcterms:identifier', s('carta.%s' % x['id']))
+        if x['sottotitolo']:
+            G.add(K, 'bj:legenda', it(x['sottotitolo']))
+        G.add(K, 'dcterms:isPartOf', 'id:edizione')
+        G.add(K, 'bj:paginaPdfCarta', i(x['pdf']))
+        if x['parte'] == 'appendici':
+            pg.appendice(K, x['pdf'] - PDF_APPENDICI)
+        G.add(K, 'bj:immagine', s(x['immagine']))
+        if x['periodo']:
+            G.add(K, 'dcterms:temporal', it(x['periodo']))
+        for b_ in x['libri']:
+            G.add(K, 'bj:raffiguraLibro', iri('libro', b_))
+        for lid in x['links']:
+            for a, z in linkx[lid]['ranges']:
+                G.link(K, 'bj:raffiguraPassaggio', passaggi(a, z))
+        cita(K, x['links'])
+    # the numbering schemes (R2-21)
+    for x in I['schemi']:
+        N = iri('schemanum', x['id'])
+        G.add(N, 'rdf:type', 'bj:SchemaNumerazione')
+        G.add(N, 'rdfs:label', ('en', x['nome']))
+        G.add(N, 'dcterms:identifier', s('numerazione.%s' % x['id']))
+        G.add(N, 'bj:righeTabella', i(x['righe']))
+    numer = R.numerazioni()
+    # the corrections (R2-20): one oa:Annotation per table row, rule or reading
+    curatore = persona_semplice(G, *CURATORE)
+    ncoll = Counter()
+    coll_ix = []
+    for l in dz['links']:
+        ncoll[l['source']] += 1
+        coll_ix.append(iri('voce', '%s/collegamento/%d' % (l['source'], ncoll[l['source']])))
+
+    def bersaglio(t):
+        k, v = t
+        if k == 'link':
+            return rimando(v) if tipi_link.get(v) == 'mref' else citazione(v)
+        return {'dzcit': lambda: citazione_voce(v), 'dzpar': lambda: paragrafo_voce(v),
+                'dzlink': lambda: coll_ix[v], 'indice': lambda: chiave_indice(v),
+                'dinastia': lambda: iri('dinastia', v), 'passaggio': lambda: passaggi(*v)}[k]()
+    for x in I['interventi']:
+        X = iri('intervento', x['id'])
+        G.add(X, 'rdf:type', 'bj:Intervento')
+        G.add(X, 'rdfs:label', s('%s %s' % (x['tabella'], x['riga'])))
+        G.add(X, 'dcterms:identifier', s('%s#%s' % (x['tabella'], x['riga'])))
+        G.add(X, 'oa:motivatedBy', MOTIVAZIONE[x['motivazione']])
+        G.add(X, 'bj:regola', REGOLA[x['regola']])
+        for t in x['bersagli']:
+            T_ = bersaglio(t)
+            G.add(X, 'oa:hasTarget', T_)
+            if t[0] in ('link', 'dzcit'):
+                G.link(T_, 'bj:regola', REGOLA[x['regola']])
+        if x['motivo']:
+            corpo = iri('intervento', x['id'] + '/motivo')
+            G.add(X, 'oa:hasBody', corpo)
+            G.add(corpo, 'rdf:type', 'oa:TextualBody')
+            G.add(corpo, 'rdf:value', (x['lingua'], x['motivo']))
+            G.add(corpo, 'dc:format', s('text/plain'))
+            G.add(corpo, 'dc:language', s(x['lingua']))
+        G.add(X, 'bj:tabellaFonte', s(x['tabella']))
+        G.add(X, 'bj:rigaFonte', s(str(x['riga'])))
+        if x['fonte']:
+            G.add(X, 'bj:fileFonte', s(x['fonte']))
+        if x['stampato']:
+            G.add(X, 'bj:testoStampato', s(x['stampato']))
+        if x['corretto']:
+            G.add(X, 'bj:testoLetto', s(x['corretto']))
+        if x['tabella'] == 'numerazioni.tsv':
+            G.add(X, 'bj:schemaNumerazione', iri('schemanum', numer[x['riga'] - 1]['schema']))
+        if x['pagina']:
+            k, n = x['pagina']
+            if k == 'pagapp':
+                pg.pagina_appendice(n)
+                G.add(X, 'prov:wasDerivedFrom', iri('pagapp', n))
+            elif k == 'pagina' and pagina(n) in G.per:
+                G.add(X, 'prov:wasDerivedFrom', pagina(n))
+        G.add(X, 'prov:wasAttributedTo', curatore)
+    G.parte = 'bibbia'
 
 
 def link_paratesto(P):
@@ -1383,7 +1739,9 @@ def nt_term(o):
         return '"%s"^^<%s>' % (v, espandi('xsd:gYear'))
     if kind == 'ym':
         return '"%s"^^<%s>' % (v, espandi('xsd:gYearMonth'))
-    if kind in ('it', 'en', 'fr'):
+    if kind == 'd':
+        return '"%s"^^<%s>' % (v, espandi('xsd:decimal'))
+    if kind in LINGUE:
         return '"%s"@%s' % (esc(v), kind)
     return '"%s"' % esc(v)
 
@@ -1398,6 +1756,8 @@ def ttl_term(o):
         return str(v)
     if kind == 'b':
         return 'true' if v else 'false'
+    if kind == 'd':
+        return v
     return nt_term(o)
 
 
@@ -1502,9 +1862,13 @@ def void(G, tipi):
             '    dcterms:description "Versetti, note, rimandi a margine e citazioni della Bibbia di '
             'Gerusalemme (EDB: testo CEI 2008, note e rimandi della Bible de Jérusalem), '
             'collegati al versetto, con le voci del Dizionario di Teologia Biblica e le loro citazioni '
-            'bibliche."@it , "Verses, notes, margin references and citations of La Bibbia '
+            'bibliche, le pagine iniziali e le appendici (edizione, canone, abbreviazioni e codici, indici, '
+            'tavola cronologica, dinastie, calendario, misure e monete, carte), i collegamenti tra le parti e le '
+            'correzioni."@it , "Verses, notes, margin references and citations of La Bibbia '
             'di Gerusalemme (EDB: CEI 2008 text, Bible de Jérusalem notes and margins), linked at the '
-            'verse, with the entries of the Dizionario di Teologia Biblica and their Bible citations."@en ;',
+            'verse, with the entries of the Dizionario di Teologia Biblica and their Bible citations, the front '
+            'matter and the appendices (edition, canon, abbreviations and codices, indices, chronological table, '
+            'dynasties, calendar, measures and coins, maps), the links between the parts and the corrections."@en ;',
             '    dcterms:rights "Testi protetti da diritto d\'autore (EDB, Marietti): solo per uso '
             'locale, non pubblicare."@it , "The texts are copyrighted (EDB, Marietti): local use only, '
             'do not publish."@en ;',
@@ -1514,7 +1878,7 @@ def void(G, tipi):
             '"progetti/introduzione-generale, progetti/appendici (pagine iniziali e appendici / front matter and '
             'appendices)" ;',
             '    void:vocabulary <%sontologia> , <http://www.w3.org/ns/oa#> , <http://purl.org/spar/cito/> , '
-            '<http://purl.org/dc/terms/> , <http://www.w3.org/ns/prov#> , '
+            '<http://purl.org/dc/terms/> , <http://purl.org/dc/elements/1.1/> , <http://www.w3.org/ns/prov#> , '
             '<http://www.w3.org/2004/02/skos/core#> , <http://xmlns.com/foaf/0.1/> , <https://schema.org/> ;' % SITO,
             '    void:uriSpace "%s" ;' % ID,
             '    void:dataDump <%sbj-dati.nt.gz> , <%sbj-dati.ttl.gz> ;' % (SITO, SITO),
@@ -1525,8 +1889,9 @@ def void(G, tipi):
             '    void:entities %d ;' % tipizzati,
             '    void:classes %d ;' % len(tipi),
             '    void:properties %d ;' % len(per_prop),
-            '    void:subset vp:bibbia , vp:dizionario , vp:paratesto , vp:voci-versetti , vp:versetti-voci , '
-            'vp:indice-versetti , vp:versetti-indice ;',
+            '    void:subset vp:bibbia , vp:dizionario , vp:paratesto , vp:integrazione , vp:voci-versetti , '
+            'vp:versetti-voci , vp:indice-versetti , vp:versetti-indice , vp:indice-dizionario , vp:versetti-persone , '
+            'vp:cronologia-libri , vp:note-testimoni ;',
             '    void:classPartition %s ;' % ' , '.join('vp:classe-' + nome(c) for c in sorted(tipi)),
             '    void:propertyPartition %s .' % ' , '.join('vp:proprieta-' + nome(p) for p in sorted(per_prop))]
     for c in sorted(tipi):
@@ -1540,7 +1905,7 @@ def void(G, tipi):
     g = Graph().parse(VOID, format='turtle')
     vt = URIRef('http://rdfs.org/ns/void#triples')
     n = g.value(URIRef(D[1:-1]), vt)
-    parti = [g.value(URIRef(SITO + 'void#' + x), vt) for x in ('bibbia', 'dizionario', 'paratesto')]
+    parti = [g.value(URIRef(SITO + 'void#' + x), vt) for x in ('bibbia', 'dizionario', 'paratesto', 'integrazione')]
     err = [] if n == Literal(len(G)) else ['%s: void:triples %s, graph %d' % (VOID, n, len(G))]
     if sum(int(x) for x in parti) != len(G):
         err.append('%s: subsets hold %s triples, graph %d' % (VOID, parti, len(G)))
@@ -1564,7 +1929,14 @@ def sottoinsiemi(G, nome):
                             'The Jerusalem Bible: front matter and appendices (edition, presentation and prefaces, '
                             'canon, abbreviations and codices, woodcuts, index of notes, index of pastoral themes, '
                             'chronological table, dynasties)',
-                            'progetti/introduzione-generale, progetti/appendici')}
+                            'progetti/introduzione-generale, progetti/appendici'),
+              'integrazione': ('Collegamenti tra le parti (indici, temi e Dizionario; persone; cronologia e libri; '
+                               'versioni e codici), calendario, misure e monete, carte, correzioni (bj:Intervento) e '
+                               'schemi di numerazione',
+                               'Links between the parts (indices, themes and dictionary; persons; chronology and books; '
+                               'versions and codices), calendar, measures and coins, maps, corrections (bj:Intervento) '
+                               'and numbering schemes',
+                               'tools/ontologia/*.tsv, tools/ontologia/integrazione.py')}
     for parte, (it_, en, fonte) in titoli.items():
         tipi = Counter(o for sog, po in G.per.items() if G.parte_di[sog] == parte
                        for p, o in po if p == 'rdf:type')
@@ -1584,18 +1956,30 @@ def sottoinsiemi(G, nome):
     for nome_, pred, da, a, parte in (('voci-versetti', 'bj:voceCitaVersetto', 'dizionario', 'bibbia', 'dizionario'),
                                       ('versetti-voci', 'bj:citatoNellaVoce', 'bibbia', 'dizionario', 'dizionario'),
                                       ('indice-versetti', 'bj:indicaVersetto', 'paratesto', 'bibbia', 'paratesto'),
-                                      ('versetti-indice', 'bj:nellIndice', 'bibbia', 'paratesto', 'paratesto')):
+                                      ('versetti-indice', 'bj:nellIndice', 'bibbia', 'paratesto', 'paratesto'),
+                                      ('versetti-persone', 'bj:nominaPersona', 'bibbia', 'paratesto', 'integrazione'),
+                                      ('cronologia-libri', 'bj:riguardaLibro', 'paratesto', 'bibbia', 'integrazione'),
+                                      ('note-testimoni', 'bj:citaTestimone', 'bibbia', 'paratesto', 'integrazione')):
         out += ['vp:%s a void:Linkset ;' % nome_,
                 '    void:linkPredicate %s ;' % pred,
                 '    void:subjectsTarget vp:%s ;' % da,
                 '    void:objectsTarget vp:%s ;' % a,
                 '    void:triples %d .' % G.per_parte_prop[parte, pred]]
+    mapping = sum(1 for sog, po in G.per.items() if sog.startswith('indice:') for p, o in po
+                  if p.startswith('skos:') and p.endswith('Match') and isinstance(o, str) and o.startswith('voce:'))
+    out += ['vp:indice-dizionario a void:Linkset ;',
+            '    void:linkPredicate skos:mappingRelation ;',
+            '    dcterms:description "Le voci e sottovoci degli indici (note, temi) allineate alle voci del Dizionario '
+            '(skos:closeMatch, broadMatch, narrowMatch, relatedMatch; tools/ontologia/allineamenti.tsv)."@it ;',
+            '    void:subjectsTarget vp:paratesto ;',
+            '    void:objectsTarget vp:dizionario ;',
+            '    void:triples %d .' % mapping]
     return out
 
 
 # ---------------------------------------------------------------- checks
 
-def checks(G, ont, data, coll, dz, passaggi, P):
+def checks(G, ont, data, coll, dz, passaggi, P, I):
     from rdflib import RDF, RDFS, OWL, URIRef
     err = []
     dichiarati = {str(t)[len(BJ):]: set(ont.objects(t, RDF.type)) for t in ont.subjects(RDF.type, None)
@@ -1608,7 +1992,7 @@ def checks(G, ont, data, coll, dz, passaggi, P):
                 err.append('bj:%s: %s without it/en' % (name, p.n3(ont.namespace_manager)))
     rng = {str(t)[len(BJ):]: str(ont.value(URIRef(BJ + str(t)[len(BJ):]), RDFS.range) or '')
            for t in ont.subjects(RDF.type, OWL.DatatypeProperty) if str(t).startswith(BJ)}
-    attesi = {'i': 'integer', 'b': 'boolean', 'it': 'langString', 's': 'string'}
+    attesi = dict({'i': 'integer', 'b': 'boolean', 's': 'string', 'd': 'decimal'}, **{x: 'langString' for x in LINGUE})
     usati, nostri = Counter(), set(G.per)
     for sog, po in G.per.items():
         for p, o in po:
@@ -1644,7 +2028,7 @@ def checks(G, ont, data, coll, dz, passaggi, P):
                   ParagrafoVoce=sum(len(v.get('paragraphs', [])) for v in dz['voci']),
                   CollegamentoVoce=len(dz['links']), Dizionario=1)
     plinks = link_paratesto(P)
-    attese['Citazione'] += len(plinks)
+    attese['Citazione'] += len(plinks) + len(I['links'])
     attese['Paragrafo'] += sum(len(x['paragraphs']) for x in P['testi'])
     attese.update(Edizione=1, Stampa=len(P['edizione']['printings']), TestoPreliminare=len(P['testi']),
                   Canone=len(P['canoni']), GruppoCanone=sum(len(c['groups']) for c in P['canoni']),
@@ -1654,18 +2038,22 @@ def checks(G, ont, data, coll, dz, passaggi, P):
                   VoceIndice=sum(len(ix['voci']) + sum(len(v['sub']) for v in ix['voci']) for ix in P['indici']),
                   TavolaCronologica=1, SezioneCronologia=len(P['cronologia']['sections']),
                   EventoCronologia=len(P['cronologia']['voci']), TavolaGenealogica=1, PersonaStorica=len(P['dinastie']),
-                  LetteraAcrostica=sum(len(v.get('acrostic', [])) for v in data['verses']))
+                  LetteraAcrostica=sum(len(v.get('acrostic', [])) for v in data['verses']),
+                  Allineamento=len(I['allineamenti']), Datazione=len(I['datazioni']),
+                  Versione=len(I['testimoni']['versioni']), Mese=len(I['mesi']), Festa=len(I['feste']),
+                  Unita=len(I['misure']), Carta=len(I['carte']), Intervento=len(I['interventi']),
+                  SchemaNumerazione=len(I['schemi']), Calendario=1, TavolaMisure=1)
     attese = {'bj:' + k: n for k, n in attese.items()}
     autori = {x['author']['id'] for x in P['testi'] if x['author']} | {P['edizione']['direction'][0],
                                                                         P['edizione']['editor'][0]}
-    attese['foaf:Person'] = len(dz['meta']['authors']) + len(DIZIONARIO['traduttori']) + len(autori)
+    attese['foaf:Person'] = len(dz['meta']['authors']) + len(DIZIONARIO['traduttori']) + len(autori) + 1   # + the curator
     attese['schema:Person'] = len(P['dinastie'])
     for k, n in attese.items():
         if tipi[k] != n:
             err.append('%s: %d resources, %d in the JSON' % (k, tipi[k], n))
     corrette = [dict(id=l['id'] + ' (corrected)', **{k: l['correction'][k] for k in ('ranges', 'targets')})
                 for l in plinks if l.get('correction')]
-    for l in coll['links'] + dz['citations'] + plinks + corrette:
+    for l in coll['links'] + dz['citations'] + plinks + corrette + I['links']:
         if l.get('kind') == 'note-label' and (l['scope'] == 'book' or l['scope'] == 'chapter' and l['target_chapters']):
             continue                            # targets chapters or the book, not passages
         got = set(v for a, z in l['ranges'] for v in passaggi.fatti[passaggio(a, z)])
@@ -1689,6 +2077,11 @@ def main(a):
     B = R.Bibbia(data)
     books = {bk['osis']: bk for bk in data['books']}
     order = {v['id']: v['order'] for v in data['verses']}
+    conta_minuscole(data)
+    I0 = json.load(open(INTEGRAZIONE, encoding='utf-8')) if os.path.exists(INTEGRAZIONE) else {'testimoni': {'versioni': []}}
+    for v in I0['testimoni']['versioni']:
+        for q in v['qualificatori']:
+            QUALIFICATORI[q] = iri('versione', v['id'])
     G = Grafo()
     struttura(G, data)
     divisioni_e_pericopi(G, data, order)
@@ -1705,8 +2098,17 @@ def main(a):
     if not os.path.exists(PARATESTO):
         sys.exit('%s is missing: run tools/ontologia/paratesto.py first' % os.path.relpath(PARATESTO, C))
     P = json.load(open(PARATESTO, encoding='utf-8'))
-    paratesto(G, P, passaggi)
-    err, tipi, usati = checks(G, ont, data, coll, dz, passaggi, P)
+    if not os.path.exists(INTEGRAZIONE):
+        sys.exit('%s is missing: run tools/ontologia/integrazione.py first' % os.path.relpath(INTEGRAZIONE, C))
+    I = json.load(open(INTEGRAZIONE, encoding='utf-8'))
+    prima = {}
+    for v in data['verses']:
+        prima.setdefault(v['book'], v['page'])
+    pg = paratesto(G, P, passaggi, prima)
+    tipi_link = {l['id']: l['kind'] for l in links}
+    tipi_link.update((l['id'], l['kind']) for l in link_paratesto(P) + I['links'])
+    integrazione(G, I, P, dz, data, passaggi, pg, tipi_link)
+    err, tipi, usati = checks(G, ont, data, coll, dz, passaggi, P, I)
     scrivi(G)
     err += void(G, tipi)
     with open(CONTESTO, 'w', encoding='utf-8') as f:
@@ -1715,10 +2117,10 @@ def main(a):
     if not quiet:
         print('resources: ' + ', '.join('%s %d' % (k, n) for k, n in tipi.most_common()))
         print('bj: properties: ' + ', '.join('%s %d' % kv for kv in usati.most_common() if kv[0][3].islower()))
-    print('triples: %d (%d subjects, %d passages; Bible %d, dictionary %d, front matter and appendices %d triples); '
-          '%s %.1f MB, %s %.1f MB; %.1f s' % (
+    print('triples: %d (%d subjects, %d passages; Bible %d, dictionary %d, front matter and appendices %d, links '
+          'between the parts and corrections %d triples); %s %.1f MB, %s %.1f MB; %.1f s' % (
         len(G), len(G.per), len(passaggi.fatti), G.per_parte['bibbia'], G.per_parte['dizionario'],
-        G.per_parte['paratesto'], os.path.relpath(TTL, C),
+        G.per_parte['paratesto'], G.per_parte['integrazione'], os.path.relpath(TTL, C),
         os.path.getsize(TTL) / 1e6, os.path.relpath(NT, C), os.path.getsize(NT) / 1e6, time.time() - t0))
     for e in err[:30]:
         print('ERROR  ' + e)

@@ -50,6 +50,12 @@ INDICE_NOTE = [
                                                                      notes=['note:Josh.14.6']))),
     ('Emmanuele', 'Is 7,10', dict(targets=['Isa.7.10'], correction=dict(raw='Is 7,14', targets=['Isa.7.14']))),
     ('Legge', 'Mt 5,11', dict(targets=['Matt.5.11'], correction=dict(raw='Mt 5,17', notes=['note:Matt.5.17']))),
+    # the four the graph exposed (revisione R2-04, read on PDF 3032-3039): the note is at the next verse
+    ('Gàlgala (gilgāl)', 'Os 9,14', dict(targets=['Hos.9.14'], nota='rimandi',
+                                         correction=dict(raw='Os 9,15', targets=['Hos.9.15'], notes=['note:Hos.9.15']))),
+    ('Decima', 'Eb 7,3', dict(targets=['Heb.7.3'], correction=dict(raw='Eb 7,4', notes=['note:Heb.7.4']))),
+    ('Martire', 'At 7,57', dict(targets=['Acts.7.57'], correction=dict(raw='At 7,58', notes=['note:Acts.7.58']))),
+    ('Scritture', '1Ts 5,25', dict(targets=['1Thess.5.25'], correction=dict(raw='1Ts 5,27', notes=['note:1Thess.5.27']))),
 ]
 INDICE_TEMI = [
     ('Adorazione', 'Gv 2,38', dict(status='unresolved', reason='no verse Gv 2,38 (chapter has 25)')),
@@ -122,6 +128,7 @@ def test_indici():
 # ---- the chronology: entry -> (date as printed, start, end, circa)
 DATE = {
     133: ('680–669', -680, -669, False),          # the one span in parentheses: a reign
+    161: ('sett. 605–562', -605, -562, False),    # a month before the span (R2-23: Nabucodònosor, query 22)
     13: ('2030–1720 ca.', -2030, -1720, True),
     40: ('1200–1025 ca.', -1200, -1025, True),
     229: ('400 ca.', -400, -400, True),
@@ -235,7 +242,37 @@ def test_acrostici():
     assert not bad, '\n'.join(bad)
 
 
-TESTS = [test_indici, test_cronologia, test_preliminari, test_dinastie, test_acrostici]
+def test_testi():
+    """The labels of the indices hold no word broken by a line-end hyphen ("secondo la testimo- nianza",
+    R1 F1: a hyphen at a page break, \\pag inside the word), and verifica_rdf.testi, the check of the
+    literals of the graph, finds such a word, LaTeX residue and spaces (revisione R2-06)."""
+    import re
+    P, _ = dati()
+    rotte = [(v['lemma'], s[k]) for x in P['indici'] for v in x['voci'] for s in v.get('sub', [])
+             for k in ('label', 'name', 'html') if re.search(r'[a-zà-ù]- [a-zà-ù]', s.get(k) or '')]
+    assert not rotte, rotte[:5]
+    temi = ' '.join(s['label'] for x in P['indici'] if x['id'] == 'temi' for v in x['voci'] for s in v['sub'])
+    for w in ('testimonianza di Giovanni', 'battesimo del Battista', 'mediante la morte di Cristo',
+              'salvatore della chiesa'):
+        assert w in temi, w
+    from rdflib import Graph, Literal, URIRef
+    import verifica_rdf as V
+    g = Graph()
+    base = 'https://massimo-nocentini.github.io/bibbia-gerusalemme/id/'
+    lab = URIRef(V.PREFISSI['skos'] + 'prefLabel')
+    g.add((URIRef(base + 'indice/temi/voce/49/6'), lab, Literal('secondo la testimo- nianza di Giovanni')))
+    g.add((URIRef(base + 'x/1'), lab, Literal('\\emph{x}')))
+    g.add((URIRef(base + 'x/2'), lab, Literal('due  spazi')))
+    g.add((URIRef(base + 'x/3'), lab, Literal('(aperta')))
+    g.add((URIRef(base + 'x/4'), lab, Literal('Pietra-memoriale (giusta)')))
+    g.add((URIRef(base + 'x/5'), URIRef(V.PREFISSI['dcterms'] + 'title'), Literal('b) dell’assemblea d’Israele')))
+    err = V.testi(g, True)
+    got = sorted((e.split(' ', 1)[0], e.split(': ')[1].split(' not')[0]) for e in err)
+    assert got == [('indice/temi/voce/49/6', 'a line-end hyphen left in a word'), ('x/1', 'LaTeX residue'),
+                   ('x/2', 'two spaces'), ('x/3', '()')], got
+
+
+TESTS = [test_indici, test_cronologia, test_preliminari, test_dinastie, test_acrostici, test_testi]
 
 
 def main(a):

@@ -1,0 +1,32 @@
+# Erode Antipa: i versetti che lo nominano (bj:nominaPersona, tabella rivista persone.tsv), per libro,
+# e le voci della tavola cronologica che lo riguardano.
+# Herod Antipas: the verses naming him, by book, and the chronology entries about him.
+PREFIX bj: <https://massimo-nocentini.github.io/bibbia-gerusalemme/ontologia#>
+PREFIX verso: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/verso/>
+PREFIX libro: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/libro/>
+PREFIX indice: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/indice/>
+PREFIX voce: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/voce/>
+PREFIX cronologia: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/cronologia/>
+PREFIX dinastia: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/dinastia/>
+PREFIX manoscritto: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/manoscritto/>
+PREFIX misura: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/misura/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX oa: <http://www.w3.org/ns/oa#>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+
+SELECT ?dove ?quanti ?versetti WHERE {
+  {
+    SELECT ("versetti" AS ?dove) ?libro (COUNT(?v) AS ?quanti) (GROUP_CONCAT(?l; separator="; ") AS ?versetti) WHERE {
+      ?v bj:nominaPersona dinastia:P23 ; rdfs:label ?l ; bj:inLibro/bj:ordine ?libro .
+    } GROUP BY ?libro
+  } UNION {
+    SELECT ("cronologia" AS ?dove) (0 AS ?libro) (COUNT(?e) AS ?quanti) (GROUP_CONCAT(?d; separator="; ") AS ?versetti) WHERE {
+      ?e bj:riguardaPersona dinastia:P23 ; dcterms:identifier ?d .
+    }
+  }
+}
+ORDER BY ?dove ?libro

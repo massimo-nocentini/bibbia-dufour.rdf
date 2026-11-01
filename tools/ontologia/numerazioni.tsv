@@ -1,0 +1,114 @@
+# Numberings of the Bible other than the CEI 2008 (the text of this edition), and how a reference
+# printed in one of them reads in the CEI. One table for the whole project (R2-21, revisione F1):
+#   tools/ontologia/riferimenti.py  the rows with a "fonte": one reference as printed in the notes, margins
+#                                   and introductions of the BJ (link id source, the reference as printed,
+#                                   the n-th so printed in that source or 0 for all)
+#   tools/ontologia/dufour.py       the rows of the scheme "dizionario": the older verse division of
+#                                   Sirach 34-36 that the Dizionario di Teologia Biblica cites (the Bible de
+#                                   Jérusalem of its French original, as the NAB 1970), verse by verse
+# schema   volgata (the Vulgate), lxx (the Greek psalter: psalm numbers of the LXX, verse numbers
+#          without the title), bj (the verse numbers of the BJ where they differ from the CEI),
+#          dizionario (above)
+# libro    the CEI siglum of the book the printed numbers belong to
+# stampato the reference as printed (as riferimenti.py reads it: its "raw"), or a verse of the scheme
+# cei      what it is in the CEI: a reference with its siglum (the link goes there, status resolved,
+#          bj:interpretazione "numerazione: ..."); "=" the printed numbers are this same verse's
+#          number in that scheme (status numbering, no link, like the bare numbers of the margins);
+#          "—" no CEI counterpart (status unresolved, the reason said)
+# fonte, n the source of the reference (riferimenti.py) and the n-th so printed there (0: all)
+# motivo   why (the evidence: the text of the verses, the scheme)
+# A row of riferimenti.py that matches no reference is an error (test_riferimenti.py).
+schema	libro	stampato	cei	fonte	n	motivo
+lxx	Sal	Sal 103,12 (LXX)	Sal 104,12	mref:Matt.13.32_1	0	the Greek psalter: Ps 103 LXX is Ps 104; «In alto abitano gli uccelli del cielo» (Ps 104,12), the birds nesting in the mustard tree of Mt 13,32 (Ps 103,12 CEI is «quanto dista l'oriente dall'occidente»)
+lxx	Sal	54,20 (LXX)	Sal 55,21	mref:Matt.26.23_1	0	the Greek psalter: Ps 54 LXX is Ps 55, its v 20 without the title is v 21: «Ognuno ha steso la mano contro i suoi amici», the hand in the dish of Mt 26,23 (Ps 54 CEI has 9 verses)
+lxx	Sal	68,35 (LXX)	Sal 68,36	mref:2Thess.1.10_1	0	verse numbered without the title: «θαυμαστὸς ὁ θεὸς ἐν τοῖς ἁγίοις αὐτοῦ» (Ps 67,36 LXX = Ps 68,36), «glorificato nei suoi santi … mirabile» of 2Ts 1,10 (Ps 68,35 CEI is «Riconoscete a Dio la sua potenza»)
+lxx	Sal	Sal 9–10,32+	Sal 10,11+	mref:Ezek.9.9_2	0	the Greek psalter: Ps 9–10 are one psalm (Ps 9 LXX), its v 32 is Ps 10,11 «Dio dimentica, nasconde il volto, non vede più nulla», Ez 9,9 «il Signore non vede»
+volgata	Gdt	13,27–28	=	mref:Jdt.14.5_1	0	the margin prints the Vulgate number of this passage: Jdt 13,27–28 Vulgate is Achior's conversion, Gdt 14,5–10 (the bare numbers below it are the same run)
+volgata	Gdt	vv 20–21	—	note:Jdt.13.16	0	«Al v 16 corrispondono i vv 20–21 della volg.»: verses of the Vulgate, no CEI (Greek) counterpart
+volgata	Es	21,1–22,20	Es 21,1–22,19	note:Exod.20.22	0	the note numbers Es 22 as the Vulgate (its 22,1 is the CEI 21,37): the civil and penal law ends at 22,19 «Colui che offre un sacrificio agli dèi … sarà votato allo sterminio»
+volgata	Es	22,21–27	Es 22,20–26	note:Exod.20.22	0	the same numbering: the social morality, 22,20 «Non molesterai il forestiero» to 22,26
+volgata	Es	22,28–31	Es 22,27–30	note:Exod.20.22	0	the same numbering: the rules for worship, 22,27 «Non bestemmierai Dio» to 22,30 (Es 22 CEI has 30 verses)
+volgata	2Mac	12,43–46	2Mac 12,43–45	note:Ezek.37.10	0	the Vulgate divides 2Mac 12 in 46 verses (its 46 «Sancta ergo et salubris est cogitatio…» is the end of the CEI 12,45; 2Mac 12 CEI has 45, and the BJ's own note says 12,38–45)
+volgata	2Mac	12,43–46	2Mac 12,43–45	note:Matt.22.32	0	the same (2Mac 12 in 46 verses)
+volgata	2Mac	2Mac 12,38–46	2Mac 12,38–45	note:Sir.7.33	0	the same (2Mac 12 in 46 verses)
+volgata	At	19,23–41	At 19,23–40	intro-atti.9	0	the Vulgate sets «Et cum haec dixisset, dimisit ecclesiam» as v 41; in the CEI it closes 19,40 («Detto questo, sciolse l'assemblea»); At 19 CEI has 40 verses
+bj	Sir	36,29	=	note:Sir.36.26	0	«per BJ: 36,29»: the number of this verse in the BJ (CEI 36,26 = BJ 36,29)
+bj	Sir	36,27–31	Sir 36,24–28	intro-siracide.14	0	the BJ numbering of Sir 36 (CEI 36,26 = BJ 36,29, the note on 36,26; the chapter ends at 36,28 CEI = 36,31 BJ): the wife, 36,24–28
+lxx	Sal	Sal 151	—	intro-salmi.26	0	extra-canonical: the Greek Ps 151 («Il salterio greco conta 151 salmi»), not in the CEI canon
+dizionario	Sir	34,1	34,1			
+dizionario	Sir	34,2	34,2			
+dizionario	Sir	34,3	34,3			
+dizionario	Sir	34,4	34,4			
+dizionario	Sir	34,5	34,5			
+dizionario	Sir	34,6	34,6			
+dizionario	Sir	34,7	34,7			
+dizionario	Sir	34,8	34,8			
+dizionario	Sir	34,9	34,9			
+dizionario	Sir	34,10	34,10–11			
+dizionario	Sir	34,11	34,12			
+dizionario	Sir	34,12	34,13			
+dizionario	Sir	34,13	34,14–15			
+dizionario	Sir	34,14	34,16			
+dizionario	Sir	34,15	34,17–18			
+dizionario	Sir	34,16	34,19			
+dizionario	Sir	34,17	34,20			
+dizionario	Sir	34,18	34,21–22			
+dizionario	Sir	34,19	34,23			
+dizionario	Sir	34,20	34,24			
+dizionario	Sir	34,21	34,25			
+dizionario	Sir	34,22	34,26–27			
+dizionario	Sir	34,23	34,28			
+dizionario	Sir	34,24	34,29			
+dizionario	Sir	34,25	34,30			
+dizionario	Sir	34,26	34,31			
+dizionario	Sir	35,1	35,1–2			
+dizionario	Sir	35,2	35,3–4			
+dizionario	Sir	35,3	35,5			
+dizionario	Sir	35,4	35,6			
+dizionario	Sir	35,5	35,7			
+dizionario	Sir	35,6	35,8			
+dizionario	Sir	35,7	35,9			
+dizionario	Sir	35,8	35,10			
+dizionario	Sir	35,9	35,11			
+dizionario	Sir	35,10	35,12			
+dizionario	Sir	35,11	35,13			
+dizionario	Sir	35,12	35,14			
+dizionario	Sir	35,13	35,15–16			
+dizionario	Sir	35,14	35,17			
+dizionario	Sir	35,15	35,18–19			
+dizionario	Sir	35,16	35,20			
+dizionario	Sir	35,17	35,21			
+dizionario	Sir	35,18	35,22			
+dizionario	Sir	35,19	35,22			
+dizionario	Sir	35,20	35,23			
+dizionario	Sir	35,21	35,23			
+dizionario	Sir	35,22	35,24			
+dizionario	Sir	35,23	35,25			
+dizionario	Sir	35,24	35,26			
+dizionario	Sir	36,1	36,1–2			
+dizionario	Sir	36,2	36,3			
+dizionario	Sir	36,3	36,4			
+dizionario	Sir	36,4	36,5			
+dizionario	Sir	36,5	36,6–7			
+dizionario	Sir	36,6	36,8–9			
+dizionario	Sir	36,7	36,10			
+dizionario	Sir	36,8	36,11			
+dizionario	Sir	36,9	36,12			
+dizionario	Sir	36,10	36,13			
+dizionario	Sir	36,11	36,14			
+dizionario	Sir	36,12	36,15			
+dizionario	Sir	36,13	36,16			
+dizionario	Sir	36,14	36,17			
+dizionario	Sir	36,15	36,18			
+dizionario	Sir	36,16	36,19			
+dizionario	Sir	36,17	36,19			
+dizionario	Sir	36,18	36,20			
+dizionario	Sir	36,19	36,21			
+dizionario	Sir	36,20	36,22			
+dizionario	Sir	36,21	36,23			
+dizionario	Sir	36,22	36,24			
+dizionario	Sir	36,23	36,25			
+dizionario	Sir	36,24	36,26			
+dizionario	Sir	36,25	36,27			
+dizionario	Sir	36,26	36,28			
+dizionario	Sir	36,27	36,28			

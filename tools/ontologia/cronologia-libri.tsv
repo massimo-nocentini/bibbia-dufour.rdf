@@ -1,0 +1,46 @@
+# The entries of the chronological table that date a book or the ministry of a prophet (session F2, from
+# R2-15; read one by one). voce: the entry number; libri: OSIS codes; tipo: composizione (the book is
+# written, edited or translated then), ministero (the prophet or apostle is active then), evento (the end
+# or the events the book narrates). The entries with Bible references also date the books they cite
+# (kind «citato», computed by integrazione.py, not listed here).
+voce	libri	tipo	nota
+96	Amos Hos	ministero	750 ca.: Amos e poco dopo Osea
+104	Isa	ministero	740 Vocazione di Isaia
+107	Mic	ministero	Inizi di Michea
+126	Isa	ministero	Ministero di Isaia
+145	Zeph	ministero	630 ca.: Sofonia
+148	Jer	ministero	627: vocazione di Geremia
+152	Josh Judg 1Sam 2Sam 1Kgs 2Kgs	composizione	prima redazione dei libri: Giosuè, Giudici, Samuele, Re
+155	Nah	ministero	612 ca.: Naum
+172	Hab	ministero	Il profeta Abacuc (?)
+177	Jer Ezek	ministero	Geremia e i falsi profeti. Ezechiele predice la rovina di Gerusalemme
+207	Hag Zech	ministero	I profeti Aggeo e Zaccaria
+210	Obad	composizione	Abdia
+219	Mal	ministero	Sotto Serse e Artaserse, Malachia
+219	Job Prov Song Ruth Ps	composizione	e forse: Giobbe, Proverbi, Cantico, Rut e numerosi Salmi
+231	Gen Exod Lev Num Deut	composizione	La legislazione del Pentateuco, unificata da Esdra
+238	Joel	ministero	il profeta Gioele
+238	1Chr 2Chr Ezra Neh	composizione	l’opera del Cronista: libri delle Cronache, Esdra e Neemia
+238	Zech	composizione	Del tempo di Alessandro: Zc 9-14
+246	Jonah Tob	composizione	Giona, Tobia
+263	Eccl Esth EsthGr	composizione	Forse i libri dell’Ecclesiaste o Qoèlet e di Ester
+285	Sir	composizione	Gesù ben Sira compone l’Ecclesiastico o Siracide
+305	Dan	composizione	Libro di Daniele
+313	2Macc	composizione	Giasone di Cirene scrive l’opera che diventerà il secondo libro dei Maccabei
+340	1Macc	evento	Fine del primo libro dei Maccabei
+356	Jdt	composizione	Tra il 100 e il 50, il libro di Giuditta
+364	Wis	composizione	50 ca., ad Alessandria: la Sapienza
+386	Wis	composizione	Verso il 30 a Alessandria la Sapienza
+477	Matt	composizione	il Matteo aramaico
+481	1Thess 2Thess	composizione	nel 50, le lettere ai Tessalonicesi
+492	Phil Phlm	composizione	Dal 53, lettere ai Filippesi e a Filèmone
+493	1Cor Gal	composizione	prima lettera ai Corinzi; lettera ai Galati?
+498	Rom	composizione	lettera ai Romani
+501	Jas	composizione	La sua lettera ai Giudei della dispersione
+510	Col Eph 2Tim	composizione	lettere ai Colossesi (?), agli Efesini, a Timoteo (2Tm)
+517	1Pet Mark	composizione	prima lettera di Pietro (?); Vangelo di Marco (?)
+519	Matt Luke Acts	composizione	Vangelo greco di Matteo, Vangelo di Luca e Atti degli apostoli
+526	Heb	composizione	lettera agli Ebrei (?)
+556	Jude 2Pet	composizione	la lettera di Giuda; poi la seconda di Pietro
+560	Rev	composizione	Edizione definitiva dell’Apocalisse
+561	John 1John 2John 3John	composizione	Vangelo di Giovanni; poi la sua prima lettera (forse la terza e la seconda sono anteriori)

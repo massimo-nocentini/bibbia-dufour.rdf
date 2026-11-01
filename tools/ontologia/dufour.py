@@ -79,20 +79,21 @@ PROSA = re.compile(r'\b(%s)\s*$' % '|'.join(sorted(map(re.escape, NOMI_PROSA), k
 # segni' = 36,6-7; 36,10 'raduna le tribù' = 36,13; 36,11 = 36,14; 36,1-17 the prayer =
 # 36,1-19; 36,20 the perverse heart = 36,22; 36,23 'bontà e dolcezza' = 36,25; 36,24 the
 # wife, a helper and a pillar = 36,26); between them, the verses the CEI splits or joins.
-SIRACIDE = {
-    34: {**{n: (n, n) for n in range(1, 10)},
-         10: (10, 11), 11: (12, 12), 12: (13, 13), 13: (14, 15), 14: (16, 16), 15: (17, 18), 16: (19, 19),
-        17: (20, 20), 18: (21, 22), 19: (23, 23), 20: (24, 24), 21: (25, 25), 22: (26, 27), 23: (28, 28),
-        24: (29, 29), 25: (30, 30), 26: (31, 31)},
-    35: {1: (1, 2), 2: (3, 4), 3: (5, 5), 4: (6, 6), 5: (7, 7), 6: (8, 8), 7: (9, 9), 8: (10, 10), 9: (11, 11),
-         10: (12, 12), 11: (13, 13), 12: (14, 14), 13: (15, 16), 14: (17, 17), 15: (18, 19), 16: (20, 20),
-         17: (21, 21), 18: (22, 22), 19: (22, 22), 20: (23, 23), 21: (23, 23), 22: (24, 24), 23: (25, 25),
-         24: (26, 26)},
-    36: {1: (1, 2), 2: (3, 3), 3: (4, 4), 4: (5, 5), 5: (6, 7), 6: (8, 9), 7: (10, 10), 8: (11, 11), 9: (12, 12),
-         10: (13, 13), 11: (14, 14), 12: (15, 15), 13: (16, 16), 14: (17, 17), 15: (18, 18), 16: (19, 19),
-         17: (19, 19), 18: (20, 20), 19: (21, 21), 20: (22, 22), 21: (23, 23), 22: (24, 24), 23: (25, 25),
-         24: (26, 26), 25: (27, 27), 26: (28, 28), 27: (28, 28)},
-}
+def _siracide():
+    """{chapter: {older verse: (first, last) CEI verse}} from the rows of the scheme "dizionario" of
+    tools/ontologia/numerazioni.tsv (the numberings of the whole project, shared with riferimenti.py)."""
+    out = {}
+    for r in R.numerazioni('dizionario'):
+        c, v = map(int, r['stampato'].split(','))
+        m = re.fullmatch(r'(\d+),(\d+)(?:–(\d+))?', r['cei'])
+        if r['libro'] != 'Sir' or not m or int(m.group(1)) != c:
+            raise ValueError('numerazioni.tsv: %r' % r)
+        a = int(m.group(2))
+        out.setdefault(c, {})[v] = (a, int(m.group(3) or a))
+    return out
+
+
+SIRACIDE = _siracide()
 # rows read by hand: citation id -> (raw as printed, fields of the row as read, why)
 CORREZIONI = {
     'forza#23': ('Ab 3', dict(book='Abd', chapter='1', verse='3'),
@@ -185,8 +186,10 @@ def stella(testo, s):
     """(drop, word start, word end, replacement) of a '*word' at offset s: '*' goes, and
     the spaces after it when it follows a space or an opening sign ('* obbedendo',
     '(* lebbra'); glued inside a word it is an apostrophe ('dell*uragano'), except in
-    'onni*potente', where it only marks the link."""
+    'onni*potente', where it only marks the link. After a compound's hyphen ('pietra- *memoriale',
+    'Cristo- *agnello', 'diogmòs- *persecuzione') the space before it goes too: 'pietra-memoriale'."""
     n = s + 1
+    prima = s - 1 if s >= 3 and testo[s - 1] == ' ' and testo[s - 2] == '-' and testo[s - 3].isalpha() else s
     if s == 0 or testo[s - 1] in ' («“"':
         while n < len(testo) and testo[n] == ' ':
             n += 1
@@ -194,7 +197,7 @@ def stella(testo, s):
     if s > 0 and testo[s - 1].isalpha() and n < len(testo) and testo[n].isalpha() and \
             not testo[:s].endswith('onni'):
         rimpiazzo = "'"
-    return set(range(s, n)), n, rimpiazzo
+    return set(range(prima, n)), n, rimpiazzo
 
 
 def componi(testo, ricco, stelle):

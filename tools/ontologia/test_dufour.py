@@ -201,6 +201,15 @@ def test_testo():
     assert titolo['title_html'] == 'Acque e <a class="voce" data-voce="retribuzione">retribuzione</a> temporale'
     a, b = c['by_id']['fedelta#71'], c['by_id']['fedelta#72']
     assert (a['para'], a['offset'], a['length']) == (b['para'], b['offset'], b['length'])
+    # '- *word' after a compound's hyphen: no space left ("diogmòs- persecuzione", revisione R2-03)
+    for slug, ok in (('prova-tentazione', 'diogmòs-persecuzione'), ('pastore-e-gregge', 'Cristo-agnello'),
+                     ('pietra', 'pietra-memoriale')):
+        testo = ' '.join(q['text'] for q in c['voci'][slug]['paragraphs'])
+        assert ok in testo and ok.replace('-', '- ') not in testo, (slug, ok)
+    assert '<a class="voce" data-voce="persecuzione">persecuzione</a>' in ' '.join(
+        q['html'] for q in c['voci']['prova-tentazione']['paragraphs'])
+    # a spaced dash before a link keeps its spaces ("condannano - Satana")
+    assert 'condannano - Satana' in ' '.join(q['text'] for q in c['voci']['castighi']['paragraphs'])
 
 
 def test_voci():
@@ -244,6 +253,11 @@ def test_numerazione():
         assert d[sig]['evidence']['quotations']['cited'] > 5 and not d[sig]['evidence']['quotations'].get('other')
     s = d['Sir']['evidence']['chapters_34_36']['citations']
     assert s['converted'] > 2 * s.get('printed', 0), s
+    # the table of the older division of Sirach 34-36 is the scheme "dizionario" of numerazioni.tsv,
+    # shared with riferimenti.py (revisione R2-21): 26 + 24 + 27 verses, the anchors of the comment
+    assert [len(D.SIRACIDE[k]) for k in (34, 35, 36)] == [26, 24, 27]
+    assert D.SIRACIDE[34][18] == (21, 22) and D.SIRACIDE[35][2] == (3, 4) and D.SIRACIDE[36][24] == (26, 26)
+    assert D.SIRACIDE[36][5] == (6, 7) and D.SIRACIDE[36][27] == (28, 28)
 
 
 def test_indice():

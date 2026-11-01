@@ -1,7 +1,9 @@
-# La tavola cronologica fra il 600 e il 530 a.C. (l'esilio): data come stampata, colonna,
-# testo e versetti citati; gli anni sono negativi prima di Cristo.
-# The chronological table between 600 and 530 BC (the exile): printed date, column, text and
-# verses cited; years are negative before Christ.
+# La tavola cronologica fra il 600 e il 530 a.C. (l'esilio): le voci i cui anni toccano quel
+# periodo (anche i regni che lo attraversano: Nabucodònosor 605–562), in ordine di anno, colonna e
+# posizione; data come stampata, colonna, testo e versetti citati; anni negativi prima di Cristo.
+# The chronological table between 600 and 530 BC (the exile): the entries whose years overlap it
+# (also the reigns across it: Nebuchadnezzar 605-562), by year, column and position; printed date,
+# column, text and verses cited; years are negative before Christ.
 PREFIX bj: <https://massimo-nocentini.github.io/bibbia-gerusalemme/ontologia#>
 PREFIX verso: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/verso/>
 PREFIX libro: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/libro/>
@@ -19,9 +21,9 @@ PREFIX foaf: <http://xmlns.com/foaf/0.1/>
 SELECT ?data ?inizio ?fine ?colonna (SUBSTR(?testo, 1, 80) AS ?voce) (GROUP_CONCAT(?rif; separator=" | ") AS ?riferimenti) WHERE {
   ?e a bj:EventoCronologia ; bj:annoInizio ?inizio ; bj:annoFine ?fine ; bj:datazione ?data ; bj:testo ?testo ;
      bj:colonna/skos:prefLabel ?colonna ; bj:riga ?riga ; bj:ordine ?o .
-  FILTER (?inizio >= -600 && ?fine <= -530 && lang(?colonna) = "it")
+  FILTER (?inizio <= -530 && ?fine >= -600 && lang(?colonna) = "it")
   OPTIONAL { ?c bj:daEvento ?e ; bj:testo ?r0 }
   BIND (COALESCE(?r0, "") AS ?rif)
 }
 GROUP BY ?data ?inizio ?fine ?colonna ?testo ?riga ?o
-ORDER BY ?riga ?o
+ORDER BY ?inizio ?colonna ?o

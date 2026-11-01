@@ -1,0 +1,29 @@
+# Le misure e le monete della tavola delle appendici: valore (con l'unità QUDT tenuta come dato),
+# rapporto stampato all'unità di base, e quanti versetti le nominano.
+# The measures and coins: value (with the QUDT unit kept as data), printed ratio to the base, verses naming them.
+PREFIX bj: <https://massimo-nocentini.github.io/bibbia-gerusalemme/ontologia#>
+PREFIX verso: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/verso/>
+PREFIX libro: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/libro/>
+PREFIX indice: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/indice/>
+PREFIX voce: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/voce/>
+PREFIX cronologia: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/cronologia/>
+PREFIX dinastia: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/dinastia/>
+PREFIX manoscritto: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/manoscritto/>
+PREFIX misura: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/misura/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX oa: <http://www.w3.org/ns/oa#>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+
+SELECT ?tipo ?nome ?originale ?valore ?unita ?rapporto ?base (COUNT(DISTINCT ?v) AS ?versetti) WHERE {
+  ?u a bj:Unita ; bj:tipoMisura ?tipo ; skos:prefLabel ?nome .
+  OPTIONAL { ?u skos:altLabel ?originale }
+  OPTIONAL { ?u bj:valore ?valore ; bj:unitaQudt ?q BIND (STRAFTER(STR(?q), "unit/") AS ?unita) }
+  OPTIONAL { ?u bj:rapporto ?rapporto ; bj:rapportoA/skos:prefLabel ?base }
+  OPTIONAL { ?v bj:nominaMisura ?u }
+}
+GROUP BY ?tipo ?nome ?originale ?valore ?unita ?rapporto ?base
+ORDER BY ?tipo DESC(?valore)

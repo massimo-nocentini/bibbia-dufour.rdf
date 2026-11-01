@@ -1,0 +1,26 @@
+# I codici e i papiri nominati dalle note (bj:citaTestimone), con quante note li nominano e le prime;
+# e le versioni (TM, LXX, Volgata, ...).
+# The codices and papyri named by the notes, with how many notes name them, and the versions.
+PREFIX bj: <https://massimo-nocentini.github.io/bibbia-gerusalemme/ontologia#>
+PREFIX verso: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/verso/>
+PREFIX libro: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/libro/>
+PREFIX indice: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/indice/>
+PREFIX voce: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/voce/>
+PREFIX cronologia: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/cronologia/>
+PREFIX dinastia: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/dinastia/>
+PREFIX manoscritto: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/manoscritto/>
+PREFIX misura: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/misura/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX oa: <http://www.w3.org/ns/oa#>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+
+SELECT ?testimone ?tipo (COUNT(?n) AS ?note) (SAMPLE(?nl) AS ?esempio) WHERE {
+  ?n bj:citaTestimone ?t ; rdfs:label ?nl .
+  ?t rdfs:label ?testimone ; a ?tipo FILTER (?tipo IN (bj:Manoscritto, bj:Versione))
+}
+GROUP BY ?testimone ?tipo
+ORDER BY DESC(?note) ?testimone

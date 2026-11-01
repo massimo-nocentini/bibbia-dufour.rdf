@@ -733,6 +733,125 @@ try {
   await p.evaluate(() => { location.hash = '#voce/agnello-di-dio/3'; });
   await p.waitForSelector('.dpar.sel');
   await foto(p, '34-voce-scuro');
+  // ------------------------------------------------ session F2: the review R3 (E1-E15) and the links between the parts (E19)
+  const box = async q => { await vai_('#'); await p.fill('#q', q); await p.press('#q', 'Enter'); await p.waitForTimeout(150); return { h: await hash(p), err: await p.$eval('#omni', x => x.querySelector('.errore')?.textContent || '') }; };
+  // E1: numbered sigla glued to the number, E7: more forms
+  const forme = {};
+  for (const [q, atteso] of [['1Cor 13,4', '#1Cor.13.4'], ['1Cor 13', '#1Cor.13'], ['1Sam 3', '#1Sam.3'], ['2Re 2,11', '#2Kgs.2.11'],
+    ['1Gv 4,8', '#1John.4.8'], ['1Mac 1,1', '#1Macc.1.1'], ['1Cor13,4', '#1Cor.13.4'], ['1Cor 13,4-7', '#1Cor.13.4-7'],
+    ['Gv 3 16', '#John.3.16'], ['Giov 3,16', '#John.3.16'], ['Ecclesiaste 3', '#Eccl.3'], ['Eccli 1', '#Sir.1'], ['Lettera di Geremia', '#Bar.6']]) {
+    const r = await box(q);
+    forme[q] = r.h;
+    verifica(`E1/E7: «${q}» nel riquadro`, r.h === atteso, r.h + (r.err ? ' ' + r.err : ''));
+  }
+  const gn = await box('Gn 1,1');
+  verifica('E7: «Gn» porta a Giona e lo dice', gn.h === '#Jonah.1.1' && /Giona/.test(await p.$eval('#vista', x => x.querySelector('.avviso')?.textContent || '')), gn.h);
+  // E3: plurals for a count of 1
+  await vai_('#John.3.16', '#pannello:not([hidden]) .contatori');
+  const cont = await p.$$eval('#pannello .contatori span', xs => xs.map(x => x.textContent.trim()));
+  verifica('E3: «1 nota» nel pannello, non «1 note»', cont.includes('1 nota') && !cont.some(t => /^1 (note|rimandi|citazioni|voci)\b/.test(t)), cont.join(' · '));
+  await vai_('#cerca?q=golgota', '#esito b');
+  const golg = await p.$eval('#esito', x => x.textContent);
+  verifica('E3: riepilogo della ricerca al singolare', !/\b1 note\b|\b1 libri\b|\b1 versetti\b/.test(golg), golg);
+  // E4: not-found pages with their title and message
+  for (const [h, re] of [['#cronologia/99', /Periodo «99» inesistente/], ['#introduzione-generale/xyz', /non presente nell’Introduzione generale/],
+    ['#Gen.51', /capitolo inesistente/], ['#persona/P99', /non è una persona/]]) {
+    await vai_(h, '#vista h1');
+    const r = await p.evaluate(() => [document.title, document.querySelector('#vista .sotto')?.textContent || '']);
+    verifica(`E4: ${h} non trovato, con il suo titolo`, /^Non trovato/.test(r[0]) && re.test(r[1]), r.join(' | '));
+  }
+  // E5: the Appendici tab, its hub, highlighted on the appendix routes; the home order
+  await vai_('#indice-note', '.dvl');
+  verifica('E5: «Appendici» evidenziata su #indice-note', await p.$eval('.schede a.attiva', a => a.dataset.vista) === 'apparati');
+  await p.click('.schede a[data-vista="apparati"]');
+  await p.waitForSelector('#vista .apparato');
+  const hub = await p.$$eval('#vista .apparato', xs => xs.map(a => a.getAttribute('href')));
+  verifica('E5: la pagina #appendici elenca le appendici', ['#indice-note', '#temi', '#cronologia', '#cronologia/dinastie', '#calendario', '#misure', '#carte', '#introduzione-generale'].every(h => hub.includes(h)), hub.join(' '));
+  await foto(p, '60-appendici');
+  await vai_('#', '.apparati');
+  const ordine = await p.evaluate(() => document.querySelector('.apparati').getBoundingClientRect().top < document.querySelector('.testamenti').getBoundingClientRect().top);
+  verifica('E5: in prima pagina le appendici sopra i libri', ordine);
+  // E2: synonyms; E6: verses first, the dictionary box closed, its entry's paragraphs first
+  await vai_('#cerca?q=davide', '#esito b');
+  const dav = await p.evaluate(() => ({ esito: document.querySelector('#esito').textContent, diz: document.querySelector('.bdiz h3 small')?.textContent || '' }));
+  verifica('E2: «davide» trova anche «David» del Dizionario', /anche: david/.test(dav.esito) && /[1-9]/.test(dav.diz), JSON.stringify(dav));
+  await vai_('#cerca?q=amore', '.bdiz');
+  const amore = await p.evaluate(() => ({ chiuso: document.querySelector('details.bdiz') && !document.querySelector('details.bdiz').open,
+    primo: document.querySelector('.bdiz .r.rd a.dove')?.textContent || '' }));
+  verifica('E6: in «Tutto» il Dizionario è un riquadro chiuso, prima i paragrafi della voce AMORE', amore.chiuso && /^Amore/.test(amore.primo), JSON.stringify(amore));
+  // E11: Back to a chapter keeps its scroll position
+  await vai_('#Ps.119', '.testo .v');
+  await p.evaluate(() => window.scrollTo(0, 4000));
+  await p.waitForTimeout(300);
+  await vai_('#voce/legge', '.voce-testo');
+  await p.goBack();
+  await p.waitForSelector('.testo .v');
+  await p.waitForTimeout(250);
+  const y119 = await p.evaluate(() => Math.round(scrollY));
+  verifica('E11: Indietro a Sal 119 ritrova la posizione', y119 > 3500, `y = ${y119}`);
+  // E12: titles that name the page
+  await vai_('#John.3.16', '#pannello:not([hidden])');
+  const t316 = await p.evaluate(() => document.title);
+  await vai_('#cronologia/6', '.cron-tavola');
+  const t6 = await p.evaluate(() => document.title);
+  verifica('E12: titoli con il versetto e il periodo', /^Gv 3,16 · /.test(t316) && /^VI\. Fine del regno di Giuda · Tavola cronologica$/.test(t6), `${t316} | ${t6}`);
+  // E13: one glossary
+  await vai_('#introduzione-generale', '.pre-testo');
+  verifica('E13: «Introduzione generale», non «Pagine iniziali»', await p.evaluate(() => !document.body.textContent.includes('Pagine iniziali') && document.title.startsWith('Introduzione generale')));
+  // E14: no «0» on the index cards
+  await vai_('#indice-note', '.dvl');
+  const zeri = await p.$$eval('.dvl span', xs => xs.filter(x => x.textContent.trim() === '0').length);
+  const agrippa = await p.$$eval('.dvl', xs => xs.find(a => a.textContent.startsWith('Agrippa'))?.querySelector(':scope > span').textContent);
+  verifica('E14: nessuna voce con «0», «Agrippa» dice «v.»', zeri === 0 && agrippa === 'v.', `${zeri} zeri; Agrippa ${agrippa}`);
+  // E15: the note summary names the verse once
+  await vai_('#indice-note/91', '.ix-nota summary');
+  const caleb = await p.$eval('.ix-nota summary .etichetta', x => x.textContent);
+  verifica('E15: «Gs 14,6» una volta sola nella nota dell’indice', !/14,6 14,6/.test(caleb), caleb);
+  // E19: «Anche in» on the index entry, the theme and the dictionary entry
+  await vai_('#indice-note/' + await p.evaluate(() => A.indici.note.find(v => v[2] === 'Amore')[0]), '.voce-ix h1');
+  const anche = await p.$$eval('.anche-in .anche-chip', xs => xs.map(a => [a.getAttribute('href'), a.textContent]));
+  verifica('E19: «Anche in» su Amore (indice delle note): Dizionario e temi', anche.some(([h]) => h === '#voce/amore') && anche.some(([h]) => h.startsWith('#temi/')), JSON.stringify(anche));
+  await foto(p, '61-anche-in-indice');
+  await vai_('#voce/amore', '.voce-testo');
+  const ancheV = await p.$$eval('.anche-in .anche-chip', xs => xs.map(a => a.getAttribute('href')));
+  verifica('E19: «Anche in» sulla voce AMORE: indice delle note e temi', ancheV.some(h => h.startsWith('#indice-note/')) && ancheV.some(h => h.startsWith('#temi/')), ancheV.join(' '));
+  await foto(p, '62-anche-in-voce');
+  // persons: the page, the dynasties' links, the panel section, the index sub-entry
+  await vai_('#persona/P23', '.persona h1');
+  const antipa = await p.evaluate(() => ({ h1: document.querySelector('.persona h1').textContent, versi: document.querySelectorAll('.pers-libro .chip').length,
+    cron: document.querySelectorAll('.persona .elenco a[href^="#cronologia/"]').length, mc: [...document.querySelectorAll('.pers-libro .chip')].some(a => a.getAttribute('href') === '#Mark.6.14') }));
+  verifica('E19: pagina di Erode Antipa: versetti, tavola cronologica', /Erode Antipa/.test(antipa.h1) && antipa.versi >= 20 && antipa.cron >= 4 && antipa.mc, JSON.stringify(antipa));
+  await foto(p, '63-persona');
+  await vai_('#cronologia/dinastie', '.dinastie');
+  verifica('E19: le dinastie portano alle persone', await p.$$eval('.dinastie a.pers-link', xs => new Set(xs.map(a => a.getAttribute('href'))).size) === 34);
+  await vai_('#Matt.2.1', '#pannello:not([hidden])');
+  verifica('E19: il pannello di Mt 2,1 nomina Erode il Grande', await p.$$eval('#pannello .sez.pers .chip', xs => xs.some(a => a.getAttribute('href') === '#persona/P15')));
+  // chronology <-> books
+  await vai_('#cronologia/5', '.cron-tavola');
+  verifica('E19: la voce «750 ca.: Amos e poco dopo Osea» porta ad Am e Os', await p.$eval('#cv96', x => [...x.querySelectorAll('.cron-chips a')].map(a => a.getAttribute('href')).join(' ')) === '#Amos #Hos');
+  await foto(p, '64-cronologia-libri');
+  await vai_('#Amos', '.capitoli');
+  verifica('E19: il libro di Amos «Nella tavola cronologica»', await p.evaluate(() => [...document.querySelectorAll('.h2')].some(x => x.textContent.startsWith('Nella tavola cronologica'))));
+  // codices and versions on the abbreviations page
+  await vai_('#introduzione-generale/abbreviazioni', 'table.abbr');
+  const cit = await p.evaluate(() => [...document.querySelectorAll('table.abbr tr')].filter(tr => tr.querySelector('.citato')).map(tr => [tr.querySelector('.ab-f').textContent, tr.querySelector('.citato summary').textContent]));
+  verifica('E19: versioni e codici «citato in N note»', cit.some(([f, t]) => f === 'LXX' && /\d+ note/.test(t)) && cit.some(([f]) => f.startsWith('P75')), JSON.stringify(cit.slice(0, 6)));
+  await foto(p, '65-abbreviazioni');
+  // calendar, measures, maps
+  await vai_('#calendario', '.festa');
+  verifica('E19: calendario: 12 mesi, 8 feste con i riferimenti', (await p.$$('.calendario-mesi tbody tr')).length === 12 && (await p.$$('.festa')).length === 8 && (await p.$$('.festa .chip')).length > 20);
+  await foto(p, '66-calendario');
+  await vai_('#misure', '.misure-t');
+  verifica('E19: misure e monete con il valore', await p.$eval('#mis-cubito', x => x.textContent.includes('45') && x.textContent.includes('cm')));
+  await foto(p, '67-misure');
+  await vai_('#carte', '.carta-voce');
+  verifica('E19: le dieci carte', (await p.$$('.carta-voce')).length === 10);
+  // a correction: its source in the preview
+  await vai_('#indice-note/91', '.chip.corretto');
+  await p.hover('.chip.corretto');
+  await p.waitForSelector('#anteprima:not([hidden]) .ap-corr');
+  verifica('E19: l’anteprima di una correzione dice la fonte', /CORREZIONI_INDICI/.test(await p.$eval('#anteprima .ap-corr', x => x.textContent)));
+  await foto(p, '68-correzione');
   await p.click('#tema');
   verifica('nessun errore in console (desktop)', errori.length === 0, errori.slice(0, 5).join(' | '));
   await ctx.close();
@@ -798,9 +917,9 @@ try {
   // the dictionary on the phone: the tabs on one line, the entry, the index, the panel section
   await m.p.evaluate(() => { location.hash = '#voce/agnello-di-dio/3?v=Isa.53.7'; });
   await m.p.waitForSelector('.dpar.sel');
-  const barra = await m.p.evaluate(() => ({ righe: (y => (Math.max(...y) - Math.min(...y) < 12 ? 1 : 2))([...document.querySelectorAll('.schede a, .comandi')].map(x => x.getBoundingClientRect().top)), largo: document.documentElement.scrollWidth,
+  const barra = await m.p.evaluate(() => ({ righe: (y => (Math.max(...y) - Math.min(...y) < 12 ? 1 : 2))([...document.querySelectorAll('.schede a, .comandi')].filter(x => x.offsetParent).map(x => x.getBoundingClientRect().top)), largo: document.documentElement.scrollWidth,
     sel: (() => { const r = document.querySelector('.dpar.sel').getBoundingClientRect(); return r.top >= document.querySelector('.barra').getBoundingClientRect().bottom - 2 && r.top < innerHeight; })() }));
-  verifica('390 px: cinque schede su una riga, voce senza scorrimento orizzontale', barra.righe === 1 && barra.largo <= 390 && barra.sel, JSON.stringify(barra));
+  verifica('390 px: le schede su una riga, voce senza scorrimento orizzontale', barra.righe === 1 && barra.largo <= 390 && barra.sel, JSON.stringify(barra));
   await foto(m.p, '35-telefono-voce');
   await m.p.evaluate(() => { location.hash = '#dizionario'; });
   await m.p.waitForSelector('.dvl');
@@ -830,6 +949,31 @@ try {
   await m.p.evaluate(() => document.querySelector('#pannello .sez.ix').scrollIntoView());
   verifica('390 px: «Nell’indice delle note» nel pannello', await m.p.evaluate(() => document.documentElement.scrollWidth) <= 390);
   await foto(m.p, '56-telefono-pannello-indice');
+  // session F2 on the phone: the filters wrap (E8), the graph's controls are a closed sheet (E9), the Appendici tab
+  await m.p.evaluate(() => { location.hash = '#cerca?q=amore'; });
+  await m.p.waitForSelector('.segmenti button');
+  const seg = await m.p.$$eval('.ricerca-campi .segmenti button', xs => xs.map(b => b.getBoundingClientRect().right));
+  verifica('E8: 390 px, i filtri della ricerca dentro lo schermo', Math.max(...seg) <= 390 - 15, seg.map(Math.round).join(', '));
+  await foto(m.p, '70-telefono-cerca');
+  await m.p.evaluate(() => { location.hash = '#grafo/John.3.16'; });
+  await m.p.waitForSelector('.carta');
+  const gr = await m.p.evaluate(() => ({ tela: Math.round(document.querySelector('#tela').getBoundingClientRect().height), lato: Math.round(document.querySelector('.grafo-lato').getBoundingClientRect().height) }));
+  verifica('E9: 390 px, la tela del grafo occupa lo schermo, i comandi chiusi', gr.tela > 600 && gr.lato < 60, JSON.stringify(gr));
+  await foto(m.p, '71-telefono-grafo');
+  await m.p.tap('[data-lato]');
+  await m.p.waitForTimeout(100);
+  verifica('E9: 390 px, i comandi si aprono', await m.p.$eval('.grafo-lato', x => x.getBoundingClientRect().height > 200));
+  await m.p.evaluate(() => { location.hash = '#appendici'; });
+  await m.p.waitForSelector('#vista .apparato');
+  const tab390 = await m.p.evaluate(() => ({ righe: (y => (Math.max(...y) - Math.min(...y) < 12 ? 1 : 2))([...document.querySelectorAll('.schede a, .comandi')].filter(x => x.offsetParent).map(x => x.getBoundingClientRect().top)), largo: document.documentElement.scrollWidth, attiva: document.querySelector('.schede a.attiva')?.dataset.vista }));
+  verifica('E5: 390 px, «Appendici» tra le schede su una riga', tab390.righe === 1 && tab390.largo <= 390 && tab390.attiva === 'apparati', JSON.stringify(tab390));
+  await foto(m.p, '72-telefono-appendici');
+  for (const [h, sel, n] of [['#persona/P15', '.persona h1', '73-telefono-persona'], ['#misure', '.misure-t', '74-telefono-misure'], ['#calendario', '.festa', '75-telefono-calendario'], ['#indice-note/38', '.anche-in', '76-telefono-anche-in']]) {
+    await m.p.evaluate(x => { location.hash = x; }, h);
+    await m.p.waitForSelector(sel);
+    verifica(`390 px: ${h} senza scorrimento orizzontale`, await m.p.evaluate(() => document.documentElement.scrollWidth) <= 390);
+    await foto(m.p, n);
+  }
   verifica('nessun errore in console (390 px)', m.errori.length === 0, m.errori.slice(0, 5).join(' | '));
   await tel.close();
 } finally {

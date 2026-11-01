@@ -1,0 +1,27 @@
+# Spellings of one name or word that differ between the Dizionario di Teologia Biblica (1976) and the
+# CEI 2008 text and its notes (session F2, from R3 E2): the explorer's search looks for every form of a
+# group when one is typed, and says which other forms it found. Seeded from the alignment of the
+# indices with the dictionary (allineamenti.tsv: Melchìsedek / MELCHISEDECH) and from a comparison of
+# the proper names of the two texts (a dictionary word absent from the Bible, a Bible word absent from
+# the dictionary, at most two letters apart), reviewed one by one; forms without accents, lower case.
+forme	nota
+davide david	Davide (CEI) / David (Dizionario)
+melchisedek melchisedech melchisedec	Melchìsedek / Melchisedech
+oreb horeb	Oreb / Horeb
+qoelet qohelet ecclesiaste	Qoèlet / Qohelet / Ecclesiaste
+siracide ecclesiastico	Siracide / Ecclesiastico
+risurrezione resurrezione	risurrezione / resurrezione
+enoc enoch	Enoc / Enoch
+nabucodonosor nabuchodonosor	Nabucodònosor / Nabuchodonosor
+betel bethel	Betel / Bethel
+acab achab	Acab / Achab
+acaz achaz	Acaz / Achaz
+raab rahab	Raab / Rahab
+sadoc sadoq	Sadoc / Sadoq
+saffira safira	Saffira / Safira
+galgala gilgal	Gàlgala / Gilgal
+leviatan leviathan	Leviatàn / Leviathan
+acan achan	Acan / Achan
+marduc marduk	Marduc / Marduk
+vulgata volgata	Vulgata / Volgata
+jahve yhwh jhwh	Jahvè (Dizionario) / YHWH (note BJ)

@@ -139,7 +139,9 @@ CONTESTO = {'catena': 'letto nel libro del riferimento precedente: la catena con
             'ester': 'la nota chiave è nell’altro testo di Ester',
             'introduzione': 'letto nel libro della frase o della sezione',
             'nudo': 'riferimento senza sigla dopo una preposizione',
-            'aggiunta': 'riferimento che la grammatica non legge, letto sulla pagina'}
+            'aggiunta': 'riferimento che la grammatica non legge, letto sulla pagina',
+            'numerazione': 'stampato in un’altra numerazione (Volgata, LXX, BJ): il versetto della CEI',
+            'refuso': 'refuso della stampa, letto corretto (il testo resta come stampato)'}
 
 
 def perche(x):
@@ -261,6 +263,7 @@ def payload(data, links, summary):
         return runs(vix[t] for t in link['targets'])
 
     mlinks, ncites, icites = [], [], []
+    posto = {}                                   # link id -> ('ml' | 'nc' | 'ic', index in the payload)
     nspans = {k: [] for k in range(len(data['notes']))}
     ispans = {}
     for x in links:
@@ -268,6 +271,7 @@ def payload(data, links, summary):
             if x['source'] not in mix:
                 errors.append('%s: unknown margin' % x['id'])
                 continue
+            posto[x['id']] = ('ml', len(mlinks))
             mlinks.append([mix[x['source']], RELAZIONI.index(x['relation']), tgt(x), ''.join(x['flags']),
                            1 if x['keynote'] else 0, [nix[n] for n in x['keynote_notes']],
                            [mix[m] for m in x['keynote_mrefs']], x['qualifier'] or '',
@@ -279,6 +283,7 @@ def payload(data, links, summary):
                 errors.append('%s: unknown note' % x['id'])
                 continue
             k = len(ncites)
+            posto[x['id']] = ('nc', k)
             ncites.append([nix[x['source']], tgt(x), STATI.index(x['status']),
                            perche(x), x['raw']])
             nspans[nix[x['source']]].append((x['html_offset'], x['html_end'], k))
@@ -288,6 +293,7 @@ def payload(data, links, summary):
                 errors.append('%s: unknown introduction' % x['id'])
                 continue
             k = len(icites)
+            posto[x['id']] = ('ic', k)
             icites.append([iix[intro], int(par), tgt(x), STATI.index(x['status']),
                            perche(x), x['raw']])
             ispans.setdefault((intro, int(par)), []).append((x['html_offset'], x['html_end'], k))
@@ -321,7 +327,86 @@ def payload(data, links, summary):
                 relazioni=RELAZIONI, stati=STATI, scopi=SCOPI, gruppi=[g for g, _ in GRUPPI])
     P = dict(meta=meta, vol=volumi(), libri=books, V=versetti(data), peri=peri, div=divs,
              note=notes, mref=mrefs, ml=mlinks, nc=ncites, ic=icites, intro=intros)
-    return P, errors
+    return P, errors, posto
+
+
+# ---------------------------------------------------------------- the links between the parts (integrazione.json)
+
+TIPI_DATAZIONE = ['composizione', 'ministero', 'evento', 'citato']
+RELAZIONI_SKOS = ['closeMatch', 'broadMatch', 'narrowMatch', 'relatedMatch', 'exactMatch']
+
+
+def sinonimi():
+    with open(os.path.join(HERE, 'sinonimi.tsv'), encoding='utf-8') as f:
+        righe = [x.rstrip('\n').split('\t') for x in f if x.strip() and not x.startswith('#')]
+    return [r[0].split() for r in righe[1:]]
+
+
+def integrazione(I, data, dz, pt, vix, posto, errors):
+    """The links between the parts in the payload (key 'int').
+
+    al: [from, to, relation, method, shared verses] (an index entry is 'note.7' / 'temi.4', a dictionary
+    entry 'v' + its index in diz.voci); pers: [id, runs of the verses naming the person, chronology entries
+    (from 1), index keys ('note.204.1', or 'note.204' with the reference as printed)]; dat: [entry (from 1),
+    books, kind]; ver: [id, name, abbreviation row, notes naming it]; cod: {Gregory-Aland number: notes};
+    mesi: [id, name, other names, solar months, Macedonian name, page, references [[printed, runs]], runs of
+    the verses naming it]; feste: [id, name, other names, month, day, page, references, also (index keys)];
+    mis: [id, kind, name, original, language, value, unit, ratio, base, equivalent, page, references, note,
+    verses]; carte: [id, title, legend, part, PDF page, image, period, books, references]; corr: {ml|nc|ic:
+    {payload index: [table, row]}} the interventions on links; sin: the synonym groups of the search."""
+    bix = {b['osis']: k for k, b in enumerate(data['books'])}
+    nix = {n['id']: k for k, n in enumerate(data['notes'])}
+    dix = {v['id']: k for k, v in enumerate(dz['voci'])}
+
+    def chiave(x):
+        return 'v%d' % dix[x[5:]] if x.startswith('voce:') else x
+    L = {l['id']: l for l in I['links']}
+
+    def refs(ids):
+        return [[L[k]['raw'], runs(vix[t] for t in L[k]['targets']), L[k].get('corrected_raw') or ''] for k in ids]
+    al = [[x['da'], chiave(x['a']), RELAZIONI_SKOS.index(x['relazione']), x['metodo'], len(x['comuni'])]
+          for x in I['allineamenti']]
+    per = {x['id']: [[], [], []] for x in pt['dinastie']}
+    for x in I['persone']['versetti']:
+        per[x['persona']][0].append(vix[x['verso']])
+    for x in I['persone']['cronologia']:
+        per[x['persona']][1].append(x['voce'])
+    for x in I['persone']['indice']:
+        raw = next((it['raw'] for ix in pt['indici'] for v in ix['voci'] for it in v['items']
+                    if it.get('link') and it['link']['id'] == x.get('citazione')), '')
+        per[x['persona']][2].append([x['voce'], raw])
+    pers = [[pid, runs(sorted(v)), sorted(set(c)), i] for pid, (v, c, i) in per.items() if v or c or i]
+    dat = [[x['voce'], [bix[b] for b in x['libri']], TIPI_DATAZIONE.index(x['tipo'])] for x in I['datazioni']]
+    T = I['testimoni']
+    nv = {}
+    for n, vs in T['note_versioni']:
+        for v in vs:
+            nv.setdefault(v, []).append(nix[n])
+    ver = [[v['id'], v['nome'], v['abbreviazione'] or 0, nv.get(v['id'], [])] for v in T['versioni']]
+    cod = {}
+    for n, cs in T['note_codici']:
+        for c in cs:
+            cod.setdefault(c, []).append(nix[n])
+    mv, sv = I['mesi_versetti'], I['misure_versetti']
+    mesi = [[m['id'], m['nome'], m['altri'], m['solare'], m['macedone'], m['pagina'], refs(m['links']),
+             runs(vix[t] for t in mv.get(m['id'], []))] for m in I['mesi']]
+    feste = [[f['id'], f['nome'], f['altri'], f['mese'], f['giorno'] or '', f['pagina'], refs(f['links']),
+              [chiave(a) for a in f['anche']]] for f in I['feste']]
+    mis = [[x['id'], x['tipo'], x['nome'], x['originale'] or '', x['lingua'] or '', x['valore'] or '', x['unita'] or '',
+            x['rapporto'] or '', x['base'] or '', x['equivale'] or '', x['pagina'], refs(x['links']), x['nota'] or '',
+            runs(vix[t] for t in sv.get(x['id'], []))] for x in I['misure']]
+    carte = [[x['id'], x['titolo'], x['sottotitolo'] or '', x['parte'], x['pdf'], x['immagine'], x['periodo'] or '',
+              [bix[b] for b in x['libri']], refs(x['links'])] for x in I['carte']]
+    corr = {'ml': {}, 'nc': {}, 'ic': {}}
+    for x in I['interventi']:
+        for kind, tid in x['bersagli']:
+            if kind == 'link' and tid in posto:
+                k, n = posto[tid]
+                corr[k][n] = [x['tabella'], str(x['riga'])]
+    if len(al) != len(I['allineamenti']) or sum(len(p[2]) for p in pers) != len(I['persone']['cronologia']):
+        errors.append('integration: alignments or persons lost in the payload')
+    return dict(al=al, pers=pers, dat=dat, ver=ver, cod=cod, mesi=mesi, feste=feste, mis=mis, carte=carte, corr=corr,
+                sin=sinonimi(), nint=len(I['interventi']))
 
 
 # ---------------------------------------------------------------- the front matter and the appendices
@@ -619,10 +704,12 @@ def main(a):
     coll = json.load(open(os.path.join(BUILD, 'collegamenti.json'), encoding='utf-8'))
     dz = json.load(open(os.path.join(BUILD, 'dufour.json'), encoding='utf-8'))
     pt = json.load(open(os.path.join(BUILD, 'paratesto.json'), encoding='utf-8'))
-    P, errors = payload(data, coll['links'], coll['meta']['summary'])
+    P, errors, posto = payload(data, coll['links'], coll['meta']['summary'])
+    ig = json.load(open(os.path.join(BUILD, 'integrazione.json'), encoding='utf-8'))
     vix = {v['id']: i for i, v in enumerate(data['verses'])}
     P['diz'] = dizionario(dz, vix, errors)
     P['par'] = paratesto(pt, data, vix, errors)
+    P['int'] = integrazione(ig, data, dz, pt, vix, posto, errors)
     page, nraw, ngz, js = pagina(P)
     if '</script' in js.lower():
         errors.append('app.js contains "</script"')

@@ -29,7 +29,8 @@
 
 <https://massimo-nocentini.github.io/bibbia-gerusalemme/ontologia>
     a owl:Ontology ;
-    owl:versionInfo "1.0" ;
+    owl:versionInfo "1.3" ;
+    dcterms:modified "2026-11-01" ;
     dcterms:title "Ontologia dei versetti della Bibbia di Gerusalemme"@it ,
                   "Verse ontology of the Jerusalem Bible"@en ;
     rdfs:label "Ontologia dei versetti BJ"@it , "BJ verse ontology"@en ;
@@ -405,7 +406,7 @@ bj:rinviaANotaChiave a owl:ObjectProperty ;
 
 bj:citaVersetto a owl:ObjectProperty ;
     rdfs:subPropertyOf cito:cites ;
-    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:Nota bj:Introduzione bj:TestoPreliminare bj:EventoCronologia ) ] ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:Nota bj:Introduzione bj:TestoPreliminare bj:EventoCronologia bj:Mese bj:Festa bj:Unita bj:Carta ) ] ;
     rdfs:range bj:Versetto ;
     rdfs:label "cita il versetto"@it , "cites verse"@en ;
     rdfs:comment "Scorciatoia: la nota, l'introduzione, il testo preliminare o la voce della tavola cronologica cita nel suo testo un passaggio che comprende il versetto (riassume le bj:Citazione risolte o parziali)."@it ,
@@ -623,8 +624,8 @@ bj:qualificatore a owl:DatatypeProperty , owl:FunctionalProperty ;
     rdfs:domain [ a owl:Class ; owl:unionOf ( bj:Rimando bj:Citazione ) ] ;
     rdfs:range xsd:string ;
     rdfs:label "qualificatore"@it , "qualifier"@en ;
-    rdfs:comment "La tradizione testuale o di numerazione indicata: LXX, volg., TM, TM var., Tg."@it ,
-                 "The text or numbering tradition named: LXX, volg., TM, TM var., Tg."@en .
+    rdfs:comment "La tradizione testuale o di numerazione indicata: LXX, volg., TM, TM var., Tg., gr. (il testo greco), BJ (la numerazione della BJ)."@it ,
+                 "The text or numbering tradition named: LXX, volg., TM, TM var., Tg., gr. (the Greek text), BJ (the BJ's numbering)."@en .
 
 bj:numeroAlternativo a owl:DatatypeProperty , owl:FunctionalProperty ;
     rdfs:domain [ a owl:Class ; owl:unionOf ( bj:Rimando bj:Citazione ) ] ;
@@ -1143,6 +1144,7 @@ bj:Abbreviazione a owl:Class ;
                  "A row of the abbreviation lists (pp. xxii-xxiv): the form (skos:notation), the meaning, the kind, and the book (bj:abbreviaLibro) or manuscript (bj:abbreviaManoscritto) it stands for."@en .
 
 bj:Manoscritto a owl:Class ;
+    rdfs:subClassOf bj:Testimone ;
     rdfs:label "Manoscritto"@it , "Manuscript"@en ;
     rdfs:comment "Un codice o un papiro dell'elenco «Codici importanti»: la sigla, il numero Gregory-Aland, la categoria (codice maiuscolo, minuscolo, papiro, vetus latina) e la descrizione come stampata."@it ,
                  "A codex or papyrus of the list «Codici importanti»: its siglum, Gregory-Aland number, category (uncial, minuscule, papyrus, vetus latina) and the description as printed."@en .
@@ -1298,7 +1300,7 @@ bj:apocrifo a owl:DatatypeProperty , owl:FunctionalProperty ;
                  "True for a book of the Greek Bible not received by the Church (printed in square brackets): it is not in this Bible."@en .
 
 bj:significato a owl:DatatypeProperty , owl:FunctionalProperty ;
-    rdfs:domain bj:Abbreviazione ; rdfs:range xsd:string ;
+    rdfs:domain bj:Abbreviazione ; rdfs:range rdf:langString ;
     rdfs:label "significato"@it , "meaning"@en ;
     rdfs:comment "Lo scioglimento dell'abbreviazione come stampato («Lettere ai Corinzi», «testo masoretico»)."@it ,
                  "What the abbreviation stands for, as printed («Lettere ai Corinzi», «testo masoretico»)."@en .
@@ -1597,3 +1599,629 @@ bj:colonnaSeleucidi a skos:Concept , bj:ColonnaCronologia ;
     rdfs:label "Seleucidi"@it , "Seleucids"@en ;
     rdfs:comment "Nell'epoca ellenistica: la dinastia dei Seleucidi in Siria."@it ,
                  "In the Hellenistic period: the Seleucid dynasty in Syria."@en .
+
+# ------------------------------------------------------------------ session F2 (review of 2026-10-31): the links between the parts, the corrections, calendar, measures, maps
+
+schema:mentions a owl:ObjectProperty .
+schema:Map a owl:Class .
+dcterms:subject a owl:ObjectProperty .
+oa:Motivation a owl:Class .
+prov:wasAttributedTo a owl:ObjectProperty .
+skos:closeMatch a owl:ObjectProperty , owl:SymmetricProperty .
+skos:relatedMatch a owl:ObjectProperty , owl:SymmetricProperty .
+skos:broadMatch a owl:ObjectProperty ; owl:inverseOf skos:narrowMatch .
+skos:narrowMatch a owl:ObjectProperty .
+skos:mappingRelation a owl:ObjectProperty .
+skos:ConceptScheme a owl:Class .
+
+# the links between the parts: alignments of the indices and the dictionary (R2-12, R2-13, R2-10)
+
+bj:Allineamento a owl:Class ;
+    rdfs:label "allineamento"@it , "alignment"@en ;
+    rdfs:comment "Un collegamento tra una voce o sottovoce degli indici e una voce del Dizionario di Teologia Biblica, o tra le due liste degli indici, rivisto a mano (tools/ontologia/allineamenti.tsv): la proprietà SKOS di mappatura, il metodo, chi l'ha rivisto e i versetti che i due concetti hanno in comune; la tripla SKOS diretta ne è la scorciatoia."@it ,
+                 "A link between an entry or sub-entry of the indices and an entry of the Dizionario di Teologia Biblica, or between the two indices, reviewed by hand (tools/ontologia/allineamenti.tsv): the SKOS mapping property, the method, the reviewer and the verses the two concepts share; the direct SKOS triple is its shortcut."@en .
+
+bj:allineamentoDa a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Allineamento ; rdfs:range skos:Concept ;
+    rdfs:label "allineamento da"@it , "alignment from"@en ;
+    rdfs:comment "La voce d'indice da cui parte l'allineamento (il soggetto della tripla SKOS)."@it ,
+                 "The index entry the alignment starts from (the subject of the SKOS triple)."@en .
+
+bj:allineamentoA a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Allineamento ; rdfs:range skos:Concept ;
+    rdfs:label "allineamento a"@it , "alignment to"@en ;
+    rdfs:comment "La voce del Dizionario o d'indice a cui arriva l'allineamento (l'oggetto della tripla SKOS)."@it ,
+                 "The dictionary or index entry the alignment goes to (the object of the SKOS triple)."@en .
+
+bj:proprietaMapping a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Allineamento ;
+    rdfs:label "proprietà di mappatura"@it , "mapping property"@en ;
+    rdfs:comment "La proprietà SKOS dell'allineamento: skos:closeMatch, skos:broadMatch, skos:narrowMatch, skos:relatedMatch."@it ,
+                 "The SKOS property of the alignment: skos:closeMatch, skos:broadMatch, skos:narrowMatch, skos:relatedMatch."@en .
+
+bj:metodoAllineamento a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Allineamento ; rdfs:range xsd:string ;
+    rdfs:label "metodo di allineamento"@it , "alignment method"@en ;
+    rdfs:comment "Come la coppia è stata trovata: label (stessa etichetta), stem (singolare/plurale), altLabel (rinvio a una sola voce), rinvio (un rinvio a più voci), head (la parola principale), mano, indici-label, indici-head, indici-parte, doppione."@it ,
+                 "How the pair was found: label (same label), stem (singular/plural), altLabel (a single-target redirect), rinvio (a multi-target redirect), head (the head word), mano (by hand), indici-label, indici-head, indici-parte, doppione (the same index)."@en .
+
+bj:revisore a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:range xsd:string ;
+    rdfs:label "revisore"@it , "reviewer"@en ;
+    rdfs:comment "Chi ha rivisto la riga della tabella (la sessione: R2, F2)."@it ,
+                 "Who reviewed the table row (the session: R2, F2)."@en .
+
+bj:versettiComuni a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Allineamento ; rdfs:range xsd:integer ;
+    rdfs:label "versetti in comune"@it , "shared verses"@en ;
+    rdfs:comment "Quanti versetti indicano entrambi i concetti (la prova dell'allineamento, ricalcolata a ogni costruzione)."@it ,
+                 "How many verses both concepts point to (the evidence of the alignment, recomputed at every build)."@en .
+
+bj:versettoComune a owl:ObjectProperty ;
+    rdfs:domain bj:Allineamento ; rdfs:range bj:Versetto ;
+    rdfs:label "versetto in comune"@it , "shared verse"@en ;
+    rdfs:comment "Un versetto indicato da entrambi i concetti allineati."@it ,
+                 "A verse both aligned concepts point to."@en .
+
+bj:tabellaFonte a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:range xsd:string ;
+    rdfs:label "tabella di origine"@it , "source table"@en ;
+    rdfs:comment "La tabella del progetto da cui viene la risorsa (un file .tsv o una tabella di un modulo: «riferimenti.CORREZIONI»)."@it ,
+                 "The project table the resource comes from (a .tsv file or a module's table: «riferimenti.CORREZIONI»)."@en .
+
+bj:rigaFonte a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:range xsd:string ;
+    rdfs:label "riga di origine"@it , "source row"@en ;
+    rdfs:comment "La riga della tabella di origine (il numero da 1, o la chiave della riga)."@it ,
+                 "The row of the source table (its number from 1, or the row's key)."@en .
+
+bj:fileFonte a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:range xsd:string ;
+    rdfs:label "file di origine"@it , "source file"@en ;
+    rdfs:comment "Il file del progetto che contiene la tabella."@it ,
+                 "The project file holding the table."@en .
+
+# persons (R2-14)
+
+bj:nominaPersona a owl:ObjectProperty ;
+    rdfs:subPropertyOf schema:mentions ;
+    rdfs:domain bj:Versetto ; rdfs:range bj:PersonaStorica ;
+    rdfs:label "nomina la persona"@it , "names person"@en ;
+    rdfs:comment "Il versetto nomina la persona delle dinastie (tabella rivista tools/ontologia/persone.tsv: per capitolo e nome, con le eccezioni)."@it ,
+                 "The verse names the person of the dynasties (reviewed table tools/ontologia/persone.tsv: by chapter and name, with exceptions)."@en .
+
+bj:nominatoIn a owl:ObjectProperty ;
+    rdfs:domain bj:PersonaStorica ; rdfs:range bj:Versetto ;
+    owl:inverseOf bj:nominaPersona ;
+    rdfs:label "nominato in"@it , "named in"@en ;
+    rdfs:comment "Inversa di bj:nominaPersona."@it ,
+                 "Inverse of bj:nominaPersona."@en .
+
+bj:indicaPersona a owl:ObjectProperty ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:VoceIndice bj:Citazione ) ] ; rdfs:range bj:PersonaStorica ;
+    rdfs:label "indica la persona"@it , "points to person"@en ;
+    rdfs:comment "La sottovoce d'indice («Erode Agrippa I») o il riferimento stampato in una voce che riguarda la persona delle dinastie."@it ,
+                 "The index sub-entry («Erode Agrippa I») or the reference printed in an entry that is about the person of the dynasties."@en .
+
+bj:riguardaPersona a owl:ObjectProperty ;
+    rdfs:subPropertyOf schema:mentions ;
+    rdfs:domain bj:EventoCronologia ; rdfs:range bj:PersonaStorica ;
+    rdfs:label "riguarda la persona"@it , "is about person"@en ;
+    rdfs:comment "La voce della tavola cronologica nomina la persona delle dinastie (elenco rivisto, sezioni VIII-IX)."@it ,
+                 "The chronology entry names the person of the dynasties (reviewed list, sections VIII-IX)."@en .
+
+# chronology <-> books (R2-15)
+
+bj:Datazione a owl:Class ;
+    rdfs:label "datazione"@it , "dating"@en ;
+    rdfs:comment "Una voce della tavola cronologica che data un libro: la composizione, il ministero del profeta o dell'apostolo, gli eventi narrati, o i libri dei versetti che cita (tools/ontologia/cronologia-libri.tsv)."@it ,
+                 "A chronology entry dating a book: its composition, the ministry of the prophet or apostle, the events it narrates, or the books of the verses it cites (tools/ontologia/cronologia-libri.tsv)."@en .
+
+bj:datazioneDi a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Datazione ; rdfs:range bj:EventoCronologia ;
+    rdfs:label "datazione di"@it , "dating of"@en ;
+    rdfs:comment "La voce della tavola cronologica."@it ,
+                 "The chronology entry."@en .
+
+bj:datazioneLibro a owl:ObjectProperty ;
+    rdfs:domain bj:Datazione ; rdfs:range bj:Libro ;
+    rdfs:label "libro datato"@it , "dated book"@en ;
+    rdfs:comment "Un libro che la voce data."@it ,
+                 "A book the entry dates."@en .
+
+bj:tipoDatazione a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Datazione ; rdfs:range xsd:string ;
+    rdfs:label "tipo di datazione"@it , "kind of dating"@en ;
+    rdfs:comment "composizione, ministero, evento, citato (la voce cita versetti del libro)."@it ,
+                 "composizione (composition), ministero (ministry), evento (narrated events), citato (the entry cites verses of the book)."@en .
+
+bj:riguardaLibro a owl:ObjectProperty ;
+    rdfs:subPropertyOf dcterms:subject ;
+    rdfs:domain bj:EventoCronologia ; rdfs:range bj:Libro ;
+    rdfs:label "riguarda il libro"@it , "is about book"@en ;
+    rdfs:comment "Scorciatoia di bj:Datazione: la voce data il libro (o ne cita versetti)."@it ,
+                 "Shortcut of bj:Datazione: the entry dates the book (or cites its verses)."@en .
+
+bj:nellaCronologia a owl:ObjectProperty ;
+    rdfs:domain bj:Libro ; rdfs:range bj:EventoCronologia ;
+    owl:inverseOf bj:riguardaLibro ;
+    rdfs:label "nella tavola cronologica"@it , "in the chronological table"@en ;
+    rdfs:comment "Inversa di bj:riguardaLibro: dal libro (e dalla sua introduzione, bj:introduce) alle voci della tavola che lo datano."@it ,
+                 "Inverse of bj:riguardaLibro: from the book (and its introduction, bj:introduce) to the entries of the table dating it."@en .
+
+# versions and codices (R2-16)
+
+bj:Testimone a owl:Class ;
+    rdfs:label "testimone del testo"@it , "text witness"@en ;
+    rdfs:comment "Un testimone del testo biblico che le note citano: una versione o recensione (bj:Versione) o un manoscritto (bj:Manoscritto)."@it ,
+                 "A witness of the Bible text the notes cite: a version or recension (bj:Versione) or a manuscript (bj:Manoscritto)."@en .
+
+bj:Versione a owl:Class ;
+    rdfs:subClassOf bj:Testimone ;
+    rdfs:label "versione"@it , "version"@en ;
+    rdfs:comment "Una versione o recensione del testo (testo masoretico, Settanta, Volgata, siriaca, samaritano, vetus latina, Targum, Qumran), con la sua abbreviazione (tools/ontologia/testimoni.tsv)."@it ,
+                 "A version or recension of the text (Masoretic, Septuagint, Vulgate, Syriac, Samaritan, vetus latina, Targum, Qumran), with its abbreviation (tools/ontologia/testimoni.tsv)."@en .
+
+bj:abbreviaVersione a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Abbreviazione ; rdfs:range bj:Versione ;
+    rdfs:label "abbrevia la versione"@it , "abbreviates version"@en ;
+    rdfs:comment "La versione indicata dalla sigla («LXX»)."@it ,
+                 "The version the siglum stands for («LXX»)."@en .
+
+bj:citaTestimone a owl:ObjectProperty ;
+    rdfs:domain bj:Nota ; rdfs:range bj:Testimone ;
+    rdfs:label "cita il testimone"@it , "cites witness"@en ;
+    rdfs:comment "La nota nomina la versione (TM, LXX, volg., …) o il codice o papiro (in un elenco di testimoni: «con S, B, ecc.»; D è Dᵉ nei Vangeli e negli Atti, Dᵖ in Paolo)."@it ,
+                 "The note names the version (TM, LXX, volg., …) or the codex or papyrus (in a list of witnesses: «con S, B, ecc.»; D is Dᵉ in the Gospels and Acts, Dᵖ in Paul)."@en .
+
+bj:secondoVersione a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:Rimando bj:Citazione ) ] ; rdfs:range bj:Versione ;
+    rdfs:label "secondo la versione"@it , "according to version"@en ;
+    rdfs:comment "La versione che il qualificatore del riferimento nomina (bj:qualificatore «LXX», «volg.», «TM», «gr.», «Tg»)."@it ,
+                 "The version the reference's qualifier names (bj:qualificatore «LXX», «volg.», «TM», «gr.», «Tg»)."@en .
+
+# calendar, measures and coins, maps (R2-18)
+
+bj:Calendario a owl:Class ;
+    rdfs:subClassOf skos:ConceptScheme ;
+    rdfs:label "calendario"@it , "calendar"@en ;
+    rdfs:comment "Il calendario delle appendici: i mesi e le feste annuali (pp. 25-26)."@it ,
+                 "The calendar of the appendices: the months and the annual feasts (pp. 25-26)."@en .
+
+bj:Mese a owl:Class ;
+    rdfs:subClassOf skos:Concept ;
+    rdfs:label "mese"@it , "month"@en ;
+    rdfs:comment "Un mese del calendario (skos:notation «I»…«XII», prefLabel il nome babilonese, altLabel il nome antico e quello macedone)."@it ,
+                 "A month of the calendar (skos:notation «I»…«XII», prefLabel the Babylonian name, altLabel the old and the Macedonian names)."@en .
+
+bj:Festa a owl:Class ;
+    rdfs:subClassOf skos:Concept ;
+    rdfs:label "festa"@it , "feast"@en ;
+    rdfs:comment "Una festa annuale menzionata nella Bibbia, con il mese, il giorno e i riferimenti stampati."@it ,
+                 "An annual feast mentioned in the Bible, with its month, day and printed references."@en .
+
+bj:nelMese a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Festa ; rdfs:range bj:Mese ;
+    rdfs:label "nel mese"@it , "in month"@en ;
+    rdfs:comment "Il mese della festa."@it ,
+                 "The feast's month."@en .
+
+bj:giorno a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Festa ; rdfs:range xsd:string ;
+    rdfs:label "giorno"@it , "day"@en ;
+    rdfs:comment "Il giorno (o i giorni) come stampati («14/15», «15-23»)."@it ,
+                 "The day (or days) as printed («14/15», «15-23»)."@en .
+
+bj:meseSolare a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Mese ; rdfs:range xsd:string ;
+    rdfs:label "mesi solari"@it , "solar months"@en ;
+    rdfs:comment "I mesi solari corrispondenti («marzo/aprile»)."@it ,
+                 "The corresponding solar months («marzo/aprile»)."@en .
+
+bj:nomeMacedone a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Mese ; rdfs:range rdf:langString ;
+    rdfs:label "nome macedone"@it , "Macedonian name"@en ;
+    rdfs:comment "Il nome macedone del mese («artemisio»)."@it ,
+                 "The Macedonian name of the month («artemisio»)."@en .
+
+bj:nomeAntico a owl:DatatypeProperty ;
+    rdfs:domain bj:Mese ; rdfs:range rdf:langString ;
+    rdfs:label "nome antico"@it , "old name"@en ;
+    rdfs:comment "Il vecchio nome semitico o fenicio del mese («abib», «ziv»), con il suo riferimento."@it ,
+                 "The old Semitic or Phoenician name of the month («abib», «ziv»), with its reference."@en .
+
+bj:nominaMese a owl:ObjectProperty ;
+    rdfs:subPropertyOf schema:mentions ;
+    rdfs:domain bj:Versetto ; rdfs:range bj:Mese ;
+    rdfs:label "nomina il mese"@it , "names month"@en ;
+    rdfs:comment "Il versetto nomina il mese (per nome: nisan, adar, …)."@it ,
+                 "The verse names the month (by name: nisan, adar, …)."@en .
+
+bj:TavolaMisure a owl:Class ;
+    rdfs:subClassOf skos:ConceptScheme ;
+    rdfs:label "tavola delle misure e delle monete"@it , "table of measures and coins"@en ;
+    rdfs:comment "La tavola delle appendici (pp. 26-28, «cifre approssimative»)."@it ,
+                 "The table of the appendices (pp. 26-28, «approximate figures»)."@en .
+
+bj:Unita a owl:Class ;
+    rdfs:subClassOf skos:Concept ;
+    rdfs:label "unità di misura o moneta"@it , "unit or coin"@en ;
+    rdfs:comment "Una misura di lunghezza, capacità o peso o una moneta della tavola, con il valore, l'unità QUDT (come dato), il rapporto all'unità di base e i riferimenti stampati."@it ,
+                 "A measure of length, capacity or weight or a coin of the table, with its value, its QUDT unit (as data), its ratio to the base unit and its printed references."@en .
+
+bj:tipoMisura a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Unita ; rdfs:range xsd:string ;
+    rdfs:label "tipo di misura"@it , "kind of measure"@en ;
+    rdfs:comment "lunghezza, capacita, peso, moneta."@it ,
+                 "lunghezza (length), capacita (capacity), peso (weight), moneta (coin)."@en .
+
+bj:valore a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Unita ; rdfs:range xsd:decimal ;
+    rdfs:label "valore"@it , "value"@en ;
+    rdfs:comment "Il valore stampato, nell'unità bj:unitaQudt (approssimativo)."@it ,
+                 "The printed value, in the unit bj:unitaQudt (approximate)."@en .
+
+bj:valoreStampato a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Unita ; rdfs:range xsd:string ;
+    rdfs:label "valore stampato"@it , "printed value"@en ;
+    rdfs:comment "Il valore come stampato («22,5»)."@it ,
+                 "The value as printed («22,5»)."@en .
+
+bj:unitaQudt a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Unita ;
+    rdfs:label "unità QUDT"@it , "QUDT unit"@en ;
+    rdfs:comment "L'unità del valore, un IRI di QUDT (unit:CentiM, unit:L, unit:GM, …) tenuto come dato: non lo si dereferenzia."@it ,
+                 "The unit of the value, a QUDT IRI (unit:CentiM, unit:L, unit:GM, …) kept as data: it is not dereferenced."@en .
+
+bj:rapporto a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Unita ; rdfs:range xsd:string ;
+    rdfs:label "rapporto"@it , "ratio"@en ;
+    rdfs:comment "Il rapporto all'unità di base come stampato («1/24», «7 palmi»)."@it ,
+                 "The ratio to the base unit as printed («1/24», «7 palmi»)."@en .
+
+bj:rapportoDecimale a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Unita ; rdfs:range xsd:decimal ;
+    rdfs:label "rapporto decimale"@it , "decimal ratio"@en ;
+    rdfs:comment "Il rapporto numerico, quando è un numero o una frazione."@it ,
+                 "The numeric ratio, when it is a number or a fraction."@en .
+
+bj:rapportoA a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Unita ; rdfs:range bj:Unita ;
+    rdfs:label "rapporto a"@it , "ratio to"@en ;
+    rdfs:comment "L'unità a cui si riferisce il rapporto (cubito, misura, siclo, dramma, denaro)."@it ,
+                 "The unit the ratio is to (cubit, measure, shekel, drachma, denarius)."@en .
+
+bj:equivaleA a owl:ObjectProperty ;
+    rdfs:domain bj:Unita ; rdfs:range bj:Unita ;
+    rdfs:label "equivale a"@it , "equivalent to"@en ;
+    rdfs:comment "L'unità a cui la tavola dice che equivale (la metreta al bat)."@it ,
+                 "The unit the table says it is equivalent to (the metretes to the bath)."@en .
+
+bj:approssimativo a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Unita ; rdfs:range xsd:boolean ;
+    rdfs:label "approssimativo"@it , "approximate"@en ;
+    rdfs:comment "Vero: la tavola dà «cifre approssimative»."@it ,
+                 "True: the table gives «approximate figures»."@en .
+
+bj:nominaMisura a owl:ObjectProperty ;
+    rdfs:subPropertyOf schema:mentions ;
+    rdfs:domain bj:Versetto ; rdfs:range bj:Unita ;
+    rdfs:label "nomina la misura"@it , "names measure"@en ;
+    rdfs:comment "Il versetto nomina la misura o la moneta (solo parole non ambigue: cubito, siclo, talento, efa, hin)."@it ,
+                 "The verse names the measure or coin (unambiguous words only: cubit, shekel, talent, ephah, hin)."@en .
+
+bj:Carta a owl:Class ;
+    rdfs:subClassOf schema:Map ;
+    rdfs:label "carta geografica"@it , "map"@en ;
+    rdfs:comment "Una carta del volume (8 nelle appendici, 2 nei risguardi): titolo, pagina del PDF, immagine, periodo, libri e passi che raffigura."@it ,
+                 "A map of the volume (8 in the appendices, 2 in the endpapers): title, PDF page, image, period, the books and passages it depicts."@en .
+
+bj:legenda a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Carta ; rdfs:range rdf:langString ;
+    rdfs:label "legenda"@it , "legend"@en ;
+    rdfs:comment "Il riquadro o la legenda stampati sotto il titolo."@it ,
+                 "The inset or legend printed under the title."@en .
+
+bj:paginaPdfCarta a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Carta ; rdfs:range xsd:integer ;
+    rdfs:label "pagina del PDF"@it , "PDF page"@en ;
+    rdfs:comment "La pagina del PDF della scansione (le carte non hanno numero stampato)."@it ,
+                 "The page of the scanned PDF (the maps have no printed number)."@en .
+
+bj:immagine a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Carta ; rdfs:range xsd:string ;
+    rdfs:label "immagine"@it , "image"@en ;
+    rdfs:comment "Il file dell'immagine nel progetto (progetti/appendici/figure/esodo.png)."@it ,
+                 "The image file in the project (progetti/appendici/figure/esodo.png)."@en .
+
+bj:raffiguraLibro a owl:ObjectProperty ;
+    rdfs:domain bj:Carta ; rdfs:range bj:Libro ;
+    rdfs:label "raffigura il libro"@it , "depicts book"@en ;
+    rdfs:comment "Un libro la cui storia la carta mostra."@it ,
+                 "A book whose story the map shows."@en .
+
+bj:raffiguraPassaggio a owl:ObjectProperty ;
+    rdfs:domain bj:Carta ; rdfs:range bj:Passaggio ;
+    rdfs:label "raffigura il passaggio"@it , "depicts passage"@en ;
+    rdfs:comment "Un passaggio che la carta disegna (Gs 13-21 per le tribù)."@it ,
+                 "A passage the map draws (Gs 13-21 for the tribes)."@en .
+
+bj:daVoceTavola a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Citazione ; rdfs:range [ a owl:Class ; owl:unionOf ( bj:Mese bj:Festa bj:Unita bj:Carta ) ] ;
+    rdfs:label "da una voce di tavola"@it , "from a table item"@en ;
+    rdfs:comment "Il mese, la festa, la misura o la carta a cui appartiene il riferimento."@it ,
+                 "The month, feast, measure or map the reference belongs to."@en .
+
+# the corrections in one model (R2-20) and the numbering schemes (R2-21)
+
+bj:Intervento a owl:Class ;
+    rdfs:subClassOf oa:Annotation ;
+    rdfs:label "intervento"@it , "intervention"@en ;
+    rdfs:comment "Una correzione o una lettura del curatore, come annotazione: il bersaglio corretto (oa:hasTarget), la motivazione (oa:editing un refuso, bj:interpretando una lettura, oa:linking un collegamento aggiunto, oa:describing una nota), il motivo (oa:hasBody), la regola (bj:regola), la riga della tabella che la fa e la pagina che ne è la prova (prov:wasDerivedFrom). I letterali di oggi (bj:interpretazione, bj:correzione, bj:conversione) ne restano le scorciatoie."@it ,
+                 "A correction or reading by the editor, as an annotation: the corrected target (oa:hasTarget), the motivation (oa:editing a misprint, bj:interpretando a reading, oa:linking an added link, oa:describing a note), the reason (oa:hasBody), the rule (bj:regola), the table row that makes it and the page that is its evidence (prov:wasDerivedFrom). Today's literals (bj:interpretazione, bj:correzione, bj:conversione) stay as its shortcuts."@en .
+
+bj:regola a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:Intervento bj:Rimando bj:Citazione ) ] ; rdfs:range skos:Concept ;
+    rdfs:label "regola"@it , "rule"@en ;
+    rdfs:comment "La regola dell'intervento (un concetto di bj:regole); sul riferimento corretto, la scorciatoia."@it ,
+                 "The rule of the intervention (a concept of bj:regole); on the corrected reference, the shortcut."@en .
+
+bj:testoStampato a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Intervento ; rdfs:range xsd:string ;
+    rdfs:label "testo stampato"@it , "printed text"@en ;
+    rdfs:comment "Il testo come stampato che l'intervento legge o corregge."@it ,
+                 "The text as printed that the intervention reads or corrects."@en .
+
+bj:testoLetto a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Intervento ; rdfs:range xsd:string ;
+    rdfs:label "testo letto"@it , "text as read"@en ;
+    rdfs:comment "Il testo come l'intervento lo legge («Gs 14,6», «Ps 104,12»)."@it ,
+                 "The text as the intervention reads it («Gs 14,6», «Ps 104,12»)."@en .
+
+bj:categoriaMotivo a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:Rimando bj:Citazione ) ] ; rdfs:range skos:Concept ;
+    rdfs:label "categoria del motivo"@it , "reason kind"@en ;
+    rdfs:comment "Il tipo del motivo di un riferimento irrisolto o parziale (un concetto di bj:motivi); il testo resta in bj:motivo."@it ,
+                 "The kind of reason of an unresolved or partial reference (a concept of bj:motivi); the text stays in bj:motivo."@en .
+
+bj:SchemaNumerazione a owl:Class ;
+    rdfs:label "schema di numerazione"@it , "numbering scheme"@en ;
+    rdfs:comment "Una numerazione dei versetti diversa da quella CEI che il volume stampa (Volgata, Settanta, BJ, la divisione del Dizionario per il Siracide), o la CEI stessa; le righe sono in tools/ontologia/numerazioni.tsv."@it ,
+                 "A verse numbering other than the CEI's that the volume prints (Vulgate, Septuagint, BJ, the dictionary's division of Sirach), or the CEI itself; the rows are in tools/ontologia/numerazioni.tsv."@en .
+
+bj:schemaNumerazione a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:Intervento ; rdfs:range bj:SchemaNumerazione ;
+    rdfs:label "schema di numerazione"@it , "numbering scheme"@en ;
+    rdfs:comment "Lo schema della riga di numerazioni.tsv."@it ,
+                 "The scheme of the numerazioni.tsv row."@en .
+
+bj:righeTabella a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:SchemaNumerazione ; rdfs:range xsd:integer ;
+    rdfs:label "righe della tabella"@it , "table rows"@en ;
+    rdfs:comment "Quante righe di numerazioni.tsv sono di questo schema."@it ,
+                 "How many rows of numerazioni.tsv are of this scheme."@en .
+
+bj:inVersetto a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:LetteraAcrostica ; rdfs:range bj:Versetto ;
+    owl:inverseOf bj:haLetteraAcrostica ;
+    rdfs:label "nel versetto"@it , "in verse"@en ;
+    rdfs:comment "Inversa di bj:haLetteraAcrostica."@it ,
+                 "Inverse of bj:haLetteraAcrostica."@en .
+
+# the motivation of a reading, the rules and the kinds of reason (R2-11, R2-20)
+
+bj:interpretando a skos:Concept , oa:Motivation ;
+    skos:broader oa:editing ;
+    skos:prefLabel "interpretando"@it , "interpreting"@en ;
+    rdfs:label "interpretando"@it , "interpreting"@en ;
+    rdfs:comment "Motivazione di un intervento che legge il testo stampato senza correggerlo: il libro di un riferimento dato dal senso della frase, un'altra numerazione."@it ,
+                 "Motivation of an intervention reading the printed text without correcting it: the book of a reference given by the sense of the sentence, another numbering."@en .
+
+bj:regole a skos:ConceptScheme ;
+    rdfs:label "Regole degli interventi"@it , "Rules of the interventions"@en ;
+    rdfs:comment "Le regole e le tabelle con cui il curatore legge o corregge un riferimento o una voce."@it ,
+                 "The rules and tables by which the editor reads or corrects a reference or an entry."@en ;
+    skos:hasTopConcept bj:regolaManuale , bj:regolaAggiunta , bj:regolaNumerazione , bj:regolaRefuso , bj:regolaCatena , bj:regolaPuntatore , bj:regolaCapitolo , bj:regolaElenco , bj:regolaInizio , bj:regolaEster , bj:regolaIntroduzione , bj:regolaNudo , bj:regolaLettura , bj:regolaIndice , bj:regolaProsa , bj:regolaRimando , bj:regolaPaginaEstranea , bj:regolaNotaEditoriale , bj:regolaParagrafo , bj:regolaForma , bj:regolaConversione .
+
+bj:regolaManuale a skos:Concept ;
+    skos:inScheme bj:regole ; skos:topConceptOf bj:regole ;
+    skos:prefLabel "manuale"@it , "by hand"@en ;
+    rdfs:label "manuale"@it , "by hand"@en ;
+    rdfs:comment "Una riga della tabella CORREZIONI (o dufour.CORREZIONI): il libro dato dal senso della frase."@it ,
+                 "A row of the table CORREZIONI (or dufour.CORREZIONI): the book given by the sense of the sentence."@en .
+
+bj:regolaAggiunta a skos:Concept ;
+    skos:inScheme bj:regole ; skos:topConceptOf bj:regole ;
+    skos:prefLabel "aggiunta"@it , "added"@en ;
+    rdfs:label "aggiunta"@it , "added"@en ;
+    rdfs:comment "Un riferimento che la grammatica non legge, aggiunto da una riga di AGGIUNTE."@it ,
+                 "A reference the grammar does not read, added by a row of AGGIUNTE."@en .
+
+bj:regolaNumerazione a skos:Concept ;
+    skos:inScheme bj:regole ; skos:topConceptOf bj:regole ;
+    skos:prefLabel "numerazione"@it , "numbering"@en ;
+    rdfs:label "numerazione"@it , "numbering"@en ;
+    rdfs:comment "Un riferimento in un'altra numerazione (numerazioni.tsv)."@it ,
+                 "A reference in another numbering (numerazioni.tsv)."@en .
+
+bj:regolaRefuso a skos:Concept ;
+    skos:inScheme bj:regole ; skos:topConceptOf bj:regole ;
+    skos:prefLabel "refuso"@it , "misprint"@en ;
+    rdfs:label "refuso"@it , "misprint"@en ;
+    rdfs:comment "Un refuso della stampa con la correzione provata (REFUSI, REFUSI_RIFERIMENTI, MISPRINT)."@it ,
+                 "A misprint of the print with its correction proved (REFUSI, REFUSI_RIFERIMENTI, MISPRINT)."@en .
+
+bj:regolaCatena a skos:Concept ;
+    skos:inScheme bj:regole ; skos:topConceptOf bj:regole ;
+    skos:prefLabel "catena"@it , "chain"@en ;
+    rdfs:label "catena"@it , "chain"@en ;
+    rdfs:comment "La catena rotta dalla grammatica continua nel libro del riferimento precedente."@it ,
+                 "A chain the grammar broke goes on in the book of the reference before."@en .
+
+bj:regolaPuntatore a skos:Concept ;
+    skos:inScheme bj:regole ; skos:topConceptOf bj:regole ;
+    skos:prefLabel "puntatore"@it , "pointer"@en ;
+    rdfs:label "puntatore"@it , "pointer"@en ;
+    rdfs:comment "«v 6», «cc 2-3»: nel libro e capitolo del riferimento precedente."@it ,
+                 "«v 6», «cc 2-3»: in the book and chapter of the reference before."@en .
+
+bj:regolaCapitolo a skos:Concept ;
+    skos:inScheme bj:regole ; skos:topConceptOf bj:regole ;
+    skos:prefLabel "capitolo"@it , "chapter"@en ;
+    rdfs:label "capitolo"@it , "chapter"@en ;
+    rdfs:comment "Un riferimento senza sigla letto nel capitolo nominato prima."@it ,
+                 "A siglum-less reference read in the chapter named before."@en .
+
+bj:regolaElenco a skos:Concept ;
+    skos:inScheme bj:regole ; skos:topConceptOf bj:regole ;
+    skos:prefLabel "elenco"@it , "list"@en ;
+    rdfs:label "elenco"@it , "list"@en ;
+    rdfs:comment "Un elenco di versetti del libro nominato."@it ,
+                 "A list of verses of the book named."@en .
+
+bj:regolaInizio a skos:Concept ;
+    skos:inScheme bj:regole ; skos:topConceptOf bj:regole ;
+    skos:prefLabel "inizio"@it , "opening"@en ;
+    rdfs:label "inizio"@it , "opening"@en ;
+    rdfs:comment "Il libro nominato all'inizio della frase."@it ,
+                 "The book named at the start of the sentence."@en .
+
+bj:regolaEster a skos:Concept ;
+    skos:inScheme bj:regole ; skos:topConceptOf bj:regole ;
+    skos:prefLabel "ester"@it , "Esther"@en ;
+    rdfs:label "ester"@it , "Esther"@en ;
+    rdfs:comment "Il testo di Ester (greco o ebraico) che il riferimento intende."@it ,
+                 "The text of Esther (Greek or Hebrew) the reference means."@en .
+
+bj:regolaIntroduzione a skos:Concept ;
+    skos:inScheme bj:regole ; skos:topConceptOf bj:regole ;
+    skos:prefLabel "introduzione"@it , "introduction"@en ;
+    rdfs:label "introduzione"@it , "introduction"@en ;
+    rdfs:comment "Nell'introduzione a più libri, il libro di cui parla il paragrafo."@it ,
+                 "In an introduction to several books, the book the paragraph speaks of."@en .
+
+bj:regolaNudo a skos:Concept ;
+    skos:inScheme bj:regole ; skos:topConceptOf bj:regole ;
+    skos:prefLabel "nudo"@it , "bare"@en ;
+    rdfs:label "nudo"@it , "bare"@en ;
+    rdfs:comment "Un riferimento senza sigla dopo una parola che lo introduce («in 5,3»), letto nel libro del contesto."@it ,
+                 "A siglum-less reference after a word introducing it («in 5,3»), read in the book of the context."@en .
+
+bj:regolaLettura a skos:Concept ;
+    skos:inScheme bj:regole ; skos:topConceptOf bj:regole ;
+    skos:prefLabel "lettura"@it , "reading"@en ;
+    rdfs:label "lettura"@it , "reading"@en ;
+    rdfs:comment "Il libro letto dal testo (stadio 2 e 2b: una parentesi, la prosa, il paragrafo)."@it ,
+                 "The book read from the text (stages 2 and 2b: an aside, the prose, the paragraph)."@en .
+
+bj:regolaIndice a skos:Concept ;
+    skos:inScheme bj:regole ; skos:topConceptOf bj:regole ;
+    skos:prefLabel "indice"@it , "index"@en ;
+    rdfs:label "indice"@it , "index"@en ;
+    rdfs:comment "Un refuso degli indici corretto dal registro dei dubbi (paratesto.CORREZIONI_INDICI)."@it ,
+                 "A misprint of the indices corrected by the log of doubts (paratesto.CORREZIONI_INDICI)."@en .
+
+bj:regolaProsa a skos:Concept ;
+    skos:inScheme bj:regole ; skos:topConceptOf bj:regole ;
+    skos:prefLabel "prosa"@it , "prose"@en ;
+    rdfs:label "prosa"@it , "prose"@en ;
+    rdfs:comment "Un refuso nella prosa delle appendici (paratesto.CORREZIONI_PROSA)."@it ,
+                 "A misprint in the prose of the appendices (paratesto.CORREZIONI_PROSA)."@en .
+
+bj:regolaRimando a skos:Concept ;
+    skos:inScheme bj:regole ; skos:topConceptOf bj:regole ;
+    skos:prefLabel "rimando"@it , "cross-reference"@en ;
+    rdfs:label "rimando"@it , "cross-reference"@en ;
+    rdfs:comment "Un «v.» a una voce stampata in una forma diversa (tsv.RIMANDI)."@it ,
+                 "A «v.» to an entry printed in another form (tsv.RIMANDI)."@en .
+
+bj:regolaPaginaEstranea a skos:Concept ;
+    skos:inScheme bj:regole ; skos:topConceptOf bj:regole ;
+    skos:prefLabel "pagina estranea"@it , "foreign page"@en ;
+    rdfs:label "pagina estranea"@it , "foreign page"@en ;
+    rdfs:comment "Un numero di pagina che non è di questa edizione (tsv.PAGINE_ESTRANEE): nessun bersaglio."@it ,
+                 "A page number not of this edition (tsv.PAGINE_ESTRANEE): no target."@en .
+
+bj:regolaNotaEditoriale a skos:Concept ;
+    skos:inScheme bj:regole ; skos:topConceptOf bj:regole ;
+    skos:prefLabel "nota editoriale"@it , "editorial note"@en ;
+    rdfs:label "nota editoriale"@it , "editorial note"@en ;
+    rdfs:comment "Una nota del curatore sulla tavola (dinastie.tsv)."@it ,
+                 "An editor's note on the chart (dinastie.tsv)."@en .
+
+bj:regolaParagrafo a skos:Concept ;
+    skos:inScheme bj:regole ; skos:topConceptOf bj:regole ;
+    skos:prefLabel "paragrafo"@it , "paragraph"@en ;
+    rdfs:label "paragrafo"@it , "paragraph"@en ;
+    rdfs:comment "I riferimenti senza sigla di un paragrafo del Dizionario letti in un libro (dufour.PARAGRAFI)."@it ,
+                 "The siglum-less references of a dictionary paragraph read in one book (dufour.PARAGRAFI)."@en .
+
+bj:regolaForma a skos:Concept ;
+    skos:inScheme bj:regole ; skos:topConceptOf bj:regole ;
+    skos:prefLabel "forma"@it , "form"@en ;
+    rdfs:label "forma"@it , "form"@en ;
+    rdfs:comment "Un rinvio del Dizionario stampato in una forma sbagliata (dufour.FORME)."@it ,
+                 "A dictionary cross-reference printed in a wrong form (dufour.FORME)."@en .
+
+bj:regolaConversione a skos:Concept ;
+    skos:inScheme bj:regole ; skos:topConceptOf bj:regole ;
+    skos:prefLabel "conversione"@it , "conversion"@en ;
+    rdfs:label "conversione"@it , "conversion"@en ;
+    rdfs:comment "I numeri di una citazione del Dizionario letti di nuovo (Siracide 34-36, Abdia, un refuso dell'OCR)."@it ,
+                 "The numbers of a dictionary citation read again (Sirach 34-36, Obadiah, an OCR misprint)."@en .
+
+bj:motivi a skos:ConceptScheme ;
+    rdfs:label "Tipi di motivo"@it , "Kinds of reason"@en ;
+    rdfs:comment "Perché un riferimento resta irrisolto o parziale."@it ,
+                 "Why a reference stays unresolved or partial."@en ;
+    skos:hasTopConcept bj:motivoExtracanonico , bj:motivoFuoriIntervallo , bj:motivoIntervalloErrato , bj:motivoNonCompreso , bj:motivoAltraNumerazione , bj:motivoLibroAmbiguo , bj:motivoAltro .
+
+bj:motivoExtracanonico a skos:Concept ;
+    skos:inScheme bj:motivi ; skos:topConceptOf bj:motivi ;
+    skos:prefLabel "libro extracanonico"@it , "extra-canonical book"@en ;
+    rdfs:label "libro extracanonico"@it , "extra-canonical book"@en ;
+    rdfs:comment "Un libro non in questa Bibbia (3-4 Esdra, Enoc, Giubilei, Sal 151)."@it ,
+                 "A book not in this Bible (3-4 Esdras, Enoch, Jubilees, Ps 151)."@en .
+
+bj:motivoFuoriIntervallo a skos:Concept ;
+    skos:inScheme bj:motivi ; skos:topConceptOf bj:motivi ;
+    skos:prefLabel "fuori intervallo"@it , "out of range"@en ;
+    rdfs:label "fuori intervallo"@it , "out of range"@en ;
+    rdfs:comment "Il capitolo o il versetto non esiste (anche un intervallo che supera la fine del capitolo)."@it ,
+                 "The chapter or verse does not exist (also a range past the end of the chapter)."@en .
+
+bj:motivoIntervalloErrato a skos:Concept ;
+    skos:inScheme bj:motivi ; skos:topConceptOf bj:motivi ;
+    skos:prefLabel "intervallo errato"@it , "misprinted range"@en ;
+    rdfs:label "intervallo errato"@it , "misprinted range"@en ;
+    rdfs:comment "Un intervallo stampato al contrario o con un refuso."@it ,
+                 "A range printed backwards or with a misprint."@en .
+
+bj:motivoNonCompreso a skos:Concept ;
+    skos:inScheme bj:motivi ; skos:topConceptOf bj:motivi ;
+    skos:prefLabel "non compreso"@it , "not understood"@en ;
+    rdfs:label "non compreso"@it , "not understood"@en ;
+    rdfs:comment "La grammatica non legge il riferimento."@it ,
+                 "The grammar does not read the reference."@en .
+
+bj:motivoAltraNumerazione a skos:Concept ;
+    skos:inScheme bj:motivi ; skos:topConceptOf bj:motivi ;
+    skos:prefLabel "altra numerazione"@it , "other numbering"@en ;
+    rdfs:label "altra numerazione"@it , "other numbering"@en ;
+    rdfs:comment "Un versetto di un'altra numerazione senza corrispondente CEI."@it ,
+                 "A verse of another numbering with no CEI counterpart."@en .
+
+bj:motivoLibroAmbiguo a skos:Concept ;
+    skos:inScheme bj:motivi ; skos:topConceptOf bj:motivi ;
+    skos:prefLabel "libro ambiguo"@it , "ambiguous book"@en ;
+    rdfs:label "libro ambiguo"@it , "ambiguous book"@en ;
+    rdfs:comment "Il libro di un riferimento senza sigla non si decide."@it ,
+                 "The book of a siglum-less reference cannot be decided."@en .
+
+bj:motivoAltro a skos:Concept ;
+    skos:inScheme bj:motivi ; skos:topConceptOf bj:motivi ;
+    skos:prefLabel "altro"@it , "other"@en ;
+    rdfs:label "altro"@it , "other"@en ;
+    rdfs:comment "Un altro motivo (il testo è in bj:motivo)."@it ,
+                 "Another reason (the text is in bj:motivo)."@en .
+

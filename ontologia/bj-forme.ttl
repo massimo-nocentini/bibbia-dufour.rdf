@@ -171,7 +171,13 @@ bjf:Riferimento a sh:NodeShape ;
                 [ sh:path bj:qualificatore ; sh:maxCount 1 ; sh:datatype xsd:string ] ,
                 [ sh:path bj:mandaANota ; sh:class bj:Nota ] ,
                 [ sh:path bj:mandaAMargine ; sh:class bj:Margine ] ,
-                [ sh:path bj:interpretazione ; sh:maxCount 1 ; sh:datatype xsd:string ] ;
+                [ sh:path bj:interpretazione ; sh:maxCount 1 ; sh:datatype xsd:string ] ,
+                [ sh:path bj:regola ; sh:maxCount 1 ;
+                  sh:in ( bj:regolaManuale bj:regolaAggiunta bj:regolaNumerazione bj:regolaRefuso bj:regolaCatena bj:regolaPuntatore bj:regolaCapitolo bj:regolaElenco bj:regolaInizio bj:regolaEster bj:regolaIntroduzione bj:regolaNudo bj:regolaLettura bj:regolaIndice bj:regolaProsa bj:regolaRimando bj:regolaPaginaEstranea bj:regolaNotaEditoriale bj:regolaParagrafo bj:regolaForma bj:regolaConversione ) ] ,
+                [ sh:path bj:categoriaMotivo ; sh:maxCount 1 ;
+                  sh:in ( bj:motivoExtracanonico bj:motivoFuoriIntervallo bj:motivoIntervalloErrato bj:motivoNonCompreso bj:motivoAltraNumerazione bj:motivoLibroAmbiguo bj:motivoAltro ) ] ,
+                [ sh:path bj:secondoVersione ; sh:maxCount 1 ; sh:class bj:Versione ] ;
+    sh:or ( [ sh:path bj:motivo ; sh:maxCount 0 ] [ sh:path bj:categoriaMotivo ; sh:minCount 1 ] ) ;
     sh:or ( [ sh:path bj:stato ; sh:in ( bj:irrisolto bj:nonRiferimento ) ]
             [ sh:path bj:aPassaggio ; sh:minCount 1 ]
             [ sh:path bj:libroCitato ; sh:minCount 1 ] ) ;
@@ -198,11 +204,13 @@ bjf:Citazione a sh:NodeShape ;
               [ sh:path bj:daParagrafo ; sh:minCount 1 ; sh:maxCount 1 ; sh:class bj:Paragrafo ]
               [ sh:path bj:daEvento ; sh:minCount 1 ; sh:maxCount 1 ; sh:class bj:EventoCronologia ]
               [ sh:path bj:daVoceIndice ; sh:minCount 1 ; sh:maxCount 1 ; sh:class bj:VoceIndice ]
+              [ sh:path bj:daVoceTavola ; sh:minCount 1 ; sh:maxCount 1 ]
               [ sh:property [ sh:path bj:daParagrafo ; sh:minCount 1 ; sh:maxCount 1 ; sh:class bj:ParagrafoVoce ] ,
                             [ sh:path bj:nellaVoce ; sh:minCount 1 ] ]
               [ sh:property [ sh:path bj:daSezione ; sh:minCount 1 ; sh:maxCount 1 ; sh:class bj:SezioneVoce ] ,
                             [ sh:path bj:nellaVoce ; sh:minCount 1 ] ] ) ;
     sh:or ( [ sh:path bj:daVoceIndice ; sh:minCount 1 ]
+            [ sh:path bj:daVoceTavola ; sh:minCount 1 ]
             [ sh:property [ sh:path bj:posizioneTesto ; sh:minCount 1 ] , [ sh:path bj:lunghezza ; sh:minCount 1 ] ,
                           [ sh:path bj:posizioneHtml ; sh:minCount 1 ] , [ sh:path bj:fineHtml ; sh:minCount 1 ] ] ) ;
     sh:property [ sh:path bj:posizioneTesto ; sh:maxCount 1 ; sh:datatype xsd:integer ; sh:minInclusive 0 ] ,
@@ -421,7 +429,10 @@ bjf:VoceCanone a sh:NodeShape ;
 bjf:Abbreviazione a sh:NodeShape ;
     sh:targetClass bj:Abbreviazione ;
     sh:property [ sh:path skos:notation ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:minLength 1 ] ,
-                [ sh:path bj:significato ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:minLength 1 ] ,
+                [ sh:path bj:significato ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype rdf:langString ;
+                  sh:languageIn ( "it" ) ; sh:minLength 1 ] ,
+                [ sh:path rdfs:label ; sh:minCount 1 ; sh:maxCount 1 ; sh:languageIn ( "it" ) ] ,
+                [ sh:path bj:abbreviaVersione ; sh:maxCount 1 ; sh:class bj:Versione ] ,
                 [ sh:path bj:tipoAbbreviazione ; sh:minCount 1 ; sh:maxCount 1 ;
                   sh:in ( "libro" "libro-forma-antica" "abbreviazione" "segno" "codice-maiuscolo" "codice-minuscolo"
                           "papiro" "codice-vetus-latina" ) ] ,
@@ -534,4 +545,105 @@ bjf:LetteraAcrostica a sh:NodeShape ;
                   sh:minInclusive 1 ; sh:maxInclusive 22 ] ,
                 [ sh:path bj:rigo ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ; sh:minInclusive 1 ] ,
                 [ sh:path bj:ordine ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ; sh:minInclusive 1 ] ,
-                [ sh:path bj:mancanteNelTesto ; sh:maxCount 1 ; sh:in ( true ) ] .
+                [ sh:path bj:mancanteNelTesto ; sh:maxCount 1 ; sh:in ( true ) ] ,
+                [ sh:path rdfs:label ; sh:minCount 1 ; sh:maxCount 1 ; sh:languageIn ( "it" ) ] ,
+                [ sh:path bj:inVersetto ; sh:minCount 1 ; sh:maxCount 1 ; sh:class bj:Versetto ] ,
+                [ sh:path bj:pagina ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ] .
+
+# ================================================================== session F2: identifiers, the links between the parts,
+# the corrections, the calendar, the measures, the maps
+
+# every typed resource but a textual body has its id of the JSON (R2-02)
+bjf:Identificatore a sh:NodeShape ;
+    sh:targetSubjectsOf rdf:type ;
+    sh:or ( [ sh:class oa:TextualBody ]      # a body is named after its annotation
+            [ sh:path dcterms:identifier ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:minLength 1 ] ) .
+
+bjf:Allineamento a sh:NodeShape ;
+    sh:targetClass bj:Allineamento ;
+    sh:property [ sh:path bj:allineamentoDa ; sh:minCount 1 ; sh:maxCount 1 ; sh:class bj:VoceIndice ] ,
+                [ sh:path bj:allineamentoA ; sh:minCount 1 ; sh:maxCount 1 ;
+                  sh:or ( [ sh:class bj:Voce ] [ sh:class bj:VoceIndice ] ) ] ,
+                [ sh:path bj:proprietaMapping ; sh:minCount 1 ; sh:maxCount 1 ;
+                  sh:in ( skos:closeMatch skos:broadMatch skos:narrowMatch skos:relatedMatch ) ] ,
+                [ sh:path bj:metodoAllineamento ; sh:minCount 1 ; sh:maxCount 1 ;
+                  sh:in ( "label" "stem" "altLabel" "rinvio" "head" "mano" "indici-label" "indici-head" "indici-parte"
+                          "doppione" ) ] ,
+                [ sh:path bj:revisore ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ] ,
+                [ sh:path bj:versettiComuni ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ; sh:minInclusive 0 ] ,
+                [ sh:path bj:versettoComune ; sh:class bj:Versetto ] ,
+                [ sh:path bj:tabellaFonte ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ] ,
+                [ sh:path bj:rigaFonte ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ] .
+
+bjf:PersonaNominata a sh:NodeShape ;
+    sh:targetSubjectsOf bj:nominaPersona ;
+    sh:class bj:Versetto ;
+    sh:property [ sh:path bj:nominaPersona ; sh:class bj:PersonaStorica ] .
+
+bjf:Datazione a sh:NodeShape ;
+    sh:targetClass bj:Datazione ;
+    sh:property [ sh:path bj:datazioneDi ; sh:minCount 1 ; sh:maxCount 1 ; sh:class bj:EventoCronologia ] ,
+                [ sh:path bj:datazioneLibro ; sh:minCount 1 ; sh:class bj:Libro ] ,
+                [ sh:path bj:tipoDatazione ; sh:minCount 1 ; sh:maxCount 1 ;
+                  sh:in ( "composizione" "ministero" "evento" "citato" ) ] .
+
+bjf:Versione a sh:NodeShape ;
+    sh:targetClass bj:Versione ;
+    sh:property [ sh:path skos:prefLabel ; sh:minCount 1 ; sh:maxCount 1 ; sh:languageIn ( "it" ) ] .
+
+bjf:Testimonianza a sh:NodeShape ;
+    sh:targetSubjectsOf bj:citaTestimone ;
+    sh:class bj:Nota ;
+    sh:property [ sh:path bj:citaTestimone ; sh:or ( [ sh:class bj:Versione ] [ sh:class bj:Manoscritto ] ) ] .
+
+bjf:Mese a sh:NodeShape ;
+    sh:targetClass bj:Mese ;
+    sh:property [ sh:path skos:notation ; sh:minCount 1 ; sh:maxCount 1 ; sh:pattern "^[IVX]+$" ] ,
+                [ sh:path skos:prefLabel ; sh:minCount 1 ; sh:maxCount 1 ; sh:languageIn ( "it" ) ] ,
+                [ sh:path skos:inScheme ; sh:minCount 1 ; sh:class bj:Calendario ] ,
+                [ sh:path bj:meseSolare ; sh:minCount 1 ; sh:maxCount 1 ; sh:pattern "^[a-z]+/[a-z]+$" ] .
+
+bjf:Festa a sh:NodeShape ;
+    sh:targetClass bj:Festa ;
+    sh:property [ sh:path skos:prefLabel ; sh:minCount 1 ; sh:maxCount 1 ; sh:languageIn ( "it" ) ] ,
+                [ sh:path bj:nelMese ; sh:minCount 1 ; sh:maxCount 1 ; sh:class bj:Mese ] ,
+                [ sh:path bj:citaVersetto ; sh:minCount 1 ; sh:class bj:Versetto ] .
+
+bjf:Unita a sh:NodeShape ;
+    sh:targetClass bj:Unita ;
+    sh:property [ sh:path skos:prefLabel ; sh:minCount 1 ; sh:maxCount 1 ; sh:languageIn ( "it" ) ] ,
+                [ sh:path skos:altLabel ; sh:languageIn ( "he-Latn" "grc-Latn" "la" ) ] ,
+                [ sh:path bj:tipoMisura ; sh:minCount 1 ; sh:maxCount 1 ; sh:in ( "lunghezza" "capacita" "peso" "moneta" ) ] ,
+                [ sh:path bj:valore ; sh:maxCount 1 ; sh:datatype xsd:decimal ; sh:minExclusive 0 ] ,
+                [ sh:path bj:unitaQudt ; sh:maxCount 1 ;
+                  sh:in ( <http://qudt.org/vocab/unit/CentiM> <http://qudt.org/vocab/unit/M> <http://qudt.org/vocab/unit/KiloM>
+                          <http://qudt.org/vocab/unit/L> <http://qudt.org/vocab/unit/GM> <http://qudt.org/vocab/unit/KiloGM> ) ] ,
+                [ sh:path bj:rapportoDecimale ; sh:maxCount 1 ; sh:datatype xsd:decimal ] ,
+                [ sh:path bj:rapportoA ; sh:maxCount 1 ; sh:class bj:Unita ] ,
+                [ sh:path bj:equivaleA ; sh:class bj:Unita ] ,
+                [ sh:path bj:pagina ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ] .
+
+bjf:Carta a sh:NodeShape ;
+    sh:targetClass bj:Carta ;
+    sh:property [ sh:path dcterms:title ; sh:minCount 1 ; sh:maxCount 1 ; sh:languageIn ( "it" ) ] ,
+                [ sh:path bj:paginaPdfCarta ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ] ,
+                [ sh:path bj:immagine ; sh:minCount 1 ; sh:maxCount 1 ; sh:pattern "^progetti/.*\\.(png|jpg)$" ] ,
+                [ sh:path bj:raffiguraLibro ; sh:minCount 1 ; sh:class bj:Libro ] ,
+                [ sh:path bj:raffiguraPassaggio ; sh:class bj:Passaggio ] .
+
+bjf:Intervento a sh:NodeShape ;
+    sh:targetClass bj:Intervento ;
+    sh:property [ sh:path oa:hasTarget ; sh:minCount 1 ] ,
+                [ sh:path oa:motivatedBy ; sh:minCount 1 ; sh:maxCount 1 ;
+                  sh:in ( oa:editing oa:linking oa:describing bj:interpretando ) ] ,
+                [ sh:path bj:regola ; sh:minCount 1 ; sh:maxCount 1 ;
+                  sh:in ( bj:regolaManuale bj:regolaAggiunta bj:regolaNumerazione bj:regolaRefuso bj:regolaCatena bj:regolaPuntatore bj:regolaCapitolo bj:regolaElenco bj:regolaInizio bj:regolaEster bj:regolaIntroduzione bj:regolaNudo bj:regolaLettura bj:regolaIndice bj:regolaProsa bj:regolaRimando bj:regolaPaginaEstranea bj:regolaNotaEditoriale bj:regolaParagrafo bj:regolaForma bj:regolaConversione ) ] ,
+                [ sh:path oa:hasBody ; sh:maxCount 1 ; sh:class oa:TextualBody ] ,
+                [ sh:path bj:tabellaFonte ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ] ,
+                [ sh:path bj:rigaFonte ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ] ,
+                [ sh:path bj:testoStampato ; sh:maxCount 1 ; sh:datatype xsd:string ] ,
+                [ sh:path bj:testoLetto ; sh:maxCount 1 ; sh:datatype xsd:string ] ,
+                [ sh:path bj:schemaNumerazione ; sh:maxCount 1 ; sh:class bj:SchemaNumerazione ] ,
+                [ sh:path prov:wasDerivedFrom ; sh:maxCount 1 ;
+                  sh:or ( [ sh:class bj:Pagina ] [ sh:class bj:PaginaAppendice ] ) ] ,
+                [ sh:path prov:wasAttributedTo ; sh:minCount 1 ; sh:maxCount 1 ; sh:class foaf:Person ] .

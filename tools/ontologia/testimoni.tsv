@@ -1,0 +1,17 @@
+# The versions and recensions of the text the notes name (session F2, from R2-16): id, the name, the
+# abbreviation row of the front matter (its form, as printed in the list), the forms a note prints (a
+# regular expression; a word boundary is added around it) and the qualifiers of the references
+# (bj:qualificatore) that name it. The codices and papyri are the bj:Manoscritto of the same list; a
+# note names one in a list of witnesses (integrazione.py, `codici`).
+id	nome	abbreviazione	forme	qualificatori
+tm	Testo masoretico	TM	TM	TM|TM var.
+lxx	Versione dei Settanta	LXX	LXX	LXX|gr.
+samaritano	Pentateuco samaritano	sam.	sam\.	
+siriaca	Versione siriaca	sir.	sir\.	
+siroesaplare	Siro-esaplare	siro-es.	siro-es\.	
+luciano	Recensione greca di Luciano	gr.luc.	gr\.\s?luc\.	
+vetuslatina	Vetus latina	vet.lat.	vet\.\s?lat\.	
+volgata	Volgata di san Girolamo	volg.	volg\.	volg.
+neovolgata	Nova Vulgata	neovolg.	neovolg\.	
+targum	Targum		Targum|Tg	Tg
+qumran	Testi di Qumran		Qumran	

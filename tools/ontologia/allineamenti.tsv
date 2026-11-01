@@ -1,0 +1,476 @@
+# Concept alignments: index of notes and pastoral themes <-> Dizionario di Teologia Biblica, index of
+# notes <-> themes, and pairs of one index naming the same thing with no printed «v.». Seeded from the
+# reviewed candidates of session R2 (revisione/R2/allineamenti-candidati.tsv: 393 accepted of 413) and
+# reviewed again by F2 (7 «rivedere» -> 3 accepted; Magi/MAGIA rejected; directions of the head matches).
+# da: index entry (note.<n>, temi.<n>); a: a Dufour entry (voce:<slug>) or an index entry;
+# relazione: SKOS mapping property; metodo: label (same label), stem (singular/plural), altLabel
+# (single-target redirect), rinvio (a multi-target redirect headword), head (head word, kept only
+# with a shared verse or a reviewer's reason), mano (by hand), indici-* (notes <-> themes), doppione
+# (same index); comuni: verses shared at the review (rdf.py recomputes them); chi: who reviewed.
+da	a	relazione	metodo	comuni	chi	nota
+note.1	voce:abba	relatedMatch	rinvio	0	R2	Abbà / ABBA
+note.7	voce:abramo	closeMatch	label	10	R2	Abramo / ABRAMO
+note.13	voce:acqua	closeMatch	label	2	R2	Acqua / ACQUA
+note.14	voce:adamo	closeMatch	label	2	R2	Adamo / ADAMO
+note.15	voce:inferi-e-inferno	closeMatch	altLabel	1	R2	Ade (inferi) / INFERI E INFERNO
+note.17	voce:adulterio	closeMatch	label	12	R2	Adulterio / ADULTERIO
+note.18	voce:agape	relatedMatch	rinvio	0	R2	Agape / AGAPE
+note.19	voce:agnello-di-dio	narrowMatch	head	3	R2+F2	Agnello / AGNELLO DI DIO
+note.22	voce:albero	broadMatch	head	1	R2	Albero della vita / ALBERO
+note.24	voce:alfa-e-omega	relatedMatch	rinvio	0	R2	Alfa e Omega / ALFA E OMEGA
+note.25	voce:alleanza	closeMatch	label	10	R2	Alleanza / ALLEANZA
+note.26	voce:lode	closeMatch	altLabel	0	R2	Alleluia / LODE
+note.27	voce:altare	closeMatch	label	2	R2	Altare / ALTARE
+note.28	voce:dio	closeMatch	label	0	R2	Altissimo (Dio) / DIO
+note.33	voce:amore	closeMatch	label	9	R2	Amore / AMORE
+note.36	voce:anatema	closeMatch	label	4	R2	Anàtema o sterminio (ḥērem) / ANATEMA
+note.38	voce:angeli	closeMatch	stem	12	R2	Angelo / ANGELI
+note.39	voce:anima	closeMatch	label	5	R2	Anima / ANIMA
+note.43	voce:anticristo	closeMatch	label	1	R2	Anticristo / ANTICRISTO
+note.45	voce:anziani	relatedMatch	rinvio	0	R2	Anziani / ANZIANI
+note.47	voce:apocalisse	relatedMatch	rinvio	0	R2	Apocalisse / APOCALISSE
+note.49	voce:apostasia	relatedMatch	rinvio	0	R2	Apostasia / APOSTASIA
+note.50	voce:apostoli	closeMatch	label	4	R2	Apostoli / APOSTOLI
+note.51	voce:apparizioni-di-cristo	closeMatch	head	1	R2+F2	Apparizioni / APPARIZIONI DI CRISTO
+note.53	voce:arca-di-alleanza	broadMatch	head	2	R2	Arca dell’alleanza / ARCA DI ALLEANZA
+note.56	voce:ascensione	closeMatch	label	0	R2	Ascensione / ASCENSIONE
+note.63	voce:assemblea	relatedMatch	rinvio	0	R2	Assemblea / ASSEMBLEA
+note.66	voce:avvento	relatedMatch	rinvio	0	R2	Avvento (o venuta) / AVVENTO
+note.67	voce:avversario	relatedMatch	rinvio	0	R2	Avversario / AVVERSARIO
+note.71	voce:azzimi	relatedMatch	rinvio	0	R2	Azzimi / AZZIMI
+note.72	voce:baal	relatedMatch	rinvio	0	R2	Baal / BAAL
+note.73	voce:babele-babilonia	closeMatch	label	1	R2	Babilonia / BABELE – BABILONIA
+note.75	voce:banchetto	relatedMatch	rinvio	0	R2	Banchetto (o convito) / BANCHETTO
+note.77	voce:battesimo	closeMatch	label	7	R2	Battesimo / BATTESIMO
+note.78	voce:beatitudine	closeMatch	stem	3	R2	Beatitudini / BEATITUDINE
+note.79	voce:demoni	closeMatch	altLabel	1	R2	Beelzebùl / DEMONI
+note.81	voce:satana	closeMatch	altLabel	0	R2	Belial (o Beliar) / SATANA
+note.83	voce:benedizione	closeMatch	stem	2	R2	Benedizioni (e maledizioni) / BENEDIZIONE
+note.84	voce:bestie-e-bestia	closeMatch	label	2	R2	Bestia / BESTIE E BESTIA
+note.90	voce:caino	relatedMatch	rinvio	0	R2	Caino / CAINO
+note.92	voce:calice	closeMatch	label	2	R2	Calice / CALICE
+note.99	voce:feste	broadMatch	head	1	R2	Capanne (festa delle) / FESTE
+note.100	voce:carismi	closeMatch	label	1	R2	Carismi (doni spirituali) / CARISMI
+note.101	voce:carita	relatedMatch	rinvio	0	R2	Carità (inno alla) / CARITÀ
+note.102	voce:carne	closeMatch	label	2	R2	Carne / CARNE
+note.106	voce:cena	relatedMatch	rinvio	0	R2	Cena / CENA
+note.107	voce:cercare	closeMatch	label	2	R2	Cercare / CERCARE
+note.108	voce:cherubini	relatedMatch	rinvio	0	R2	Cherubini / CHERUBINI
+note.110	voce:chiesa	closeMatch	label	5	R2	Chiesa / CHIESA
+note.113	voce:cielo	closeMatch	label	4	R2	Cielo / CIELO
+note.115	voce:circoncisione	closeMatch	label	4	R2	Circoncisione / CIRCONCISIONE
+note.117	voce:citta	closeMatch	label	0	R2	Città / CITTÀ
+note.122	voce:comandamenti	relatedMatch	rinvio	0	R2	Comandamenti / COMANDAMENTI
+note.125	voce:comunione	closeMatch	label	3	R2	Comunione / COMUNIONE
+note.127	voce:confessione	broadMatch	head	2	R2	Confessione dei peccati / CONFESSIONE
+note.130	voce:conoscere	broadMatch	head	1	R2	Conoscere Dio / CONOSCERE
+note.134	voce:penitenza-conversione	closeMatch	label	3	R2	Conversione (metánoia) / PENITENZA - CONVERSIONE
+note.139	voce:corpo	closeMatch	label	2	R2	Corpo / CORPO
+note.140	voce:coscienza	closeMatch	label	1	R2	Coscienza / COSCIENZA
+note.142	voce:creazione	closeMatch	label	4	R2	Creazione / CREAZIONE
+note.145	voce:cristo	relatedMatch	rinvio	0	R2	Cristo / CRISTO
+note.146	voce:croce	broadMatch	head	1	R2	Croce di Gesù / CROCE
+note.147	voce:culto	closeMatch	label	6	R2	Culto / CULTO
+note.148	voce:cuore	closeMatch	label	1	R2	Cuore / CUORE
+note.152	voce:decalogo	relatedMatch	rinvio	0	R2	Decalogo / DECALOGO
+note.154	voce:decima	relatedMatch	rinvio	0	R2	Decima / DECIMA
+note.156	voce:dedicazione	relatedMatch	rinvio	0	R2	Dedicazione / DEDICAZIONE
+note.157	voce:demoni	closeMatch	label	0	R2	Demòni / DEMONI
+note.158	voce:tradizione	closeMatch	altLabel	1	R2	Deposito / TRADIZIONE
+note.159	voce:deserto	closeMatch	label	2	R2	Deserto / DESERTO
+note.161	voce:dispersione	closeMatch	altLabel	2	R2	Diaspora / DISPERSIONE
+note.162	voce:satana	closeMatch	altLabel	0	R2	Diavolo / SATANA
+note.164	voce:diluvio	closeMatch	label	0	R2	Diluvio / DILUVIO
+note.166	voce:dio	closeMatch	label	0	R2	Dio / DIO
+note.168	voce:discepolo	closeMatch	stem	2	R2	Discepoli / DISCEPOLO
+note.171	voce:dispersione	closeMatch	label	0	R2	Dispersione / DISPERSIONE
+note.173	voce:dito-di-dio	relatedMatch	rinvio	0	R2	Dito di Dio / DITO DI DIO
+note.174	voce:magia	closeMatch	altLabel	0	R2	Divinazione / MAGIA
+note.176	voce:divorzio	relatedMatch	rinvio	0	R2	Divorzio / DIVORZIO
+note.178	voce:domenica	relatedMatch	rinvio	0	R2	Domenica / DOMENICA
+note.180	voce:donna	broadMatch	head	1	R2	Donna, simbolo del popolo di Dio / DONNA
+note.189	voce:eden	relatedMatch	rinvio	0	R2	Eden / EDEN
+note.195	voce:elemosina	closeMatch	label	1	R2	Elemosina / ELEMOSINA
+note.196	voce:elezione	broadMatch	head	2	R2	Elezione d’Israele / ELEZIONE
+note.197	voce:elia	closeMatch	label	3	R2	Elia / ELIA
+note.207	voce:escatologia	relatedMatch	rinvio	0	R2	Escatologia / ESCATOLOGIA
+note.209	voce:esodo	closeMatch	label	3	R2	Esodo / ESODO
+note.211	voce:espiazione	closeMatch	label	1	R2	Espiazione / ESPIAZIONE
+note.214	voce:eucaristia	closeMatch	label	2	R2	Eucaristia / EUCARISTIA
+note.216	voce:faccia	closeMatch	label	0	R2	Faccia / FACCIA
+note.217	voce:farisei	closeMatch	label	2	R2	Farisei / FARISEI
+note.218	voce:fede	closeMatch	label	14	R2	Fede / FEDE
+note.219	voce:fedelta	closeMatch	label	1	R2	Fedeltà / FEDELTÀ
+note.220	voce:felicita	relatedMatch	rinvio	0	R2	Felicità / FELICITÀ
+note.221	voce:feste	broadMatch	head	1	R2	Feste d’Israele / FESTE
+note.222	voce:fidanzamento	relatedMatch	rinvio	0	R2	Fidanzamento / FIDANZAMENTO
+note.224	voce:figlio-dell-uomo	narrowMatch	head	5	R2+F2	Figlio / FIGLIO DELL'UOMO
+note.224	voce:figlio-di-dio	narrowMatch	head	1	R2+F2	Figlio / FIGLIO DI DIO
+note.225	voce:figlio-di-dio	closeMatch	label	6	R2	Figlio di Dio / FIGLIO DI DIO
+note.228	voce:follia	closeMatch	label	2	R2	Follia (e saggezza) / FOLLIA
+note.231	voce:fratello	closeMatch	stem	1	R2	Fratelli / FRATELLO
+note.232	voce:fratello	closeMatch	label	0	R2	Fratello / FRATELLO
+note.233	voce:frazione-del-pane	relatedMatch	rinvio	0	R2	Frazione del pane / FRAZIONE DEL PANE
+note.234	voce:fuoco	closeMatch	label	7	R2	Fuoco / FUOCO
+note.240	voce:geenna	relatedMatch	rinvio	0	R2	Geènna (gê-hinnom) / GEENNA
+note.241	voce:gelosia	relatedMatch	rinvio	0	R2	Gelosia / GELOSIA
+note.243	voce:straniero	closeMatch	label	1	R2	Ger o straniero / STRANIERO
+note.246	voce:germe	relatedMatch	rinvio	0	R2	Germe / GERME
+note.247	voce:gerusalemme	closeMatch	label	9	R2	Gerusalemme / GERUSALEMME
+note.249	voce:gesu-nome-di	closeMatch	label	4	R2	Gesù / GESÙ (NOME DI)
+note.250	voce:giacobbe	relatedMatch	rinvio	0	R2	Giacobbe / GIACOBBE
+note.253	voce:gioia	closeMatch	label	3	R2	Gioia / GIOIA
+note.255	voce:giorno-del-signore	closeMatch	head	3	R2+F2	Giorno di YHWH / GIORNO DEL SIGNORE
+note.257	voce:giosue	closeMatch	label	0	R2	Giosuè / GIOSUÈ
+note.258	voce:giovanni-battista	closeMatch	label	2	R2	Giovanni Battista / GIOVANNI BATTISTA
+note.260	voce:settimana	closeMatch	altLabel	0	R2	Giubileo / SETTIMANA
+note.261	voce:giuda	relatedMatch	rinvio	0	R2	Giuda / GIUDA
+note.262	voce:giudeo	closeMatch	stem	1	R2	Giudei e cristiani / GIUDEO
+note.264	voce:giudizio	closeMatch	label	2	R2	Giudizio / GIUDIZIO
+note.265	voce:giuramento	broadMatch	head	0	F2	giuramento imprecatorio: un tipo di giuramento
+note.266	voce:giustificazione	closeMatch	label	1	R2	Giustificazione / GIUSTIFICAZIONE
+note.267	voce:giustizia	closeMatch	label	5	R2	Giustizia / GIUSTIZIA
+note.268	voce:gloria	closeMatch	label	4	R2	Gloria / GLORIA
+note.270	voce:gnosi	relatedMatch	rinvio	0	R2	Gnosi / GNOSI
+note.272	voce:sodoma-e-gomorra	relatedMatch	rinvio	0	R2	Gomorra / SODOMA E GOMORRA
+note.275	voce:pastore-e-gregge	closeMatch	label	0	R2	Gregge / PASTORE E GREGGE
+note.276	voce:lode	closeMatch	altLabel	2	R2	Hallel o alleluia / LODE
+note.277	voce:dedicazione	relatedMatch	rinvio	0	R2	Hanukka (= dedicazione) / DEDICAZIONE
+note.282	voce:idoli	closeMatch	label	2	R2	Idoli / IDOLI
+note.284	voce:immagine	broadMatch	head	3	R2	Immagine di Dio / IMMAGINE
+note.285	voce:immortalita	relatedMatch	rinvio	0	R2	Immortalità / IMMORTALITÀ
+note.287	voce:imposizione-delle-mani	closeMatch	label	2	R2	Imposizione delle mani / IMPOSIZIONE DELLE MANI
+note.292	voce:indurimento	closeMatch	label	4	R2	Indurimento / INDURIMENTO
+note.293	voce:inferi-e-inferno	closeMatch	label	2	R2	Inferi / INFERI E INFERNO
+note.295	voce:intelligenza	relatedMatch	rinvio	0	R2	Intelligenza o mente (noûs) / INTELLIGENZA
+note.296	voce:intercessione	relatedMatch	rinvio	0	R2	Intercessione / INTERCESSIONE
+note.297	voce:uomo	closeMatch	label	0	R2	Interiore (uomo) / UOMO
+note.300	voce:ipocrita	closeMatch	stem	1	R2	Ipocriti / IPOCRITA
+note.301	voce:ira	closeMatch	label	6	R2	Ira / IRA
+note.302	voce:isacco	relatedMatch	rinvio	0	R2	Isacco / ISACCO
+note.303	voce:israele	closeMatch	label	4	R2	Israele / ISRAELE
+note.312	voce:kyrios	relatedMatch	rinvio	0	R2	Kyrios / KYRIOS
+note.313	voce:latte	closeMatch	label	2	R2	Latte e miele / LATTE
+note.314	voce:lavoro	broadMatch	head	2	R2	Lavoro manuale / LAVORO
+note.315	voce:lebbra	closeMatch	label	1	R2	Lebbra / LEBBRA
+note.316	voce:legge	closeMatch	label	6	R2	Legge / LEGGE
+note.317	voce:spirito	closeMatch	label	0	R2	Lettera e spirito / SPIRITO
+note.322	voce:liberazione-liberta	closeMatch	label	3	R2	Libertà / LIBERAZIONE – LIBERTÀ
+note.323	voce:libro	closeMatch	stem	3	R2	Libri / LIBRO
+note.324	voce:lingua	closeMatch	stem	2	R2	Lingue (miracolo delle) / LINGUA
+note.325	voce:parola-di-dio	closeMatch	altLabel	0	R2	Logos / PAROLA DI DIO
+note.326	voce:luce-e-tenebre	closeMatch	label	3	R2	Luce / LUCE E TENEBRE
+note.333	voce:gesu-nome-di	closeMatch	label	0	R2	Malattie (Gesù e le -) / GESÙ (NOME DI)
+note.334	voce:bene-e-male	closeMatch	label	0	R2	Male / BENE E MALE
+note.335	voce:maledizione	closeMatch	label	0	R2	Maledizione / MALEDIZIONE
+note.336	voce:manifestazione	relatedMatch	rinvio	0	R2	Manifestazione / MANIFESTAZIONE
+note.337	voce:manna	closeMatch	label	4	R2	Manna / MANNA
+note.338	voce:marana-tha	relatedMatch	rinvio	0	R2	Maràna tha / MARANA THA
+note.340	voce:mare	closeMatch	label	3	R2	Mare / MARE
+note.341	voce:maria	closeMatch	label	1	R2	Maria / MARIA
+note.342	voce:martire	closeMatch	label	2	R2	Martire / MARTIRE
+note.345	voce:matrimonio	closeMatch	label	4	R2	Matrimonio / MATRIMONIO
+note.347	voce:mediatore	closeMatch	label	1	R2	Mediatore / MEDIATORE
+note.351	voce:menzogna	closeMatch	label	1	R2	Menzogna / MENZOGNA
+note.353	voce:messia	closeMatch	label	3	R2	Messia / MESSIA
+note.354	voce:penitenza-conversione	closeMatch	label	3	R2	Metanoia (penitenza, conversione) / PENITENZA - CONVERSIONE
+note.358	voce:miracolo	closeMatch	stem	1	R2	Miracoli / MIRACOLO
+note.359	voce:misericordia	closeMatch	label	0	R2	Misericordia / MISERICORDIA
+note.360	voce:missione	closeMatch	label	3	R2	Missione / MISSIONE
+note.361	voce:mistero	closeMatch	label	3	R2	Mistero / MISTERO
+note.364	voce:mondo	closeMatch	label	2	R2	Mondo / MONDO
+note.366	voce:monte	closeMatch	label	2	R2	Monte / MONTE
+note.370	voce:morte	closeMatch	label	7	R2	Morte / MORTE
+note.371	voce:morte	closeMatch	stem	1	R2	Morti / MORTE
+note.372	voce:mose	closeMatch	label	8	R2	Mosè / MOSÈ
+note.384	voce:nome	closeMatch	label	3	R2	Nome / NOME
+note.388	voce:nozze	relatedMatch	rinvio	0	R2	Nozze / NOZZE
+note.389	voce:nube	closeMatch	label	5	R2	Nube / NUBE
+note.390	voce:nuovo	closeMatch	label	1	R2	Nuovo e vecchio / NUOVO
+note.391	voce:obbedienza	closeMatch	label	2	R2	Obbedienza / OBBEDIENZA
+note.393	voce:offerta	relatedMatch	rinvio	0	R2	Oblazione (offerta) / OFFERTA
+note.394	voce:olocausto	relatedMatch	rinvio	0	R2	Olocausto / OLOCAUSTO
+note.396	voce:opere	closeMatch	label	2	R2	Opere / OPERE
+note.397	voce:ora	broadMatch	head	1	R2	Ora di Gesù / ORA
+note.401	voce:pastore-e-gregge	closeMatch	altLabel	0	R2	Ovile / PASTORE E GREGGE
+note.402	voce:pace	closeMatch	label	2	R2	Pace / PACE
+note.403	voce:padri-e-padre	broadMatch	head	1	R2	«Padre nostro» / PADRI E PADRE
+note.406	voce:pane	closeMatch	label	1	R2	Pane / PANE
+note.407	voce:paolo	relatedMatch	rinvio	0	R2	Paolo / PAOLO
+note.408	voce:paraclito	closeMatch	label	1	R2	Paràclito / PARACLITO
+note.409	voce:paradiso	broadMatch	head	1	R2	Paradiso terrestre / PARADISO
+note.413	voce:parola-di-dio	narrowMatch	head	4	R2+F2	Parola / PAROLA DI DIO
+note.414	voce:parusia	relatedMatch	rinvio	0	R2	Parusia / PARUSIA
+note.416	voce:pasqua	closeMatch	label	4	R2	Pasqua / PASQUA
+note.417	voce:pasto	closeMatch	label	0	R2	Pasto / PASTO
+note.418	voce:pastore-e-gregge	closeMatch	label	4	R2	Pastore / PASTORE E GREGGE
+note.419	voce:peccato	closeMatch	label	4	R2	Peccato / PECCATO
+note.420	voce:pecore	relatedMatch	rinvio	0	R2	Pecore / PECORE
+note.422	voce:penitenza-conversione	closeMatch	label	1	R2	Penitenza (conversione) / PENITENZA - CONVERSIONE
+note.424	voce:pentecoste	closeMatch	label	2	R2	Pentecoste / PENTECOSTE
+note.425	voce:pentimento	relatedMatch	rinvio	0	R2	Pentimento / PENTIMENTO
+note.426	voce:perdizione	relatedMatch	rinvio	0	R2	Perdizione / PERDIZIONE
+note.427	voce:perdono	closeMatch	label	3	R2	Perdono / PERDONO
+note.428	voce:perfezione	closeMatch	label	2	R2	Perfezione / PERFEZIONE
+note.429	voce:persecuzione	closeMatch	label	1	R2	Persecuzione / PERSECUZIONE
+note.431	voce:pienezza	closeMatch	label	4	R2	Pienezza / PIENEZZA
+note.432	voce:pieta	closeMatch	label	1	R2	Pietà / PIETÀ
+note.433	voce:pietro-san	closeMatch	label	3	R2	Pietro / PIETRO (SAN)
+note.436	voce:popolo	closeMatch	stem	1	R2	Popoli (tavola dei) / POPOLO
+note.437	voce:potenza	closeMatch	label	3	R2	Potenza / POTENZA
+note.438	voce:potere	relatedMatch	rinvio	0	R2	Potere / POTERE
+note.439	voce:poveri	closeMatch	label	4	R2	Poveri / POVERI
+note.442	voce:preghiera	closeMatch	label	2	R2	Preghiera / PREGHIERA
+note.445	voce:presenza-di-dio	closeMatch	label	3	R2	Presenza di Dio / PRESENZA DI DIO
+note.447	voce:primato	relatedMatch	rinvio	0	R2	Primato / PRIMATO
+note.448	voce:primizie	closeMatch	label	0	R2	Primizie / PRIMIZIE
+note.451	voce:profeta	closeMatch	stem	8	R2	Profeti / PROFETA
+note.453	voce:profumo	broadMatch	head	1	R2	Profumo soave / PROFUMO
+note.454	voce:promesse	broadMatch	head	2	R2	Promessa di Dio / PROMESSE
+note.455	voce:propiziatorio	relatedMatch	rinvio	0	R2	Propiziatorio o coperchio / PROPIZIATORIO
+note.458	voce:prossimo	closeMatch	label	0	R2	Prossimo / PROSSIMO
+note.459	voce:prostituzione	relatedMatch	rinvio	0	R2	Prostituzione / PROSTITUZIONE
+note.461	voce:prova-tentazione	closeMatch	label	0	R2	Prova / PROVA - TENTAZIONE
+note.463	voce:provvidenza	broadMatch	head	1	R2	Provvidenza di Dio / PROVVIDENZA
+note.468	voce:puro	closeMatch	label	3	R2	Puro e impuro / PURO
+note.472	voce:redenzione	closeMatch	label	3	R2	Redenzione / REDENZIONE
+note.475	voce:regno	closeMatch	label	4	R2	Regno / REGNO
+note.477	voce:reni	closeMatch	label	1	R2	Reni e cuori / RENI
+note.478	voce:responsabilita	closeMatch	label	0	R2	Responsabilità / RESPONSABILITÀ
+note.480	voce:resto	broadMatch	head	1	R2	Resto d’Israele / RESTO
+note.481	voce:retribuzione	closeMatch	label	22	R2	Retribuzione / RETRIBUZIONE
+note.483	voce:ricchezza	closeMatch	label	1	R2	Ricchezza / RICCHEZZA
+note.484	voce:riconciliazione	broadMatch	head	1	R2	Riconciliazione nel Cristo / RICONCILIAZIONE
+note.485	voce:rigenerazione	relatedMatch	rinvio	0	R2	Rigenerazione / RIGENERAZIONE
+note.486	voce:ringraziamento	closeMatch	label	0	R2	Ringraziamento / RINGRAZIAMENTO
+note.487	voce:riposo	closeMatch	label	1	R2	Riposo / RIPOSO
+note.488	voce:riscatto	relatedMatch	rinvio	0	R2	Riscatto / RISCATTO
+note.489	voce:risurrezione	closeMatch	label	12	R2	Risurrezione / RISURREZIONE
+note.492	voce:rivelazione	broadMatch	head	1	R2	Rivelazione del Cristo / RIVELAZIONE
+note.493	voce:roccia	closeMatch	label	3	R2	Roccia / ROCCIA
+note.496	voce:sabato	closeMatch	label	3	R2	Sabato / SABATO
+note.500	voce:sadducei	relatedMatch	rinvio	0	R2	Sadducei / SADDUCEI
+note.502	voce:sale	closeMatch	label	2	R2	Sale / SALE
+note.503	voce:salvatore	relatedMatch	rinvio	0	R2	Salvatore / SALVATORE
+note.504	voce:salvezza	closeMatch	label	1	R2	Salvezza / SALVEZZA
+note.507	voce:sangue	closeMatch	label	8	R2	Sangue / SANGUE
+note.508	voce:santo	closeMatch	stem	2	R2	Santi / SANTO
+note.511	voce:santo	closeMatch	label	0	R2	Santo / SANTO
+note.512	voce:sapienza	closeMatch	label	4	R2	Sapienza / SAPIENZA
+note.514	voce:satana	closeMatch	label	3	R2	Satana / SATANA
+note.517	voce:scandalo	closeMatch	label	4	R2	Scandalo / SCANDALO
+note.518	voce:schiavo	closeMatch	label	1	R2	Schiavo / SCHIAVO
+note.520	voce:scriba	relatedMatch	rinvio	0	R2	Scriba / SCRIBA
+note.521	voce:scrittura	closeMatch	stem	2	R2	Scritture / SCRITTURA
+note.522	voce:segno	closeMatch	label	5	R2	Segno / SEGNO
+note.523	voce:segreto	relatedMatch	rinvio	0	R2	Segreto / SEGRETO
+note.526	voce:serpente	relatedMatch	rinvio	0	R2	Serpente / SERPENTE
+note.527	voce:servo-di-dio	closeMatch	head	5	R2+F2	Servo di YHWH / SERVO DI DIO
+note.535	voce:sigillo	broadMatch	head	1	R2	Sigillo dello Spirito (sfragìs) / SIGILLO
+note.536	voce:signore	closeMatch	label	3	R2	Signore (Gesù) / SIGNORE
+note.536	voce:gesu-nome-di	closeMatch	label	2	R2	Signore (Gesù) / GESÙ (NOME DI)
+note.537	voce:silenzio	closeMatch	label	0	R2	Silenzio / SILENZIO
+note.541	voce:sinai	relatedMatch	rinvio	0	R2	Sinai (Oreb) / SINAI
+note.542	voce:sion	relatedMatch	rinvio	0	R2	Sion / SION
+note.544	voce:sobrieta	relatedMatch	rinvio	0	R2	Sobrietà / SOBRIETÀ
+note.545	voce:sodoma-e-gomorra	relatedMatch	rinvio	0	R2	Sodoma / SODOMA E GOMORRA
+note.546	voce:sofferenza	closeMatch	label	1	R2	Sofferenza / SOFFERENZA
+note.547	voce:soffio	relatedMatch	rinvio	0	R2	Soffio / SOFFIO
+note.548	voce:sogni	closeMatch	label	3	R2	Sogni / SOGNI
+note.552	voce:sommo-sacerdote	relatedMatch	rinvio	0	R2	Sommo sacerdote / SOMMO SACERDOTE
+note.555	voce:speranza	closeMatch	label	1	R2	Speranza / SPERANZA
+note.556	voce:spirito	closeMatch	label	3	R2	Spirito / SPIRITO
+note.557	voce:sposo-sposa	closeMatch	label	3	R2	Sposa / SPOSO - SPOSA
+note.558	voce:stele	relatedMatch	rinvio	0	R2	Stele (Maššēbôt) / STELE
+note.562	voce:straniero	closeMatch	label	1	R2	Straniero (ger) e cittadino / STRANIERO
+note.565	voce:taglione	relatedMatch	rinvio	0	R2	Taglione / TAGLIONE
+note.568	voce:tempio	closeMatch	label	9	R2	Tempio / TEMPIO
+note.569	voce:tempo	closeMatch	label	4	R2	Tempo / TEMPO
+note.571	voce:feste	broadMatch	head	0	F2	festa delle Tende: una delle feste
+note.572	voce:luce-e-tenebre	closeMatch	label	0	R2	Tenebre / LUCE E TENEBRE
+note.575	voce:virtu-e-vizi	closeMatch	label	1	R2	Teologali (virtù) / VIRTÙ E VIZI
+note.579	voce:testimonianza	closeMatch	label	4	R2	Testimonianza / TESTIMONIANZA
+note.581	voce:timore-di-dio	narrowMatch	head	4	R2+F2	Timore / TIMORE DI DIO
+note.585	voce:legge	closeMatch	altLabel	0	R2	Torah / LEGGE
+note.586	voce:tradizione	closeMatch	label	1	R2	Tradizione / TRADIZIONE
+note.587	voce:trasfigurazione	closeMatch	label	1	R2	Trasfigurazione / TRASFIGURAZIONE
+note.589	voce:trinita	relatedMatch	rinvio	0	R2	Trinità / TRINITÀ
+note.596	voce:unita	closeMatch	label	0	R2	Unità / UNITÀ
+note.599	voce:uomo	closeMatch	label	1	R2	Uomo / UOMO
+note.603	voce:vangelo	closeMatch	label	1	R2	Vangelo / VANGELO
+note.604	voce:vanita	relatedMatch	rinvio	0	R2	Vanità / VANITÀ
+note.606	voce:vedere	broadMatch	head	0	F2	VEDERE tratta il vedere Dio
+note.607	voce:vedove	closeMatch	label	1	R2	Vedove / VEDOVE
+note.609	voce:vendetta	broadMatch	head	1	R2	Vendetta divina (appellarsi alla) / VENDETTA
+note.613	voce:verita	closeMatch	label	2	R2	Verità / VERITÀ
+note.615	voce:via	closeMatch	label	4	R2	Via / VIA
+note.616	voce:vegliare	closeMatch	altLabel	2	R2	Vigilanza / VEGLIARE
+note.617	voce:vite-vigna	closeMatch	label	2	R2	Vigna / VITE - VIGNA
+note.618	voce:virtu-e-vizi	closeMatch	label	2	R2	Virtù / VIRTÙ E VIZI
+note.619	voce:visita	broadMatch	head	2	R2	Visita di YHWH / VISITA
+note.620	voce:vita	closeMatch	label	5	R2	Vita / VITA
+note.621	voce:vite-vigna	closeMatch	label	1	R2	Vite / VITE - VIGNA
+note.623	voce:vittoria	closeMatch	label	1	R2	Vittoria / VITTORIA
+note.624	voce:virtu-e-vizi	closeMatch	label	1	R2	Vizi (liste di) / VIRTÙ E VIZI
+note.626	voce:faccia	closeMatch	altLabel	4	R2	Volto / FACCIA
+temi.1	voce:adorazione	closeMatch	label	27	R2	Adorazione / ADORAZIONE
+temi.3	voce:amore	closeMatch	label	46	R2	Amore / AMORE
+temi.4	voce:amore	broadMatch	head	14	R2	Amore verso Dio / AMORE
+temi.5	voce:amore	broadMatch	head	39	R2	Amore fraterno / AMORE
+temi.8	voce:beatitudine	closeMatch	label	36	R2	Beatitudine / BEATITUDINE
+temi.9	voce:benedizione	closeMatch	label	31	R2	Benedizione / BENEDIZIONE
+temi.10	voce:carismi	closeMatch	label	88	R2	Carismi / CARISMI
+temi.11	voce:cercare	closeMatch	label	20	R2	Cercare / CERCARE
+temi.12	voce:chiesa	closeMatch	label	23	R2	Chiesa / CHIESA
+temi.13	voce:confessione	closeMatch	label	32	R2	Confessione / CONFESSIONE
+temi.14	voce:penitenza-conversione	closeMatch	label	50	R2	Conversione / PENITENZA - CONVERSIONE
+temi.15	voce:corpo	closeMatch	label	34	R2	Corpo / CORPO
+temi.16	voce:croce	closeMatch	label	18	R2	Croce / CROCE
+temi.17	voce:cuore	closeMatch	label	24	R2	Cuore / CUORE
+temi.18	voce:discepolo	closeMatch	label	33	R2	Discepolo / DISCEPOLO
+temi.19	voce:domenica	relatedMatch	rinvio	0	R2	Domenica / DOMENICA
+temi.20	voce:dono	closeMatch	label	39	R2	Dono / DONO
+temi.21	voce:edificare	closeMatch	label	23	R2	Edificare / EDIFICARE
+temi.23	voce:eucaristia	closeMatch	label	71	R2	Eucaristia / EUCARISTIA
+temi.24	voce:fede	closeMatch	label	214	R2	Fede / FEDE
+temi.25	voce:fedelta	closeMatch	label	55	R2	Fedeltà / FEDELTÀ
+temi.26	voce:fiducia	closeMatch	label	6	R2	Fiducia / FIDUCIA
+temi.27	voce:figlio-di-dio	closeMatch	label	45	R2	Figlio di Dio / FIGLIO DI DIO
+temi.28	voce:forza	closeMatch	label	6	R2	Forza / FORZA
+temi.30	voce:fratello	closeMatch	label	31	R2	Fratello / FRATELLO
+temi.31	voce:gioia	closeMatch	label	50	R2	Gioia / GIOIA
+temi.32	voce:giorno-del-signore	closeMatch	label	31	R2	Giorno del Signore / GIORNO DEL SIGNORE
+temi.33	voce:giovanni-battista	closeMatch	label	48	R2	Giovanni Battista / GIOVANNI BATTISTA
+temi.34	voce:giudizio	broadMatch	head	117	R2	Giudizio di Dio / GIUDIZIO
+temi.35	voce:giustificazione	closeMatch	label	13	R2	Giustificazione / GIUSTIFICAZIONE
+temi.36	voce:giustizia	broadMatch	head	1	R2	Giustizia sociale / GIUSTIZIA
+temi.37	voce:grazia	closeMatch	label	31	R2	Grazia / GRAZIA
+temi.39	voce:insegnare	closeMatch	label	90	R2	Insegnare / INSEGNARE
+temi.40	voce:lavoro	closeMatch	label	32	R2	Lavoro / LAVORO
+temi.41	voce:legge	closeMatch	label	906	R2	Legge / LEGGE
+temi.42	voce:liberazione-liberta	closeMatch	label	128	R2	Liberazione-libertà / LIBERAZIONE – LIBERTÀ
+temi.43	voce:lode	closeMatch	label	216	R2	Lode / LODE
+temi.44	voce:luce-e-tenebre	closeMatch	label	42	R2	Luce / LUCE E TENEBRE
+temi.45	voce:maria	closeMatch	label	81	R2	Maria / MARIA
+temi.46	voce:matrimonio	closeMatch	label	50	R2	Matrimonio / MATRIMONIO
+temi.47	voce:memoria	closeMatch	label	11	R2	Memoria / MEMORIA
+temi.48	voce:misericordia	closeMatch	label	76	R2	Misericordia / MISERICORDIA
+temi.49	voce:missione	closeMatch	label	15	R2	Missione / MISSIONE
+temi.50	voce:mistero	closeMatch	label	24	R2	Mistero / MISTERO
+temi.51	voce:mondo	closeMatch	label	61	R2	Mondo / MONDO
+temi.52	voce:morte	closeMatch	label	34	R2	Morte / MORTE
+temi.53	voce:nuovo	closeMatch	label	46	R2	Nuovo / NUOVO
+temi.54	voce:obbedienza	closeMatch	label	23	R2	Obbedienza / OBBEDIENZA
+temi.55	voce:opere	closeMatch	stem	40	R2	Opera / OPERE
+temi.56	voce:ora	closeMatch	label	14	R2	Ora / ORA
+temi.57	voce:pace	closeMatch	label	41	R2	Pace / PACE
+temi.58	voce:padri-e-padre	closeMatch	label	56	R2	Padre / PADRI E PADRE
+temi.59	voce:parola-di-dio	closeMatch	label	236	R2	Parola di Dio / PAROLA DI DIO
+temi.60	voce:pasqua	closeMatch	label	38	R2	Pasqua / PASQUA
+temi.61	voce:peccato	closeMatch	label	66	R2	Peccato / PECCATO
+temi.62	voce:penitenza-conversione	closeMatch	label	196	R2	Penitenza / PENITENZA - CONVERSIONE
+temi.63	voce:perdono	closeMatch	label	68	R2	Perdono / PERDONO
+temi.64	voce:persecuzione	closeMatch	label	43	R2	Persecuzione / PERSECUZIONE
+temi.65	voce:pienezza	closeMatch	label	10	R2	Pienezza / PIENEZZA
+temi.66	voce:popolo	broadMatch	head	19	R2	Popolo di Dio / POPOLO
+temi.67	voce:poveri	closeMatch	label	35	R2	Poveri / POVERI
+temi.68	voce:preghiera	closeMatch	label	151	R2	Preghiera / PREGHIERA
+temi.69	voce:promesse	closeMatch	stem	57	R2	Promessa / PROMESSE
+temi.70	voce:provvidenza	closeMatch	label	33	R2	Provvidenza / PROVVIDENZA
+temi.71	voce:redenzione	closeMatch	label	18	R2	Redenzione / REDENZIONE
+temi.72	voce:regno	broadMatch	head	141	R2	Regno di Dio / REGNO
+temi.73	voce:riconciliazione	closeMatch	label	11	R2	Riconciliazione / RICONCILIAZIONE
+temi.74	voce:ringraziamento	broadMatch	head	9	R2	Ringraziamento a Dio / RINGRAZIAMENTO
+temi.75	voce:risurrezione	broadMatch	head	78	R2	Risurrezione di Cristo / RISURREZIONE
+temi.76	voce:sacerdozio	closeMatch	label	71	R2	Sacerdozio / SACERDOZIO
+temi.77	voce:sacrificio	closeMatch	label	94	R2	Sacrificio / SACRIFICIO
+temi.78	voce:salvezza	closeMatch	label	47	R2	Salvezza / SALVEZZA
+temi.79	voce:santo	closeMatch	label	64	R2	Santo / SANTO
+temi.80	voce:sapienza	closeMatch	label	152	R2	Sapienza / SAPIENZA
+temi.81	voce:servire	closeMatch	label	7	R2	Servire/servizio / SERVIRE
+temi.82	voce:servo-di-dio	closeMatch	head	246	R2+F2	Servo del Signore / SERVO DI DIO
+temi.83	voce:signore	closeMatch	label	17	R2	Signore / SIGNORE
+temi.84	voce:speranza	closeMatch	label	81	R2	Speranza / SPERANZA
+temi.85	voce:spirito-di-dio	closeMatch	label	52	R2	Spirito santo/Spirito di Dio / SPIRITO DI DIO
+temi.86	voce:sposo-sposa	closeMatch	label	155	R2	Sposo / SPOSO - SPOSA
+temi.87	voce:testimonianza	broadMatch	head	19	R2	Testimonianza nel NT / TESTIMONIANZA
+temi.88	voce:timore-di-dio	narrowMatch	head	12	R2+F2	Timore / TIMORE DI DIO
+temi.89	voce:umilta	closeMatch	label	23	R2	Umiltà / UMILTÀ
+temi.90	voce:uomo	closeMatch	label	57	R2	Uomo / UOMO
+temi.91	voce:vangelo	closeMatch	label	19	R2	Vangelo / VANGELO
+temi.92	voce:verita	closeMatch	label	23	R2	Verità / VERITÀ
+temi.93	voce:via	closeMatch	label	21	R2	Via / VIA
+temi.94	voce:vita	closeMatch	label	43	R2	Vita / VITA
+temi.95	voce:vocazione	closeMatch	label	35	R2	Vocazione / VOCAZIONE
+temi.96	voce:volonta-di-dio	closeMatch	label	18	R2	Volontà di Dio / VOLONTÀ DI DIO
+note.510	voce:santo	closeMatch	mano		R2	Santità / SANTO
+note.474	voce:re	closeMatch	mano		R2	Regalità / RE
+temi.2	voce:amico	relatedMatch	mano		R2	Amicizia / AMICO
+temi.6	voce:ascoltare	closeMatch	mano		R2	Ascolto / ASCOLTARE
+temi.22	voce:esortare	closeMatch	mano		R2	Esortazione / ESORTARE
+temi.38	voce:esempio	relatedMatch	mano		R2	Imitazione / ESEMPIO
+temi.3	note.33	closeMatch	indici-label	4	R2+F2	Amore / Amore
+temi.4	note.33	broadMatch	indici-head	1	R2+F2	Amore verso Dio / Amore
+temi.5	note.33	broadMatch	indici-head	3	R2+F2	Amore fraterno / Amore
+temi.7	note.66	closeMatch	indici-head	0	R2+F2	Avvento (venuta) del Signore / Avvento (o venuta)
+temi.10	note.100	closeMatch	indici-label	1	R2+F2	Carismi / Carismi (doni spirituali)
+temi.11	note.107	closeMatch	indici-label	3	R2+F2	Cercare / Cercare
+temi.12	note.110	closeMatch	indici-label	3	R2+F2	Chiesa / Chiesa
+temi.14	note.134	closeMatch	indici-label	2	R2+F2	Conversione / Conversione (metánoia)
+temi.15	note.139	closeMatch	indici-label	3	R2+F2	Corpo / Corpo
+temi.17	note.148	closeMatch	indici-label	1	R2+F2	Cuore / Cuore
+temi.19	note.178	closeMatch	indici-label	2	R2+F2	Domenica / Domenica
+temi.23	note.214	closeMatch	indici-label	3	R2+F2	Eucaristia / Eucaristia
+temi.24	note.218	closeMatch	indici-label	8	R2+F2	Fede / Fede
+temi.25	note.219	closeMatch	indici-label	1	R2+F2	Fedeltà / Fedeltà
+temi.27	note.225	closeMatch	indici-label	3	R2+F2	Figlio di Dio / Figlio di Dio
+temi.30	note.232	closeMatch	indici-label	0	R2+F2	Fratello / Fratello
+temi.31	note.253	closeMatch	indici-label	2	R2+F2	Gioia / Gioia
+temi.32	note.255	closeMatch	indici-head	1	R2+F2	Giorno del Signore / Giorno di YHWH
+temi.33	note.258	closeMatch	indici-label	2	R2+F2	Giovanni Battista / Giovanni Battista
+temi.34	note.264	broadMatch	indici-head	2	R2+F2	Giudizio di Dio / Giudizio
+temi.35	note.266	closeMatch	indici-label	1	R2+F2	Giustificazione / Giustificazione
+temi.36	note.267	broadMatch	indici-head	0	R2+F2	Giustizia sociale / Giustizia
+temi.41	note.316	closeMatch	indici-label	3	R2+F2	Legge / Legge
+temi.42	note.322	relatedMatch	indici-parte	2	R2+F2	Liberazione-libertà / Libertà
+temi.44	note.326	closeMatch	indici-label	2	R2+F2	Luce / Luce
+temi.45	note.341	closeMatch	indici-label	0	R2+F2	Maria / Maria
+temi.46	note.345	closeMatch	indici-label	4	R2+F2	Matrimonio / Matrimonio
+temi.48	note.359	closeMatch	indici-label	0	R2+F2	Misericordia / Misericordia
+temi.49	note.360	closeMatch	indici-label	0	R2+F2	Missione / Missione
+temi.50	note.361	closeMatch	indici-label	3	R2+F2	Mistero / Mistero
+temi.51	note.364	closeMatch	indici-label	1	R2+F2	Mondo / Mondo
+temi.52	note.370	closeMatch	indici-label	1	R2+F2	Morte / Morte
+temi.54	note.391	closeMatch	indici-label	3	R2+F2	Obbedienza / Obbedienza
+temi.57	note.402	closeMatch	indici-label	0	R2+F2	Pace / Pace
+temi.59	note.413	broadMatch	indici-head	2	R2+F2	Parola di Dio / Parola
+temi.60	note.416	closeMatch	indici-label	5	R2+F2	Pasqua / Pasqua
+temi.61	note.419	closeMatch	indici-label	2	R2+F2	Peccato / Peccato
+temi.62	note.422	closeMatch	indici-label	0	R2+F2	Penitenza / Penitenza (conversione)
+temi.63	note.427	closeMatch	indici-label	2	R2+F2	Perdono / Perdono
+temi.64	note.429	closeMatch	indici-label	0	R2+F2	Persecuzione / Persecuzione
+temi.65	note.431	closeMatch	indici-label	2	R2+F2	Pienezza / Pienezza
+temi.67	note.439	closeMatch	indici-label	3	R2+F2	Poveri / Poveri
+temi.68	note.442	closeMatch	indici-label	1	R2+F2	Preghiera / Preghiera
+temi.71	note.472	closeMatch	indici-label	2	R2+F2	Redenzione / Redenzione
+temi.72	note.475	broadMatch	indici-head	3	R2+F2	Regno di Dio / Regno
+temi.74	note.486	broadMatch	indici-head	0	R2+F2	Ringraziamento a Dio / Ringraziamento
+temi.75	note.489	broadMatch	indici-head	4	R2+F2	Risurrezione di Cristo / Risurrezione
+temi.78	note.504	closeMatch	indici-label	0	R2+F2	Salvezza / Salvezza
+temi.79	note.511	closeMatch	indici-label	0	R2+F2	Santo / Santo
+temi.80	note.512	closeMatch	indici-label	2	R2+F2	Sapienza / Sapienza
+temi.83	note.536	closeMatch	indici-label	1	R2+F2	Signore / Signore (Gesù)
+temi.84	note.555	closeMatch	indici-label	1	R2+F2	Speranza / Speranza
+temi.85	note.556	broadMatch	indici-head	6	R2+F2	Spirito santo/Spirito di Dio / Spirito
+temi.87	note.579	broadMatch	indici-head	2	R2+F2	Testimonianza nel NT / Testimonianza
+temi.88	note.581	closeMatch	indici-label	2	R2+F2	Timore / Timore
+temi.90	note.599	closeMatch	indici-label	3	R2+F2	Uomo / Uomo
+temi.91	note.603	closeMatch	indici-label	2	R2+F2	Vangelo / Vangelo
+temi.92	note.613	closeMatch	indici-label	1	R2+F2	Verità / Verità
+temi.93	note.615	closeMatch	indici-label	3	R2+F2	Via / Via
+temi.94	note.620	closeMatch	indici-label	2	R2+F2	Vita / Vita
+note.89	note.41	closeMatch	doppione		R2	Caifa / Anna e Caifa
+note.354	note.134	closeMatch	doppione		R2	Metanoia / Conversione (metánoia)
+note.243	note.562	closeMatch	doppione		R2	Ger o straniero / Straniero (ger) e cittadino
+note.312	note.536	closeMatch	doppione		R2	Kyrios / Signore (Gesù)
+note.467	note.553	closeMatch	doppione		R2	Purìm / Sorti (tirare le)

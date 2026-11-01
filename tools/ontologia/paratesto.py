@@ -425,6 +425,14 @@ CORREZIONI_INDICI = [
     ('note', 'Amore', 'Gv 13,24', 'Gv 13,34', 'la nota della BJ sul comandamento nuovo è a Gv 13,34'),
     ('note', 'Legge', 'Mt 5,11', 'Mt 5,17', 'la nota della BJ sulla Legge antica e nuova è a Mt 5,17'),
     ('note', 'Emmanuele', 'Is 7,10', 'Is 7,14', 'la nota della BJ sull’Emmanuele è a Is 7,14'),
+    ('note', 'Gàlgala (gilgāl)', 'Os 9,14', 'Os 9,15', 'la nota della BJ su Gàlgala è a Os 9,15 («a Gàlgala: …»); '
+     'a Os 9,14 nessuna nota (p. 33, PDF 3034)'),
+    ('note', 'Decima', 'Eb 7,3', 'Eb 7,4', 'la nota della BJ sulla decima è a Eb 7,4 («la decima del suo bottino»; '
+     'p. 31, PDF 3032)'),
+    ('note', 'Martire', 'At 7,57', 'At 7,58', 'la nota della BJ sulla morte del «primo martire» è a At 7,58 '
+     '(p. 34, PDF 3035)'),
+    ('note', 'Scritture', '1Ts 5,25', '1Ts 5,27', 'la nota della BJ sulla «prima menzione della lettura pubblica» di '
+     'una lettera dell’apostolo è a 1Ts 5,27 (p. 38, PDF 3039)'),
     ('temi', 'Cuore', 'Cr 28,9', '1Cr 28,9', 'la sigla è stampata senza il numero (1Cr)'),
     ('temi', 'Gioia', '62,5', 'Is 62,5', 'i riferimenti a Isaia seguono Sof senza la sigla'),
     ('temi', 'Gioia', '66,10–14', 'Is 66,10–14', 'i riferimenti a Isaia seguono Sof senza la sigla'),
@@ -581,7 +589,7 @@ MESI = r'(?:gennaio|febbraio|marzo|aprile|maggio|giugno|luglio|agosto|settembre|
 ERA = r'(?:\s*(?P<e>a\.C\.|d\.C\.))?'
 A, Z = r'(?P<a>\d{1,4})', r'(?P<z>\d{1,4})'
 # the date an entry starts with (groups a, z: first and last year as printed; e: the era; s: a
-# shortened last year, "589/8"); else the one span in parentheses (a reign: "(680–669)")
+# shortened last year, "589/8"); else the one span in parentheses (a reign: "(680–669)", "(sett. 605–562)")
 DATA_INIZIO = [
     # "Fra il 34 e il 45:", "Tra 70 e 80 (?):"
     re.compile(r'^(?:Fra|Tra) (?:il )?' + A + r' e (?:il )?' + Z + ERA + r'(?:\s*\(\?\))?\s*:'),
@@ -607,7 +615,7 @@ DATA_INIZIO = [
     re.compile(r'^(?:%s\s+)?(?P<a>\d{1,7})(?:\s*ca\.)?(?:\s*(?:[–-]|o)\s*' % MESE + Z +
                r')?(?:\s+(?:inizio|fine|ca\.|circa))?' + ERA + r'\s*:'),
 ]
-PARENTESI = re.compile(r'\((?:ca\.\s*|verso il\s*)?(\d{2,4})\s*[–-]\s*(\d{1,4})(?:\s*ca\.)?' + ERA + r'\)')
+PARENTESI = re.compile(r'\((?:ca\.\s*|verso il\s*|(?:genn?|febbr?|mar|apr|ag|sett?|ott|nov|dic)\.\s*)?(\d{2,4})\s*[–-]\s*(\d{1,4})(?:\s*ca\.)?' + ERA + r'\)')
 
 
 def anno(n, era):

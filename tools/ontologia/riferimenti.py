@@ -30,6 +30,7 @@ Tg; "v"/"vv" verses and "c"/"cc" chapters of the current chapter/book; "cf.".
 
 parse(text, ctx) and resolve(ref, bibbia) are the API used by test_riferimenti.py.
 """
+import csv
 import json
 import os
 import re
@@ -57,8 +58,17 @@ OSIS2SIGLA = {osis: sig for _, osis, sig in LIBRI}
 EXTRA = {'3 Esdra': '3Esdr', '1 Esdra': '1Esdr', '4 Esdra': '4Esdr', '1 Enoc': '1En', 'Enoc': '1En',
          'Libro di Enoc': '1En', 'Giubilei': 'Jub', 'Didachè': 'Did', '3 Mac': '3Macc', '4 Mac': '4Macc',
          'Testamento di Levi': 'TLevi', '1QS': '1QS'}
-# sigla as misprinted in the notes (reported as unknown, with the likely siglum)
+# sigla as misprinted in the notes: the link goes to the book of the CEI siglum (rule 'refuso'), the
+# text stays as printed (Am 7,7 "Zac 4,10", "Zac 5,7"; At 26,7 "2Mc 7,9+"; the checklists say so)
 MISPRINT = {'Zac': 'Zc', '2Mc': '2Mac'}
+# chains of verses with a misprint the grammar cannot read, as printed -> (read as, why): the text
+# stays as printed, the link reads the corrected numbers (rule 'refuso'; evidence in the checklist)
+REFUSI = {
+    '7,1–2.3b–5.7.–10.12.16b.17b.22–23': ('7,1–2.3b–5.7–10.12.16b.17b.22–23',
+                                          '"5.7.–10" (Gen 6,5 note, p. 35): a stray ".", read 7–10'),
+    '7,6.11.13–16a.17a.18–21.–24': ('7,6.11.13–16a.17a.18–21.24',
+                                    '"18–21.–24" (Gen 6,5 note, p. 35): a stray "–", read 24'),
+}
 
 RELATION = {None: 'related', '‖': 'parallel', '=': 'doublet', '/': 'quoted-later'}
 TRADITION = ('LXX', 'volg.', 'TM', 'TM var.')
@@ -96,7 +106,7 @@ MISURA = re.compile(r'\d+,\d+\s*(?:cm|m|km|metri|litri|l|grammi|g|kg|chili|ettar
 PT = r'\d+(?:,\d+)?[a-z]{0,3}\+?'
 SEG = r'%s(?:[%s](?:\d+(?:,\d+)?[a-z]{0,2}|[a-z])(?![\dA-Z]|\ (?:Sam|Re|Cr|Mac|Cor|Ts|Tm|Pt|Gv)\b)\+?)?' % (
     PT, DASH)                                   # not the start of "–2Re 1" (a range across books)
-SPEC = r'%s(?:\.%s)*' % (SEG, SEG)
+SPEC = r'%s(?:\.(?:%s|[%s]\d+[a-z]{0,2}(?![\d,])))*' % (SEG, SEG, DASH)   # ".–10": a misprint (REFUSI)
 ITEM = r"""
   (?P<cf>[Cc]fr?\.\s*(?:anche\s+|già\s+)?)?
   (?P<sign>[‖=/])?\s*
@@ -241,6 +251,14 @@ def parse(text, ctx, prose=False, start=0):
             if g['spec']:
                 ref['spans'] = split_spec(g['spec'], False, 0)
         elif g['spec']:
+            if re.search(r'\.[%s]' % DASH, g['spec']):     # "5.7.–10": a misprint, read as REFUSI says
+                fix = REFUSI.get(g['spec'])
+                if fix:
+                    g['spec'] = fix[0]
+                    ref['refuso'] = fix[1]
+            if re.search(r'\dgr\.\d', g['spec']):     # "1Sam 14,23gr.31": v 23 of the Greek text, and v 31
+                g['spec'] = re.sub(r'(?<=\d)gr\.(?=\d)', '.', g['spec'])
+                ref['qualifier'] = ref['qualifier'] or 'gr.'
             if g['pfx']:
                 chapter_mode = g['pfx'].startswith('c')
             else:                               # also a bare number in a margin: Gen 25,9 "23"
@@ -506,7 +524,7 @@ def books_for(ref, ctx):
         if osis in ESTER:
             return [osis] + [x for x in ESTER if x != osis]
         return [osis] if osis else []
-    return list(SIGLA.get(ref['siglum'], []))
+    return list(SIGLA.get(MISPRINT.get(ref['siglum'], ref['siglum']), []))
 
 
 def greek_letters(B, cap, num, tail):
@@ -574,9 +592,8 @@ def resolve_as_printed(ref, B, ctx):
     if sig in EXTRA:
         ref['reason'] = 'extra-canonical book %s' % sig
         return ref
-    if sig in MISPRINT:
-        ref['reason'] = 'unknown siglum %s (%s?)' % (sig, MISPRINT[sig])
-        return ref
+    if sig in MISPRINT:                         # "Zac 4,10": the book of Zc, said in 'refuso'
+        ref['refuso'] = 'siglum %s printed for %s' % (sig, MISPRINT[sig])
     cands = books_for(ref, ctx)
     if not cands:
         ref['reason'] = 'unknown siglum %s' % sig if sig else 'no current book'
@@ -712,6 +729,8 @@ def record(lid, kind, source, verse, relation, r):
     for k in ('target_book', 'doublet_of', 'inferred'):
         if r.get(k):
             rec[k] = r[k]
+    if r.get('refuso') and r['status'] in ('resolved', 'partial'):
+        rec.update(corrected='refuso', corrected_from=None, why=r['refuso'])
     if r.get('keynote_verses'):
         rec['keynote_verses'] = r['keynote_verses']
     if kind.endswith('-cites'):
@@ -908,11 +927,105 @@ CORREZIONI = [
     ('note:Matt.8.3', '8,1–4,5', 0, 'Mt', None, '"8,1–4,5–13.14–15" (a comma misprinted for "."): Mt 8,1'),
     ('intro-atti.8', '15,22ss', 0, 'Rm', None, '"la Lettera ai Romani, soprattutto 15,22ss"'),
     ('intro-apocalisse.2', 'Giovanni (1,9', 0, 'Ap', None, '"il suo nome: Giovanni (1,9)": Ap 1,9'),
-]
+    ('note:Eph.3.18', 'cf. 1,17–19.23', 0, 'Ef', None,
+     '"(Gb 11,8–9; cf. 1,17–19.23; 2,7; 3,8; Col 2,2s)": after the parallel in Giobbe, Efesini again'),
+    ('note:Eph.3.18', '2,7', 0, 'Ef', None, 'the same list: Ef 2,7'),
+    ('note:Eph.3.18', '3,8', 0, 'Ef', None, 'the same list: Ef 3,8'),
+    ('note:2Macc.13.23', '6,59', 0, '1Mac', None,
+     '"il racconto di 1Maccabei … insiste sulla libertà religiosa concessa ai Giudei (6,59)": 1Mac 6,59'),
+    ('note:2Macc.15.20', '7,40.45', 0, '1Mac', None,
+     '"Il racconto parallelo di 1Maccabei … precisa il campo di battaglia: Adasà (7,40.45)": 1Mac 7,40.45'),
+] + [('intro-giovanni.25', raw, 0, '1Gv', None,
+      '"Quanto alla prima lettera, … (luce: 1,5s; giustizia: 2,29s; …)": the first letter of Giovanni')
+     for raw in ('1,5s', '2,29s', '4,7–8s', '5,6s', '3,23–24', '1,5–7', '2,9–11', '2,21–22', '4,1–6')]
 # a row whose raw text is a misprint read as another span: the verse the row links to
 CORREZIONI_VERSO = {('note:Matt.8.3', '8,1–4,5'): 'Matt.8.1'}
 CONTEXT_FIELDS = ('book', 'targets', 'ranges', 'flags', 'keynote', 'keynote_notes', 'keynote_mrefs',
                   'keynote_verses', 'status', 'reason')
+
+
+# ---------------------------------------------------------------- other numberings
+
+NUMERAZIONI = os.path.join(HERE, 'numerazioni.tsv')
+SCHEMI = {'volgata': 'Vulgate numbering', 'lxx': 'Greek (LXX) numbering', 'bj': 'numbering of the BJ',
+          'dizionario': 'older verse division of the Dizionario di Teologia Biblica'}
+QUALIFICATORE = {'volgata': 'volg.', 'lxx': 'LXX', 'bj': 'BJ'}
+# misprinted references whose correction the volume's checklist states with its evidence: the link goes
+# to the corrected reference (rule 'refuso'), the text stays as printed; read with the rows of
+# numerazioni.tsv: (source, reference as printed, corrected reference, why)
+REFUSI_RIFERIMENTI = [
+    ('mref:Eph.5.17_2', 'Sal 23,31 (LXX)', 'Pr 23,31',
+     '"Sal" printed for "Pr" (PDF 2823): «non ubriacatevi di vino» of Ef 5,18 quotes Pr 23,31 LXX '
+     '(μὴ μεθύσκεσθε οἴνῳ); Sal 23 has 6 verses'),
+]
+
+
+def numerazioni(schema=None):
+    """The rows of numerazioni.tsv (the numberings other than the CEI), all or of one scheme."""
+    with open(NUMERAZIONI, encoding='utf-8') as f:
+        lines = [x for x in f if x.strip() and not x.startswith('#')]
+    rows = list(csv.DictReader(lines, delimiter='\t', quoting=csv.QUOTE_NONE))
+    for r in rows:
+        if r['schema'] not in SCHEMI:
+            raise ValueError('numerazioni.tsv: unknown scheme %r' % r['schema'])
+    return [r for r in rows if schema is None or r['schema'] == schema]
+
+
+def numbering_corrections(links, B):
+    """The references printed in another numbering (the rows of numerazioni.tsv with a source):
+    linked to the CEI verse they mean (rule 'numerazione'), or made a numbering entry of their
+    verse ('='), or left unresolved with the reason ('—'). Every row must match a reference."""
+    rows = [r for r in numerazioni() if r['fonte']] + [
+        dict(schema='refuso', libro='', stampato=raw, cei=cei, fonte=src, n='0', motivo=why)
+        for src, raw, cei, why in REFUSI_RIFERIMENTI]
+    by = defaultdict(list)
+    for r in rows:
+        by[r['fonte']].append(r)
+    used, seen, out = Counter(), Counter(), []
+    for ln in links:
+        if ln['kind'] not in ('mref', 'note-cites', 'intro-cites') or ln['source'] not in by:
+            continue
+        seen[(ln['source'], ln['raw'])] += 1
+        row = next((r for r in by[ln['source']] if r['stampato'] == ln['raw'] and
+                    int(r['n']) in (0, seen[(ln['source'], ln['raw'])])), None)
+        if not row:
+            continue
+        used[(row['fonte'], row['stampato'], row['n'])] += 1
+        rule = 'refuso' if row['schema'] == 'refuso' else 'numerazione'
+        why = row['motivo'] if rule == 'refuso' else '%s; %s' % (SCHEMI[row['schema']], row['motivo'])
+        before = first_target(ln)
+        empty = dict(book=None, targets=[], ranges=[], flags=[], keynote=False, keynote_notes=[],
+                     keynote_mrefs=[], keynote_verses=[])
+        if row['cei'] == '=':                   # this verse's own number in that scheme
+            new = dict(empty, status='numbering', reason=None)
+            ln.update(alt=ln['alt'] or re.sub(r'^(?:vv?|cc?)\s+', '', ln['raw']),
+                      qualifier=ln['qualifier'] or QUALIFICATORE[row['schema']])
+            if ln['kind'] == 'mref':
+                ln['relation'] = 'numbering'
+        elif row['cei'] == '—':                 # no CEI counterpart
+            new = dict(empty, status='unresolved', reason=row['motivo'])
+            ln['qualifier'] = ln['qualifier'] or QUALIFICATORE.get(row['schema'])
+        else:
+            ctx = dict(book=B.verses[ln['source_verse']]['book'] if ln.get('source_verse') else None,
+                       chapter=None, margin=False)
+            got, end = parse(row['cei'], ctx, prose=True)
+            if len(got) != 1 or end != len(row['cei']):
+                raise ValueError('numerazioni.tsv: %r not read' % row['cei'])
+            new = resolve_as_printed(dict(got[0]), B, ctx)
+            if new['status'] != 'resolved':
+                raise ValueError('numerazioni.tsv: %r does not resolve (%s)' % (row['cei'], new['reason']))
+        for k in CONTEXT_FIELDS:
+            ln[k] = new.get(k, [] if k in ('targets', 'ranges', 'flags', 'keynote_notes', 'keynote_mrefs',
+                                           'keynote_verses') else None)
+        ln.pop('inferred', None)
+        ln.update(corrected=rule, corrected_from=before, why=why)
+        out.append(dict(link=ln['id'], source=ln['source'], raw=ln['raw'], rule=rule, before=before,
+                        after=first_target(ln), why=why))
+    missing = [r for r in rows if not used[(r['fonte'], r['stampato'], r['n'])]]
+    if missing:
+        raise ValueError('numerazioni.tsv: rows that match no reference: %s' %
+                         [(r['fonte'], r['stampato']) for r in missing])
+    return out
 
 
 def first_target(link):
@@ -1004,6 +1117,8 @@ def context_corrections(data, links, B):
         seen = Counter()
         for k, (r, ln) in enumerate(zip(refs, lns)):
             seen[r['raw']] += 1
+            if ln.get('corrected') in ('numerazione', 'refuso'):
+                continue                        # read in its numbering (numerazioni.tsv)
             prev = lns[k - 1] if k else None
             gap = text[prev['offset'] + prev['length']:ln['offset']] if prev else ''
             # the table first: it is read in the notes
@@ -1317,7 +1432,8 @@ def table_links(data, links, B):
 
 def context_links(data, links, B):
     """The pass of this section: corrections in place, then the added links (appended)."""
-    fixed = context_corrections(data, links, B)
+    fixed = numbering_corrections(links, B)
+    fixed += context_corrections(data, links, B)
     added = intro_book_links(data, links, B)
     links += added
     added2 = bare_note_links(data, links, B)
@@ -1441,7 +1557,11 @@ def main(a):
                                inizio='a range with a misprinted end: its first verse (partial)',
                                introduzione='added: a reference without siglum of an introduction to several books',
                                nudo='added: a chapter,verse without siglum after a preposition in a note',
-                               aggiunta='added: the table AGGIUNTE, a reference the grammar does not read'),
+                               aggiunta='added: the table AGGIUNTE, a reference the grammar does not read',
+                               numerazione='printed in another numbering (Vulgate, LXX, BJ): the CEI verse '
+                                           'of tools/ontologia/numerazioni.tsv',
+                               refuso='a misprinted siglum (MISPRINT) or chain of verses (REFUSI) read as '
+                                      'corrected; the text as printed'),
                 summary=s)
     dump(dict(meta=meta, links=links,
               unresolved=[dict(raw=k[0], reason=k[1], count=n) for k, n in worst.most_common()]), out)

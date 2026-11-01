@@ -18,16 +18,22 @@ make ontologia          # the same: vendor/venv/bin/python -I tools/ontologia/co
 | `canone.py` | the 74 book sections: corpus id, OSIS code, CEI siglum, canonical order, verse ids |
 | `estrai.py` | stage 1: LaTeX volumes → `ontologia/build/bibbia.json` |
 | `riferimenti.py` | stage 2: reference parser and resolver → `ontologia/build/collegamenti.json` |
-| `test_riferimenti.py` | stage 2 tests: 112 cases on strings of the corpus and 44 links read in the sense of the sentence (run by `costruisci.py`) |
+| `test_riferimenti.py` | stage 2 tests: 116 cases on strings of the corpus and 70 links read in the sense of the sentence, another numbering or a misprint (run by `costruisci.py`) |
+| `numerazioni.tsv` | the numberings other than the CEI (Vulgate, LXX, the BJ's own, the older division of Sirach 34–36 of the dictionary) and how a reference printed in one reads in the CEI: read by `riferimenti.py` (16 references of the BJ) and `dufour.py` (the scheme `dizionario`) |
 | `dufour.py` | stage 2b: the Dizionario di Teologia Biblica (`../dufour/corpus`, read only) → `ontologia/build/dufour.json` |
 | `test_dufour.py` | stage 2b tests: 98 citations of real rows, text, entries, links, numbering evidence, verse index (run by `costruisci.py`) |
 | `paratesto.py` | stage 2c: the front matter and the appendices (`progetti/introduzione-generale`, `progetti/appendici`, read only) → `ontologia/build/paratesto.json` |
 | `test_paratesto.py` | stage 2c tests: index references, misprints, dates of the chronology, woodcuts, canon, abbreviations, dynasties, acrostic letters (run by `costruisci.py`) |
-| `rdf.py` | stage 3: the four JSON files (Bible, links, dictionary, front matter and appendices) → `ontologia/bj-dati.ttl.gz`, `bj-dati.nt.gz`, `bj-contesto.jsonld`, `bj-void.ttl` |
+| `integrazione.py` | stage 2d: the links between the parts, the calendar, measures and maps, every correction as an intervention (hand tables below) → `ontologia/build/integrazione.json` |
+| `test_integrazione.py` | stage 2d tests: reviewed alignments and rejected ones, persons and their exceptions, datings, codices (D by book), measures and the prose misprints, the rows of every correction table (run by `costruisci.py`) |
+| `allineamenti.tsv`, `persone.tsv`, `cronologia-libri.tsv`, `testimoni.tsv`, `calendario.tsv`, `misure.tsv`, `carte.tsv` | the hand tables of stage 2d, each with its header comment (what a row says, who reviewed it) |
+| `sinonimi.tsv` | the spellings that differ between the dictionary and the CEI text (David / Davide): the explorer's search |
+| `rdf.py` | stage 3: the five JSON files (Bible, links, dictionary, front matter and appendices, integration) → `ontologia/bj-dati.ttl.gz`, `bj-dati.nt.gz`, `bj-contesto.jsonld`, `bj-void.ttl` |
 | `grafo.py` | loads `bj-dati.nt.gz` (and the ontology) into rdflib, fast |
 | `verifica_rdf.py` | stage 3 checks: parsers, OWL sanity, SPARQL integrity, SHACL, JSON-LD |
 | `interroga.py` | runs SPARQL queries (`ontologia/query/*.rq` or `-e`) and prints tables |
-| `esploratore.py` | stage 4: the four JSON files + `esploratore/` → `ontologia/esplora.html` |
+| `statistiche.py` | writes the *Size* tables and the query table of `ontologia/README.md` from `bj-void.ttl` and `build/query.md` (`--controlla`: only check) |
+| `esploratore.py` | stage 4: the five JSON files + `esploratore/` → `ontologia/esplora.html` |
 | `esploratore/` | the page: `modello.html`, `stile.css`, `app.js` (inlined by `esploratore.py`) |
 | `prova_esploratore.mjs` | stage 4 test: the page in headless Chromium (not run by `costruisci.py`) |
 | `costruisci.py` | runs every stage in order, stops at the first failed check |
@@ -183,9 +189,19 @@ the doublet *of that reference* (`doublet_of`), and the verse relates to it as t
 previous one (parallel, or related). A `=` with another book written out (`=Es 34,6+`
 beside Sal 86,15, 6 cases) is kept as printed.
 
-**Psalms.** The CEI (Hebrew) numbering is used; `(LXX)` is kept as a qualifier only, since
-the BJ uses it both for the Greek text with Hebrew numbers (`Sal 89,8 (LXX)` in 2Ts 1,9)
-and for Greek numbers (`Sal 54,20 (LXX)` in Mt 26,22, left unresolved).
+**Psalms.** The CEI (Hebrew) numbering is used; `(LXX)` is kept as a qualifier, since the BJ
+uses it mostly for the Greek text with Hebrew numbers (`Sal 89,8 (LXX)` in 2Ts 1,10, 10 of the 14
+psalm references so marked); where the print uses the Greek numbering, `numerazioni.tsv` maps the
+reference to the CEI verse (`Sal 103,12 (LXX)` in Mt 13,32 is Sal 104,12, `54,20 (LXX)` in Mt 26,23
+Sal 55,21, `68,35 (LXX)` in 2Ts 1,10 Sal 68,36, `Sal 9–10,32+` in Ez 9,9 Sal 10,11).
+
+**Other numberings** (`numerazioni.tsv`, rule `numerazione`). A reference the BJ prints in the
+Vulgate's numbering (Es 22 in the note on Es 20,22, `2Mac 12,43–46` three times, `At 19,23–41`), in
+the BJ's own (`36,27–31` in the introduction to Siracide) or in the Greek psalter is linked to the CEI
+verse the table gives, its text as printed (`bj:interpretazione` «numerazione: …»). A row whose `cei`
+is `=` makes the reference a numbering entry of its own verse (`13,27–28` beside Gdt 14,5, `per BJ:
+36,29` in the note on Sir 36,26); `—` leaves it unresolved with the reason (`i vv 20–21 della volg.`,
+`Sal 151`). A row that matches no reference stops the stage.
 
 **Bare numbers in the margins.** Most margins holding only a number (`\mref{23}`,
 `\mref{4 5 6}`) print the verse number of another tradition (the Vulgate in Gen 31–32,
@@ -210,9 +226,13 @@ continue it (`Ger 1,11–12 (cf. 31,28; 44,27)` stays in Ger). Never a start: da
 litri`), other numberings (`neovolg. (2,21)`, `la volg. (v 23)`, `TM 1,1`). The current
 book is the note's book, the current chapter that of its first target; introductions
 have a current book only when they introduce one book, and no current chapter.
-Extra-canonical books (`3 Esdra`, `Enoc`, `Giubilei`, `Didachè`, `1QS`, …) and misprinted
-sigla (`Zac`, `2Mc`) are kept as unresolved with that reason, and the references that
-follow them in the chain inherit them.
+Extra-canonical books (`3 Esdra`, `Enoc`, `Giubilei`, `Didachè`, `1QS`, …) are kept as unresolved
+with that reason, and the references that follow them in the chain inherit them. Misprinted sigla
+(`MISPRINT`: `Zac` for Zc in the note on Am 7,7, `2Mc` for 2Mac in the note on At 26,7) are read as
+the CEI siglum, the link marked `corrected` `refuso`; so are a misprinted reference of the margins
+(`REFUSI_RIFERIMENTI`: `Sal 23,31 (LXX)` beside Ef 5,17 is Pr 23,31) and the two chains of the note on
+Gen 6,5 the grammar cannot read (`REFUSI`: `7,1–2.3b–5.7.–10.12…` read 7–10, `…18–21.–24` read 24).
+`gr.` glued to a verse is a qualifier (`1Sam 14,23gr.31` is 1Sam 14,23, Greek text, and 14,31).
 
 **Key notes.** `+` sends to the narrowest note whose label starts at that verse, else one
 called from it, else the narrowest (≤ 20 verses) commenting on it; with no note there, to
@@ -231,13 +251,13 @@ count, so `Gv 10,34 (= Sal 82,6); 14,20` stays in Gv); verses of the previous ch
 `e forse`, `e anche` continue a chain (`Mt 15,26 e forse 7,6`), and after a `= 2Re 19,4`
 aside the chain goes back to its book (`Is 37,4 = 2Re 19,4; 37,31–32`). A reference whose
 first verse exists but whose end does not (`2Mac 12,43–46`, `Gb 12,23–35`) is never read
-elsewhere: that is a misprint or another numbering, and it stays unresolved. Readings
-after an extra-canonical book or a misprinted siglum are not tried.
+elsewhere: that is a misprint or another numbering, and it stays unresolved (unless
+`numerazioni.tsv` has it). Readings after an extra-canonical book or a misprinted siglum are not tried.
 
 **Checks** (exit status 1 if any fails): every margin and note has a link; link ids are
 unique; every target is a verse id; resolved links have targets, unresolved ones a
 reason; every citation's offsets point at its raw text in the plain text and the HTML.
-`test_riferimenti.py` runs 112 cases. Margin cases go through `printed(raw, verse)`,
+`test_riferimenti.py` runs 116 cases. Margin cases go through `printed(raw, verse)`,
 which takes the real `\mref` printed beside that verse, so a case cannot test a string
 the corpus does not have (five grammar probes that are not printed use `margin()` and
 say so); note cases use real note texts. The cases marked F1–F12 are the regressions
@@ -254,7 +274,7 @@ in the book of the reference before: «Dt 24 passim; 26,12», «Ger 23,5 = 33,15
 particolare (cf. 38,22)»), `puntatore` («v N» right after a reference of another chapter: «Ger
 39,1–10 (con un’aggiunta nel v 3)» is Ger 39,3), `capitolo` («v N» in a note on several
 chapters: the chapter named last in the sentence, the next chapters of the label, or the next
-chapter), `elenco` («vv 4,7,15»), the table `CORREZIONI` (48 rows read in the notes, each with
+chapter), `elenco` («vv 4,7,15»), the table `CORREZIONI` (62 rows read in the notes and introductions, each with
 its reason: a «Giovanni» or «Marco» before the parentheses is a person, the symbolic acts of
 Ezekiel listed in a note on Ger 18, …; a row that matches no reference stops the stage),
 `ester` (also margins: a «+» to Esther goes to the text that has the key note) and `inizio`
@@ -266,23 +286,26 @@ or section), `nudo` (a bare «c,v» after a preposition in a note, «come in 11,
 page image: «Nm 11,17 (Mosè); 25–26» is Nm 11,25–26, «ai cc 11, 27 e 31 del Deuteronomio» Dt 27
 and Dt 31, «Dt 5, soprattutto vv 4 e 22» Dt 5,22). Each such
 link has `corrected` (the rule), `corrected_from` (the former first verse) and `why`; they go
-to the graph as `bj:interpretazione` («rule: why»). Current volumes: 87 links corrected
-(manuale 48, inizio 16, catena 9, capitolo 8, puntatore 3, ester 2, elenco 1) and 821 added
+to the graph as `bj:interpretazione` («rule: why»). Current volumes: 117 links corrected
+(manuale 62, numerazione 16, inizio 10, catena 9, capitolo 8, refuso 6, puntatore 3, ester 2,
+elenco 1) and 821 added
 (introduzione 747, nudo 70, aggiunta 4). The Tufte edition gets exactly the same links as before the port:
 `genera.py` run on a scratch output wrote 95 byte-identical files and `test_genera.py` passes
 10/10.
 
-**Results** (current volumes): 18,455 margins → 28,669 links: 27,801 references, 99.95%
-resolved (related 25,098, parallel 1,533, quoted-later 659, doublet 511), 866 numbering,
-2 comments; 4,661 of them carry `+` (7,712 with the `+` of note and introduction citations). Notes: 10,762 label links and 25,437 citations in 6,485 notes,
-99.71% resolved (before the sense of the sentence: 25,363 in 6,467 notes, 99.66%); introductions: 2,689 citations,
-99.70% resolved (before: 1,942, 99.59%). The margins are unchanged in number and share
+**Results** (current volumes): 18,455 margins → 28,669 links: 27,800 references, 99.97%
+resolved, 867 numbering, 2 comments; 7,713 links carry `+` (margins, notes and introductions).
+Notes: 10,762 label links and 25,437 citations in 6,485 notes, 99.76% resolved (before the sense of
+the sentence: 25,363 in 6,467 notes, 99.66%); introductions: 2,689 citations, 99.81% resolved (before:
+1,942, 99.59%). All links: 66,611 resolved, 869 numbering, 63 unresolved, 12 partial, 2 comments
+(revisione 2026-10-31: 66,594, 867, 73, 21, 2 before it). The margins are unchanged in number and share
 (6 of them now read again: 5 `partial`, 1 in the other Esther text). What stays unresolved
 (`unresolved` in the file, about 130 strings) is genuinely odd: misprints (`Fil 1,21–32`,
 `Col 5,2`, `Mt 4,18–29`, `Lc 20,45–57`, `Sal 23,31 (LXX)` for Pr 23,31, `‖Lc 23,2–5,13–25`,
-`1Re 4,38` for 2Re 4,38, `Est 10,31` probably for 10,3l), verse numbers of other editions
-(`2Mac 12,46`, `Gdt 13,27`), extra-canonical books, and siglum-less references whose book
-is only named in the prose around them (`dai Salmi (soprattutto 78,20…)`).
+`1Re 4,38` for 2Re 4,38, `Est 10,31` probably for 10,3l), verse numbers of other editions not in
+`numerazioni.tsv` (`Sir 41,22–23`, partial), extra-canonical books (`Sal 151`, the Vulgate's `vv
+20–21` of Gdt 13), and siglum-less references whose book is only named in the prose around them
+(`dai Salmi (soprattutto 78,20…)`).
 
 **Known limits.** A siglum-less `3,1` or `v 6` means the book in force: when a note
 talks about another book without its siglum, the reference resolves wrongly if that
@@ -443,7 +466,7 @@ they are stale). A shim in front of `riferimenti.py` keeps every reference `tsv.
 resolves, so each row of the index gets the full typed link (flags, key notes, reason) and
 its `nota` column (what the BJ has at the first verse: `nota` a note is called or starts
 there, `copre` inside a note's label, `capitolo`, `rimandi`, `nessuna`) and `note`.
-Misprints stay as printed; `CORREZIONI_INDICI` (16 rows, each with the evidence of
+Misprints stay as printed; `CORREZIONI_INDICI` (20 rows, each with the evidence of
 `progetti/appendici/checklist-ocr.md`, in Italian) adds a `correction` (raw, targets, the
 notes there, why) where that log states the corrected reference: Caleb `Gb 14,6` → Gs 14,6,
 `Lc 22,60` → 66, `Gv 13,24` → 34, `Mt 5,11` → 17, `Is 7,10` → 14 in the index of notes;
@@ -865,3 +888,79 @@ acrostic letters and the verse → index shortcuts.
   `bj:testo` and `bj:acrostico`; one more integrity query (77). `make ontologia` green
   (13 min); 3,718,625 triples (+229).
 
+
+## Stage 7: the fixes of the review of 2026-10-31 (session F1)
+
+- `riferimenti.py`: `numerazioni.tsv` (rule `numerazione`, 16 references: the Greek psalter, the
+  Vulgate's Es 22, 2Mac 12, At 19, Gdt 13–14, the BJ's Sir 36, Sal 151); `MISPRINT` sigla read as the
+  CEI siglum and `REFUSI_RIFERIMENTI`, `REFUSI` (rule `refuso`, 6 links: Zac ×2, 2Mc, Sal 23,31 (LXX) →
+  Pr 23,31, the two chains of Gen 6,5); `gr.` as a qualifier; 14 more rows of `CORREZIONI` (Ef 3,18;
+  2Mac 13,23 and 15,20 → 1Mac; the nine 1Gv references of the introduction to Giovanni). Links:
+  resolved 66,594 → 66,611, unresolved 73 → 63, partial 21 → 12, numbering 867 → 869. The wrong link
+  of `Sal 103,12 (LXX)` (Ps 103,12) now goes to Ps 104,12.
+- `dufour.py`: the table of Sirach 34–36 is read from `numerazioni.tsv` (scheme `dizionario`, equal to
+  the former dict); `pietra- *memoriale` → `pietra-memoriale` (3 paragraphs).
+- `paratesto.py`: `CORREZIONI_INDICI` 16 → 20 (Os 9,15, Eb 7,4, At 7,58, 1Ts 5,27, read on PDF 3032–3039).
+- `progetti/appendici/tsv.py`: comments dropped as TeX does; a word split by `\pag{n}` is one word
+  (the 4 sub-themes of R1 F1).
+- `rdf.py`: no trailing space in a truncated label. `verifica_rdf.py`: the content of 460,452 literals
+  (line-end hyphens, LaTeX residue, spaces; «» () [] balanced in labels and titles) and the report of the
+  index references with no BJ note and no correction (18).
+- Queries 22 (overlap, order) and 25 (the first verse of the Bet stanza).
+- `make ontologia` green (13 min): 3,718,720 triples (+95), SHACL conforms; browser test 171/171.
+
+## Stage 8: the links between the parts and the explorer (review of 2026-10-31, session F2)
+
+- **Stage 2d, `integrazione.py`** (after `test_paratesto.py`): reads the hand tables of this folder
+  and the four JSON files, writes `build/integrazione.json`; its checks fail on a row naming an
+  unknown resource, a head-word alignment with no shared verse and no reviewer's reason, a verse
+  given one by one in `persone.tsv` that does not name the person, a reference of the calendar,
+  measures or maps that does not resolve, a row of a correction table with no intervention (or two),
+  a corrected or read link with none. `test_integrazione.py`: 6 tests on real rows.
+  - `allineamenti.tsv` (466): seeded by a script from R2's reviewed table (`revisione/R2/allineamenti-candidati.tsv`,
+    the `si` rows), F2's review of the 7 `rivedere` (3 accepted, each with its reason) and of Magi / MAGIA
+    (rejected), the direction of the head-word matches (an index entry broader than its dictionary
+    entry is `narrowMatch`), 6 hand rows (Amicizia, Ascolto, Esortazione, Imitazione, Santità, Regalità),
+    the 60 theme ↔ index-of-notes pairs and the 5 pairs of R2-10.
+  - `persone.tsv`: verses by name within the chapters listed (exceptions written out), index
+    sub-entries and references, chronology entries. `cronologia-libri.tsv`: 46 datings.
+  - `testimoni.tsv` and the codices: a list of at least two sigla (or a papyrus) within 60 characters of
+    a cue (`con`, `hanno`, `leggono`, `omette`, `var.`, `mss`, `ecc.`, …); D by book (05 Gospels and
+    Acts, 06 Paul), E only in Acts, a codex only in the books its abbreviation row names.
+  - `calendario.tsv`, `misure.tsv`, `carte.tsv`: the tables by hand, the references read by
+    `riferimenti.scan_prose`, the prose misprints of `paratesto.CORREZIONI_PROSA` read corrected.
+  - The interventions: one per row of `riferimenti.CORREZIONI` (matched by note and text),
+    `CORREZIONI_VERSO`, `AGGIUNTE` (by note, in text order), `REFUSI`, `REFUSI_RIFERIMENTI`, `MISPRINT`,
+    `numerazioni.tsv` (the dictionary's rows target the CEI passage they map), `paratesto.CORREZIONI_INDICI`,
+    `CORREZIONI_PROSA`, `tsv.RIMANDI`, `PAGINE_ESTRANEE`, `dufour.CORREZIONI`, `PARAGRAFI`, `FORME`, the notes
+    of `dinastie.tsv`, and one per link read by a rule of stage 2, 2b or 2c (1,433).
+- **`paratesto.py`**: a month before a reign's span is read («NABUCODÒNOSOR (sett. 605–562)»): 388 of
+  585 entries dated; query 22 now lists Nabucodònosor (R2-23's remaining gap).
+- **`rdf.py`**: the fourth part (`integrazione()`, VoID subset `vp:integrazione` and four linksets);
+  `dcterms:identifier` on the pages, the Bible, the front matter and appendices (R2-02), the
+  woodcut's page (its book's first) and the acrostic letter's page and `bj:inVersetto` (R2-11),
+  `bj:categoriaMotivo` on every reference with a reason, `bj:secondoVersione` from the qualifier,
+  `@it` on the labels and meanings of the abbreviations, the acrostic labels and the colophon (R2-07),
+  «Headword: label» sub-entry labels (R2-08), the VoID description of the whole dataset and `dc:` among
+  its vocabularies (R2-01). Literals: `xsd:decimal` and the language tags `he-Latn`, `grc-Latn`, `la`.
+- **Vocabulary** (`bj-ontologia.ttl`, version 1.3): 94 terms (230 → 324): 63 classes and properties, the concept schemes `bj:regole` (21
+  rules) and `bj:motivi` (7 kinds) and the motivation `bj:interpretando`; **shapes** (`bj-forme.ttl`): 11 more (identifiers, alignments,
+  datings, versions, witnesses, months, feasts, units, maps, interventions, persons named);
+  **checks** (`verifica_rdf.py`): 22 SPARQL queries on the integration (counts against the JSON,
+  shortcuts backed and closed, every reading or correction literal with its intervention, every typed
+  resource with an identifier); **queries** 27–32; **README** numbers by `statistiche.py`.
+- **Explorer** (R3): the reference box reads `1Cor 13,4` (E1), `Gv 3 16`, `Giov`, `Ecclesiaste`,
+  `Eccli`, «Lettera di Geremia» (Bar 6) and says «Gn» is Giona (E7); counts in the singular (E3);
+  not-found pages with their title and a message per view (E4); the *Appendici* tab and hub, the
+  appendices above the books on the first page, the Panoramica tab only in the hub on the phone (E5);
+  the search finds the other spellings (`sinonimi.tsv`) and says so (E2), in «Tutto» the verses come
+  with the dictionary and appendix groups as closed boxes, the paragraphs of a matching entry first
+  then by hits (E6); the filters wrap on the phone (E8); the graph's controls are a closed sheet on the
+  phone and the first view fits the root and its first level (E9); Back to a chapter keeps its scroll
+  (E11); titles name the verse and the period (E12); «Introduzione generale» and «riferimenti»
+  everywhere (E13); no «0» on the index cards (E14); a note named once in the index summary (E15);
+  E19: «Anche in» on the index entries, themes and dictionary entries, person pages (`#persona/<id>`)
+  linked from the dynasties and the verse panel, books and persons at the end of the chronology entries,
+  «Nella tavola cronologica» on a book page, «citato in N note» for versions and codices,
+  `#calendario`, `#misure`, `#carte`, the editor's intervention in the preview of a corrected link.
+  `prova_esploratore.mjs`: 50 more checks (221).

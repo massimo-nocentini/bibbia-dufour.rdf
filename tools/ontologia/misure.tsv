@@ -1,0 +1,71 @@
+# The table of measures and coins of the appendices (progetti/appendici/appendici/misure.tex, pp. 26-28,
+# PDF 3027-3029; «cifre approssimative»), by hand, one row per unit the table or its prose gives a value.
+# tipo: lunghezza, capacita, peso, moneta; nome: the Italian name printed (prefLabel); originale: the
+# Hebrew, Greek or Latin name printed in italics, lingua its language (he-Latn, grc-Latn, la);
+# valore and unita: the value printed and its unit (QUDT: unit:CentiM, unit:M, unit:KiloM, unit:L,
+# unit:GM, unit:KiloGM; stored as data); rapporto: the ratio to `base` as printed (the table's column;
+# a coin's ratio is to the Attic drachma or, for the Roman ones, to the denarius); equivale: a unit the
+# print says it is equivalent to; riferimenti: as printed (misprints too: paratesto.CORREZIONI_PROSA);
+# parole: the words of the CEI text that name the unit (whole words, no accents; only unambiguous ones).
+id	tipo	nome	originale	lingua	valore	unita	rapporto	base	equivale	riferimenti	pagina	parole	nota
+cubito	lunghezza	cubito	amma	he-Latn	45	unit:CentiM	1	cubito			26	cubito cubiti	
+spanna	lunghezza	spanna	zeret	he-Latn	22,5	unit:CentiM	1/2	cubito			26		
+palmo	lunghezza	palmo	tofah	he-Latn	7,5	unit:CentiM	1/6	cubito			26		
+dito	lunghezza	dito	eṣba	he-Latn	1,8	unit:CentiM	1/24	cubito			26		
+cubito-ezechiele	lunghezza	cubito antico di Ezechiele			52,5	unit:CentiM	7 palmi	palmo			26		misura 7 palmi; la spanna di Ez 40,5 è la metà
+canna-ezechiele	lunghezza	canna di Ezechiele			315	unit:CentiM	6 cubiti antichi	cubito-ezechiele		Ez 40,5	26		
+braccio	lunghezza	braccio			1,85	unit:M					26		NT
+stadio	lunghezza	stadio			185	unit:M					26		NT
+miglio	lunghezza	miglio romano			1479	unit:M	8 stadi	stadio			26		
+scheno	lunghezza	scheno	skoinos	grc-Latn	5,500	unit:KiloM	30 stadi	stadio		2Mac 11,5	26		
+moggio	capacita	moggio	kor	he-Latn	450	unit:L	10	misura			26		materie solide «omer o kor», liquide «kor»
+letek	capacita	letek	letek	he-Latn	225	unit:L	5	misura		Os 3,2+	26		
+misura	capacita	misura	efa	he-Latn	45	unit:L	1	misura	bat	Ez 45,10–11.13–14; Mi 6,10; Zac 5,5–11	26	efa	materie solide; in Zc 5,5–11 BJ traduce efa con «staio»
+bat	capacita	misura (liquidi)	bat	he-Latn	45	unit:L	1	misura	misura		26		materie liquide
+staio	capacita	staio	seah	he-Latn	15	unit:L	1/3	misura			26		
+sestiere	capacita	sestiere	hin	he-Latn	7,5	unit:L	1/6	misura			26	hin	materie liquide
+decimo	capacita	decimo	issaron	he-Latn	4,5	unit:L	1/10	misura			26		
+qab	capacita	qab	qab	he-Latn	2,5	unit:L	1/18	misura		2Re 6,25	26		
+pinta	capacita	pinta	log	he-Latn	0,6	unit:L	1/72	misura			26		
+artaba	capacita	artaba	artaba	grc-Latn	56	unit:L				Dn 14,3	27		misura persiana di ca. 56 litri (BC = sacchi)
+metreta	capacita	metreta	metreta	grc-Latn	39,4	unit:L			bat		27		NT, equivalente al bat
+sestiere-greco	capacita	sestiere greco-romano	xestès	grc-Latn	0,46	unit:L			pinta		27		o sextarius; equivalente al log
+modius	capacita	modius	modius	la	8,75	unit:L	2/3	staio			27		equivalente a 2/3 del seah
+chenice	capacita	chenìce	choinix	grc-Latn	1,10	unit:L				Ap 6,6	27		(BC = misura)
+talento	peso	talento	kikkar	he-Latn	34,272	unit:KiloGM	3000	siclo			27	talento talenti	
+mina	peso	mina	mané	he-Latn	571	unit:GM	50	siclo			27		
+siclo	peso	siclo	šeqel	he-Latn	11,4	unit:GM	1	siclo			27	siclo sicli	
+mezzo-siclo	peso	mezzo siclo	beqa	he-Latn	5,7	unit:GM	1/2	siclo			27		
+obolo-gera	peso	obolo	gera	he-Latn	0,6	unit:GM	1/20	siclo			27		
+mina-ezechiele	peso	mina di Ezechiele			685	unit:GM	60 sicli	siclo		Ez 45,12	27		
+libra	peso	libra romana	litra	grc-Latn	327	unit:GM					27		NT, circa
+mina-babilonese	moneta	mina d’argento			505	unit:GM				Ne 7,70	27		forse la mina babilonese
+dramme-oro	moneta	dramme d’oro							statere	Ne 7,70 (= Esd 6,69)	27		forse semi-stateri attici
+darico	moneta	darico d’oro			8,41	unit:GM			siclo	Esd 8,27	27		equivalente al siclo babilonese
+siclo-argento	moneta	siclo d’argento			5,60	unit:GM	1/20	darico		Ne 5,15	27		valeva venti volte meno del darico
+talento-attico	moneta	talento attico			26	unit:KiloGM	6000	dramma			27		circa; seimila dramme
+mina-attica	moneta	mina attica			436	unit:GM	100	dramma			27		cento dramme
+sicli-didramme	moneta	sicli (didramme)							didramma	1Mac 10,40	27		I sicli di 1Mac 10,40 sono didramme
+tetradramma-israele	moneta	tetradramma della prima rivolta			14	unit:GM					27		ca. 14 g, scritta «siclo d’Israele» (66–70; 132–135)
+didramma-israele	moneta	didramma della prima rivolta			7	unit:GM					27		scritta «mezzo siclo»
+dramma-israele	moneta	dramma della prima rivolta			3,35	unit:GM					27		scritta «quarto di siclo»
+statere	moneta	statere attico	statere	grc-Latn	8,60	unit:GM	20	dramma			28		taglio in oro; prima di Alessandro
+aureus	moneta	aureus sotto Augusto	aureus	la	7,80	unit:GM	25	denaro			28		
+tetradramma	moneta	tetradramma attico	tetradramma	grc-Latn	17,40	unit:GM	4	dramma			28		d’argento
+tetradramma-tiro	moneta	tetradramma di Tiro	tetradramma	grc-Latn	14,40	unit:GM	3	dramma	statere	Mt 17,27; 26,15 (D); cf. Zac 11,12	28		dal 126 a.C. al 195 d.C.; a volte chiamato statere
+didramma	moneta	didramma attico	didramma	grc-Latn	8,60	unit:GM	2	dramma			28		d’argento
+didramma-impero	moneta	didramma sotto l’impero	didramma	grc-Latn	7	unit:GM	1,5	dramma		Mt 17,24	28		ca. 7 g
+dramma	moneta	dramma attica	dramma	grc-Latn	4,36	unit:GM	1	dramma		2Mac 14,43	28		taglio in argento
+denaro	moneta	denaro	denaro	la	4,55	unit:GM	1	denaro			28		in argento, appare nel 269 a.C.; di buona lega fino al III sec.
+denaro-216	moneta	denaro dal 216 a.C.	denaro	la	3,85	unit:GM	1	denaro			28		dal 216 a.C. fino a Nerone
+dramma-impero	moneta	dramma sotto l’impero	dramma	grc-Latn	3,50	unit:GM	3/4	dramma			28		
+denaro-nerone	moneta	denaro da Nerone	denaro	la	3,41	unit:GM	1	denaro			28		a partire da Nerone
+sesterzio	moneta	sesterzio	sesterzio	la	25,40	unit:GM	1/4	dramma			28		in ottone; sotto Augusto, 4 assi
+obolo	moneta	obolo attico	obolo	grc-Latn	0,72	unit:GM	1/6	dramma			28		in argento
+dipondio	moneta	dipondio	dipondio	la	15,50	unit:GM	1/8	denaro		Lc 12,6	28		in ottone; sotto Augusto, 2 assi (Lc 12,6 e volg.)
+asse	moneta	asse	assarius	la	10	unit:GM	1/16	denaro			28		taglio bronzo, originariamente una libra (327 g); sotto Augusto
+calco	moneta	calco attico	calco	grc-Latn	8,60	unit:GM	1/48	dramma			28		bronzo
+semisse	moneta	semisse	semis	la	4,50	unit:GM	1/32	denaro			28		mezza libra, sotto Augusto, bronzo
+calco-antioco	moneta	calco sotto Antioco IV	calco	grc-Latn	6	unit:GM					28		ca. 6 g
+lepton	moneta	lepton	lepton	grc-Latn			1/336	dramma	calco	Mc 12,42; Lc 21,2; Lc 12,59 = Mt 5,26	28		«spicciolo», bronzo; 1/7 del calco
+quadrante	moneta	quadrante	quadrante	la	3,10	unit:GM	1/64	denaro			28		sotto Augusto, bronzo

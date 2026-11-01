@@ -15,6 +15,11 @@ bj-contesto.jsonld:
             links, citations by status, verses cited), every citation target a declared
             verse, every entry link resolved to an entry (and its section to that entry),
             the entry <-> verse and entry <-> entry shortcuts backed and closed
+  texts     the content of the literals (labels, titles, texts, note bodies): no line-end hyphen left
+            in a word ("testimo- nianza"), no LaTeX residue, no double or edge spaces; the labels of
+            the index entries and the titles with their «» () [] balanced (ALLOW: printed so)
+  warnings  (not failures) the references of the index of the notes with no BJ note at or over
+            their verse and no correction: the candidates of new misprints of the index
   SHACL     pyshacl with bj-forme.ttl on the whole graph (about 4.5 minutes)
   JSON-LD   a few resources (John 3,16, the entry ABELE) serialised with the context and
             parsed back unchanged
@@ -24,6 +29,7 @@ import gzip
 import hashlib
 import json
 import os
+import re
 import sys
 import time
 from collections import defaultdict
@@ -31,7 +37,8 @@ from multiprocessing import Pool
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-from rdf import BJ, BIBBIA, COLLEGAMENTI, CONTESTO, DUFOUR, NT, ONTOLOGIA, PARATESTO, PREFISSI, TTL, link_paratesto  # noqa: E402
+from rdf import BJ, BIBBIA, COLLEGAMENTI, CONTESTO, DUFOUR, INTEGRAZIONE, NT, ONTOLOGIA, PARATESTO, PREFISSI, TTL, \
+    link_paratesto  # noqa: E402
 import grafo  # noqa: E402
 
 FORME = os.path.join(os.path.dirname(ONTOLOGIA), 'bj-forme.ttl')
@@ -114,14 +121,14 @@ def conta(classe, sopra=''):
     return 'SELECT (COUNT(?x) AS ?n) WHERE { ?x a %s %s}' % (classe, sopra)
 
 
-def integrita(data, coll, dz, P):
+def integrita(data, coll, dz, P, I):
     """(name, query, expected value of the single result ?n)."""
     links = coll['links']
     plinks = link_paratesto(P)
     nmref = sum(1 for l in links if l['kind'] == 'mref')
-    ncit = sum(1 for l in links if l['kind'].endswith('-cites')) + len(dz['citations']) + len(plinks)
+    ncit = sum(1 for l in links if l['kind'].endswith('-cites')) + len(dz['citations']) + len(plinks) + len(I['links'])
     cited = set((l['source'].rsplit('.', 1)[0] if l['kind'] in ('intro-cites', 'front-cites') else l['source'], t)
-                for l in links + P['links'] if l['kind'].endswith('-cites') and l['status'] in ('resolved', 'partial')
+                for l in links + P['links'] + I['links'] if l['kind'].endswith('-cites') and l['status'] in ('resolved', 'partial')
                 for t in l['targets'])
     return [
         ('verses', conta('bj:Versetto'), len(data['verses'])),
@@ -175,13 +182,14 @@ def integrita(data, coll, dz, P):
          'SELECT (COUNT(*) AS ?n) WHERE { ?x bj:citaVersetto ?v }', len(cited)),
         ('citaVersetto backed by a citation of that note, introduction, text or entry',
          'SELECT (COUNT(*) AS ?n) WHERE { SELECT DISTINCT ?x ?v WHERE { { ?c bj:daNota ?x }'
-         ' UNION { ?c bj:daParagrafo/dcterms:isPartOf ?x } UNION { ?c bj:daEvento ?x } ?c bj:aPassaggio/bj:comprende ?v .'
+         ' UNION { ?c bj:daParagrafo/dcterms:isPartOf ?x } UNION { ?c bj:daEvento ?x } UNION { ?c bj:daVoceTavola ?x }'
+         ' ?c bj:aPassaggio/bj:comprende ?v .'
          ' ?x bj:citaVersetto ?v } }', len(cited)),
         ('quoted-later references in the shortcut',
          'SELECT (COUNT(?r) AS ?n) WHERE { ?r bj:relazione bj:citatoDopo ; bj:stato bj:risolto ;'
          ' bj:daVersetto ?a ; bj:aPassaggio/bj:comprende ?b FILTER (?a != ?b)'
          ' FILTER NOT EXISTS { ?a bj:citatoIn ?b } }', 0),
-    ] + integrita_dizionario(dz) + integrita_paratesto(P, data)
+    ] + integrita_dizionario(dz) + integrita_paratesto(P, data) + integrita_integrazione(I, P)
 
 
 def integrita_dizionario(dz):
@@ -341,9 +349,73 @@ def integrita_paratesto(P, data):
     ]
 
 
-def sparql(g, data, coll, dz, P, quiet):
+def integrita_integrazione(I, P):
+    """The links between the parts and the corrections (integrazione.json, session F2)."""
+    al = I['allineamenti']
+    per = I['persone']
+    da_tab = sum(1 for x in I['datazioni'] if x['tipo'] != 'citato')
+    return [
+        ('alignments: one bj:Allineamento per row of allineamenti.tsv', conta('bj:Allineamento'), len(al)),
+        ('alignments: each with its SKOS shortcut',
+         'SELECT (COUNT(*) AS ?n) WHERE { ?a a bj:Allineamento ; bj:allineamentoDa ?x ; bj:allineamentoA ?y ;'
+         ' bj:proprietaMapping ?p . ?x ?p ?y }', len(al)),
+        ('alignments: closeMatch and relatedMatch symmetric, broadMatch the inverse of narrowMatch',
+         'SELECT (COUNT(*) AS ?n) WHERE { { ?a skos:closeMatch ?b FILTER NOT EXISTS { ?b skos:closeMatch ?a } } UNION'
+         ' { ?a skos:relatedMatch ?b FILTER NOT EXISTS { ?b skos:relatedMatch ?a } } UNION'
+         ' { ?a skos:broadMatch ?b FILTER NOT EXISTS { ?b skos:narrowMatch ?a } } UNION'
+         ' { ?a skos:narrowMatch ?b FILTER NOT EXISTS { ?b skos:broadMatch ?a } } }', 0),
+        ('alignments: the shared verses are verses both concepts point to',
+         'SELECT (COUNT(*) AS ?n) WHERE { ?a bj:allineamentoDa ?x ; bj:versettoComune ?v .'
+         ' FILTER NOT EXISTS { { ?x bj:indicaVersetto ?v } UNION { ?w skos:broader ?x ; bj:indicaVersetto ?v } } }', 0),
+        ('alignments: shared verses of the JSON', 'SELECT (COUNT(*) AS ?n) WHERE { ?a bj:versettoComune ?v }',
+         sum(len(x['comuni']) for x in al)),
+        ('persons: verses naming a person (persone.tsv)', 'SELECT (COUNT(*) AS ?n) WHERE { ?v bj:nominaPersona ?p }',
+         len(per['versetti'])),
+        ('persons: bj:nominatoIn the inverse of bj:nominaPersona',
+         'SELECT (COUNT(*) AS ?n) WHERE { { ?v bj:nominaPersona ?p FILTER NOT EXISTS { ?p bj:nominatoIn ?v } } UNION'
+         ' { ?p bj:nominatoIn ?v FILTER NOT EXISTS { ?v bj:nominaPersona ?p } } }', 0),
+        ('persons: chronology entries and index entries naming a person',
+         'SELECT (COUNT(*) AS ?n) WHERE { { ?e bj:riguardaPersona ?p } UNION { ?e bj:indicaPersona ?p } }',
+         len(per['cronologia']) + len(per['indice'])),
+        ('datings: one bj:Datazione per row and per entry with references', conta('bj:Datazione'), len(I['datazioni'])),
+        ('datings: the hand rows', 'SELECT (COUNT(*) AS ?n) WHERE { ?d a bj:Datazione ; bj:rigaFonte ?r }', da_tab),
+        ('datings: bj:riguardaLibro backed by a bj:Datazione, bj:nellaCronologia its inverse',
+         'SELECT (COUNT(*) AS ?n) WHERE { { ?e bj:riguardaLibro ?b FILTER NOT EXISTS { ?d bj:datazioneDi ?e ;'
+         ' bj:datazioneLibro ?b } } UNION { ?e bj:riguardaLibro ?b FILTER NOT EXISTS { ?b bj:nellaCronologia ?e } }'
+         ' UNION { ?b bj:nellaCronologia ?e FILTER NOT EXISTS { ?e bj:riguardaLibro ?b } } }', 0),
+        ('datings: a cited book is a book of a verse the entry cites',
+         'SELECT (COUNT(*) AS ?n) WHERE { ?d bj:tipoDatazione "citato" ; bj:datazioneDi ?e ; bj:datazioneLibro ?b'
+         ' FILTER NOT EXISTS { ?e bj:citaVersetto/bj:inLibro ?b } }', 0),
+        ('witnesses: versions', conta('bj:Versione'), len(I['testimoni']['versioni'])),
+        ('witnesses: (note, witness) pairs', 'SELECT (COUNT(*) AS ?n) WHERE { ?x bj:citaTestimone ?t }',
+         sum(len(x[1]) for x in I['testimoni']['note_versioni'] + I['testimoni']['note_codici'])),
+        ('calendar, measures, maps: months, feasts, units, maps',
+         'SELECT (COUNT(*) AS ?n) WHERE { { ?x a bj:Mese } UNION { ?x a bj:Festa } UNION { ?x a bj:Unita } UNION'
+         ' { ?x a bj:Carta } }', len(I['mesi']) + len(I['feste']) + len(I['misure']) + len(I['carte'])),
+        ('calendar, measures, maps: their references, all resolved',
+         'SELECT (COUNT(*) AS ?n) WHERE { ?c bj:daVoceTavola ?x ; bj:stato bj:risolto }', len(I['links'])),
+        ('measures: a value has its QUDT unit', 'SELECT (COUNT(*) AS ?n) WHERE { ?u bj:valore ?v'
+         ' FILTER NOT EXISTS { ?u bj:unitaQudt ?q } }', 0),
+        ('interventions: one per row of the correction tables, rule and reading', conta('bj:Intervento'),
+         len(I['interventi'])),
+        ('interventions: each with a target, a rule and its source table',
+         'SELECT (COUNT(*) AS ?n) WHERE { ?i a bj:Intervento FILTER NOT EXISTS { ?i oa:hasTarget ?t ; bj:regola ?r ;'
+         ' bj:tabellaFonte ?f } }', 0),
+        ('interventions: every reading, correction and conversion literal has one',
+         'SELECT (COUNT(*) AS ?n) WHERE { { ?x bj:interpretazione ?t } UNION { ?x bj:correzione ?t } UNION'
+         ' { ?x bj:conversione ?t } FILTER NOT EXISTS { ?i oa:hasTarget ?x ; a bj:Intervento } }', 0),
+        ('interventions: the rule shortcut on the reference is the intervention\'s',
+         'SELECT (COUNT(*) AS ?n) WHERE { ?x bj:regola ?r FILTER NOT EXISTS { ?x a bj:Intervento }'
+         ' FILTER NOT EXISTS { ?i a bj:Intervento ; oa:hasTarget ?x ; bj:regola ?r } }', 0),
+        ('identifiers: every typed resource (bodies aside) has dcterms:identifier (R2-02)',
+         'SELECT (COUNT(DISTINCT ?x) AS ?n) WHERE { ?x a ?c FILTER (isIRI(?x) && ?c != oa:TextualBody)'
+         ' FILTER NOT EXISTS { ?x dcterms:identifier ?i } }', 0),
+    ]
+
+
+def sparql(g, data, coll, dz, P, quiet, I):
     err, rows = [], []
-    for name, q, atteso in integrita(data, coll, dz, P):
+    for name, q, atteso in integrita(data, coll, dz, P, I):
         t = time.time()
         n = int(list(g.query(PREFIX + q))[0][0])
         dt = time.time() - t
@@ -354,6 +426,79 @@ def sparql(g, data, coll, dz, P, quiet):
             print('  %-66s %7d  %s  %5.1f s' % (name, n, 'ok' if n == atteso else 'EXPECTED %d' % atteso, dt))
     print('  %d queries, %d as expected, %.1f s' % (len(rows), len(rows) - len(err), sum(r[3] for r in rows)))
     return err, rows
+
+
+# ---------------------------------------------------------------- the content of the literals
+
+TESTI = ('skos:prefLabel', 'rdfs:label', 'bj:etichetta', 'bj:testo', 'dcterms:title', 'rdf:value')
+REGOLE = [
+    ('a line-end hyphen left in a word', re.compile(r'[a-zà-ù]- [a-zà-ù]'), TESTI),
+    ('LaTeX residue', re.compile(r'[{}\\]'), TESTI),
+    ('two spaces', re.compile(r'  '), TESTI),
+    ('a space at the start or the end', re.compile(r'^\s|\s$'), TESTI),
+]
+# balanced «» () []: only where a literal is a whole unit (an index label, a title); verse texts and
+# note bodies quote across verses and number lists "a) … b)"
+BILANCIATI = ('skos:prefLabel', 'bj:etichetta', 'dcterms:title')
+COPPIE = (('«', '»'), ('(', ')'), ('[', ']'))
+ELENCO = re.compile(r'(?:^|(?<=[\s;:]))[a-z]\)(?=\s)|^\d{1,2}\)(?=\s)')   # a list item: "a) del sommo sacerdote"
+# printed so (subject IRI after id/, the reason)
+ALLOW = {
+    'indice/temi/voce/6/9': 'the parenthesis «(racconto della trasfigurazione: …)» runs over two sub-themes',
+    'indice/temi/voce/44/10': 'the parenthesis «(che è luce …)» runs over two sub-themes',
+    'voce/sessualita/sezione/I-2': 'a section title of the Dizionario cut at its first quotation (source)',
+    'voce/sonno/sezione/III-1': 'a section title of the Dizionario cut at its first quotation (source)',
+    'voce/melchisedech/sezione/3': 'a section title of the Dizionario without its closing parenthesis (source)',
+}
+
+
+def testi(g, quiet):
+    """Failures of REGOLE and of the balance of BILANCIATI, outside ALLOW."""
+    from rdflib import Literal, URIRef
+    err, conto = [], 0
+    for q in TESTI:
+        pfx, name = q.split(':')
+        pred = URIRef(PREFISSI[pfx] + name)
+        for s, _, o in g.triples((None, pred, None)):
+            if not isinstance(o, Literal):
+                continue
+            conto += 1
+            v = str(o)
+            chi = str(s).split('/id/', 1)[-1]
+            if chi in ALLOW:
+                continue
+            for nome, rx, dove in REGOLE:
+                m = rx.search(v)
+                if m and q in dove:
+                    err.append('%s %s: %s: %r' % (chi, q, nome, v[max(0, m.start() - 30):m.end() + 30]))
+            if q in BILANCIATI:
+                w = ELENCO.sub('', v)                   # "a) del sommo sacerdote" (Lv 4): a list letter
+                for a, b in COPPIE:
+                    if w.count(a) != w.count(b):
+                        err.append('%s %s: %s%s not balanced: %r' % (chi, q, a, b, v[:80]))
+    if not quiet or err:
+        print('  %d literals read (%s): %s' % (conto, ', '.join(TESTI), 'ok' if not err else '%d errors' % len(err)))
+    return err
+
+
+def avvisi(P):
+    """The references of the index of the notes whose first verse has no BJ note at or over it
+    (tsv.py column nota: rimandi, nessuna) and no correction: candidates of misprints of the index
+    (the four of revisione R2-04 were found so). A report, not a failure."""
+    out = []
+    for x in P['indici']:
+        if x['id'] != 'note':
+            continue
+        for v in x['voci']:
+            for it in v['items']:
+                l = it.get('link')
+                if l and l.get('nota') in ('rimandi', 'nessuna') and not l.get('correction'):
+                    out.append('%s: %s (%s)' % (v['lemma'], l['raw'], l['nota']))
+    print('warnings: %d references of the index of the notes with no BJ note at their verse and no correction'
+          ' (look at them on the page: a misprint goes to paratesto.CORREZIONI_INDICI):' % len(out))
+    for w in out:
+        print('  ' + w)
+    return out
 
 
 # ---------------------------------------------------------------- SHACL
@@ -427,7 +572,8 @@ def main(a):
         print('OWL: ontology %d triples, %d bj: terms declared; domain/range of %d triples checked: %s'
               % (len(ont), ndecl, nchecked, 'ok' if not e else '%d errors' % len(e)), flush=True)
         print('SPARQL integrity (whole graph):', flush=True)
-        e, _ = sparql(g, data, coll, dz, P, quiet)
+        I = json.load(open(INTEGRAZIONE, encoding='utf-8'))
+        e, _ = sparql(g, data, coll, dz, P, quiet, I)
         err += e
         mio = digest(g)
         for fmt, dg, dt in lavori.get():
@@ -436,6 +582,10 @@ def main(a):
                 fmt, dg[0], dt, 'same graph as' if ok else 'DIFFERENT from'), flush=True)
             if not ok:
                 err.append('%s parse differs from the fast reader' % fmt)
+    e = testi(g, quiet)
+    print('texts: %s' % ('ok' if not e else '%d errors' % len(e)), flush=True)
+    err += e
+    avvisi(P)
     ok, n = jsonld(g)
     print('JSON-LD context: %d triples round-tripped: %s' % (n, 'ok' if ok else 'FAILED'))
     if not ok:

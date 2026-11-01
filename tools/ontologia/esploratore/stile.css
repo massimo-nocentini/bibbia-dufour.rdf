@@ -838,3 +838,71 @@ table.abbr .ab-f { width: 7rem; font: 600 .85rem var(--sans); white-space: nowra
 .ix-nota { margin: .45rem 0 .2rem; }
 .ix-nota summary .etichetta { white-space: nowrap; }
 .ix-riga > div { min-width: 0; }
+
+/* ---------------------------------------------------------------- session F2: the links between the parts */
+.anche-in { display: flex; flex-wrap: wrap; align-items: baseline; gap: .3rem .5rem; margin: .1rem 0 .9rem; }
+.anche-et { font: 600 .7rem var(--sans); letter-spacing: .09em; text-transform: uppercase; color: var(--tenue); }
+.anche-in .chips { display: inline-flex; flex-wrap: wrap; gap: .3rem; align-items: baseline; }
+.anche-chip .seg { color: var(--c); margin-right: .25rem; }
+.anche-chip small { color: var(--tenue); margin-left: .15rem; }
+.anche-altri { display: inline; }
+.anche-altri summary { display: inline; cursor: pointer; color: var(--secondo); font-size: .85rem; list-style: none; }
+.anche-altri[open] summary { display: none; }
+.anche-altri .chips { display: inline-flex; }
+.chip.mini { font-size: .72rem; padding: .02rem .35rem; }
+.cron-chips { display: inline; margin-left: .2rem; }
+.cron-chips .chip { margin: 0 .15rem .1rem 0; }
+.persona .famiglia { display: grid; grid-template-columns: max-content 1fr; gap: .25rem 1rem; margin: .5rem 0 1rem; }
+.persona .famiglia dt { color: var(--tenue); font-size: .85rem; }
+.persona .famiglia dd { margin: 0; }
+.pers-libro { margin: .35rem 0; }
+.pers-libro b { font-weight: 600; margin-right: .4rem; }
+.pers-link { color: inherit; }
+.pers-n { color: var(--tenue); }
+.nota-fonte { color: var(--tenue); font-size: .8rem; margin-top: 2rem; }
+.festa { border-top: 1px solid var(--linea); padding: .6rem 0; }
+.festa.sel { background: var(--sopra); }
+.festa h3 { font: 600 1.05rem var(--serif); margin: 0 0 .3rem; }
+.festa h3 small { font: .8rem var(--sans); color: var(--tenue); }
+.misure-t td, .calendario-mesi td { vertical-align: top; }
+.misure-t td.num { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.misure-t tr.sel { background: var(--sopra); }
+.carta-voce { border-top: 1px solid var(--linea); padding: .6rem 0; }
+.carta-voce h3 { font: 600 1.05rem var(--serif); margin: 0; }
+.carta-voce h3 small { font: .8rem var(--sans); color: var(--tenue); }
+.avviso { background: var(--sopra); border-left: 3px solid var(--rubrica); padding: .4rem .7rem; font-size: .88rem; color: var(--secondo); }
+.ap-corr { margin: .4rem 0 0; padding-top: .35rem; border-top: 1px solid var(--linea); color: var(--secondo); font-size: .8rem; }
+a.ci.letto { text-decoration-style: dashed; }
+.sinonimi { color: var(--tenue); font-size: .85rem; margin-left: .4rem; }
+details.blocco.chiuso > summary { cursor: pointer; list-style: none; }
+details.blocco.chiuso > summary::-webkit-details-marker { display: none; }
+details.blocco.chiuso > summary h3::after { content: ' ▸'; color: var(--tenue); }
+details.blocco.chiuso[open] > summary h3::after { content: ' ▾'; }
+.altri-gruppi { margin-bottom: .6rem; }
+details.sez.chiusa > summary { cursor: pointer; list-style: none; }
+details.sez.chiusa > summary h3 { display: inline; }
+details.sez.chiusa > summary h3::after { content: ' ▸'; color: var(--tenue); }
+details.sez.chiusa[open] > summary h3::after { content: ' ▾'; }
+.altre-app { margin: .2rem 0 1.4rem; }
+.citato { margin-top: .25rem; }
+.lato-apri { display: none; }
+@media (max-width: 720px) {
+  .schede a.largo { display: none; }
+  /* the search filters wrap instead of being cut (R3 E8) */
+  .ricerca-campi .segmenti { display: flex; flex-wrap: wrap; width: 100%; }
+  .ricerca-campi .segmenti button { flex: 1 1 auto; border-left: 0; border-right: 1px solid var(--linea2); }
+  /* the graph: the canvas takes the screen, the controls are a sheet below it (R3 E9) */
+  .grafo-lato { max-height: 2.9rem; overflow: hidden; padding: .35rem 16px; }
+  .grafo-lato.aperto { max-height: 55vh; overflow-y: auto; }
+  .lato-apri { display: block; width: 100%; height: 2.2rem; border: 1px solid var(--linea2); border-radius: 8px; background: var(--foglio); color: var(--secondo); font-size: .85rem; margin-bottom: .6rem; cursor: pointer; }
+  .lato-apri::after { content: ' ▴'; }
+  .grafo-lato.aperto .lato-apri::after { content: ' ▾'; }
+  .persona .famiglia { grid-template-columns: 1fr; }
+  .misure-t td { display: block; border-top: 0; padding: .1rem .4rem; }
+  .misure-t tr { display: block; border-top: 1px solid var(--linea); padding: .3rem 0; }
+}
+@media (max-width: 720px) {
+  .calendario-mesi thead { display: none; }
+  .calendario-mesi td { display: block; border-top: 0; padding: .1rem .4rem; }
+  .calendario-mesi tr { display: block; border-top: 1px solid var(--linea); padding: .3rem 0; }
+}

@@ -1,0 +1,29 @@
+# I libri nella tavola cronologica (bj:nellaCronologia, da bj:Datazione): per ogni libro datato a mano,
+# la voce, i suoi anni e il tipo (composizione, ministero, evento); dal libro si arriva alla sua introduzione.
+# The books in the chronological table: for each book dated by hand, the entry, its years and the kind.
+PREFIX bj: <https://massimo-nocentini.github.io/bibbia-gerusalemme/ontologia#>
+PREFIX verso: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/verso/>
+PREFIX libro: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/libro/>
+PREFIX indice: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/indice/>
+PREFIX voce: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/voce/>
+PREFIX cronologia: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/cronologia/>
+PREFIX dinastia: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/dinastia/>
+PREFIX manoscritto: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/manoscritto/>
+PREFIX misura: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/misura/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX oa: <http://www.w3.org/ns/oa#>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+
+SELECT ?libro ?tipo ?data ?inizio ?voce WHERE {
+  ?d a bj:Datazione ; bj:tipoDatazione ?tipo ; bj:datazioneDi ?e ; bj:datazioneLibro ?b .
+  FILTER (?tipo != "citato")
+  ?b bj:sigla ?libro ; bj:ordine ?o .
+  ?e rdfs:label ?voce .
+  OPTIONAL { ?e bj:datazione ?data0 } BIND (COALESCE(?data0, "—") AS ?data)
+  OPTIONAL { ?e bj:annoInizio ?inizio }
+}
+ORDER BY ?o ?inizio

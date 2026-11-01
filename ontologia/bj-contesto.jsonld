@@ -45,25 +45,40 @@
   "pagprel": "https://massimo-nocentini.github.io/bibbia-gerusalemme/id/preliminari/pagina/",
   "pagapp": "https://massimo-nocentini.github.io/bibbia-gerusalemme/id/appendici/pagina/",
   "schema": "https://schema.org/",
+  "allineamento": "https://massimo-nocentini.github.io/bibbia-gerusalemme/id/allineamento/",
+  "intervento": "https://massimo-nocentini.github.io/bibbia-gerusalemme/id/intervento/",
+  "versione": "https://massimo-nocentini.github.io/bibbia-gerusalemme/id/versione/",
+  "schemanum": "https://massimo-nocentini.github.io/bibbia-gerusalemme/id/numerazione/",
+  "calendario": "https://massimo-nocentini.github.io/bibbia-gerusalemme/id/calendario/",
+  "misura": "https://massimo-nocentini.github.io/bibbia-gerusalemme/id/misura/",
+  "carta": "https://massimo-nocentini.github.io/bibbia-gerusalemme/id/carta/",
+  "unit": "http://qudt.org/vocab/unit/",
   "Abbreviazione": "bj:Abbreviazione",
+  "Allineamento": "bj:Allineamento",
   "Ambito": "bj:Ambito",
   "Bibbia": "bj:Bibbia",
+  "Calendario": "bj:Calendario",
   "Canone": "bj:Canone",
   "Capitolo": "bj:Capitolo",
+  "Carta": "bj:Carta",
   "Citazione": "bj:Citazione",
   "CollegamentoVoce": "bj:CollegamentoVoce",
   "ColonnaCronologia": "bj:ColonnaCronologia",
+  "Datazione": "bj:Datazione",
   "Divisione": "bj:Divisione",
   "Dizionario": "bj:Dizionario",
   "Edizione": "bj:Edizione",
   "EventoCronologia": "bj:EventoCronologia",
+  "Festa": "bj:Festa",
   "GruppoCanone": "bj:GruppoCanone",
   "Indice": "bj:Indice",
+  "Intervento": "bj:Intervento",
   "Introduzione": "bj:Introduzione",
   "LetteraAcrostica": "bj:LetteraAcrostica",
   "Libro": "bj:Libro",
   "Manoscritto": "bj:Manoscritto",
   "Margine": "bj:Margine",
+  "Mese": "bj:Mese",
   "Nota": "bj:Nota",
   "Pagina": "bj:Pagina",
   "PaginaAppendice": "bj:PaginaAppendice",
@@ -76,16 +91,21 @@
   "PersonaStorica": "bj:PersonaStorica",
   "Relazione": "bj:Relazione",
   "Rimando": "bj:Rimando",
+  "SchemaNumerazione": "bj:SchemaNumerazione",
   "SezioneCronologia": "bj:SezioneCronologia",
   "SezioneVoce": "bj:SezioneVoce",
   "Stampa": "bj:Stampa",
   "Stato": "bj:Stato",
   "TavolaCronologica": "bj:TavolaCronologica",
   "TavolaGenealogica": "bj:TavolaGenealogica",
+  "TavolaMisure": "bj:TavolaMisure",
   "Testamento": "bj:Testamento",
+  "Testimone": "bj:Testimone",
   "TestoPreliminare": "bj:TestoPreliminare",
   "TipoCollegamento": "bj:TipoCollegamento",
+  "Unita": "bj:Unita",
   "Versetto": "bj:Versetto",
+  "Versione": "bj:Versione",
   "Voce": "bj:Voce",
   "VoceCanone": "bj:VoceCanone",
   "VoceIndice": "bj:VoceIndice",
@@ -115,11 +135,23 @@
    "@id": "bj:abbreviaManoscritto",
    "@type": "@id"
   },
+  "abbreviaVersione": {
+   "@id": "bj:abbreviaVersione",
+   "@type": "@id"
+  },
   "accantoA": {
    "@id": "bj:accantoA",
    "@type": "@id"
   },
   "acrostico": "bj:acrostico",
+  "allineamentoA": {
+   "@id": "bj:allineamentoA",
+   "@type": "@id"
+  },
+  "allineamentoDa": {
+   "@id": "bj:allineamentoDa",
+   "@type": "@id"
+  },
   "ambiti": "bj:ambiti",
   "ambito": {
    "@id": "bj:ambito",
@@ -141,6 +173,10 @@
    "@id": "bj:apocrifo",
    "@type": "xsd:boolean"
   },
+  "approssimativo": {
+   "@id": "bj:approssimativo",
+   "@type": "xsd:boolean"
+  },
   "apreCapitolo": {
    "@id": "bj:apreCapitolo",
    "@type": "xsd:integer"
@@ -150,9 +186,17 @@
    "@type": "@id"
   },
   "categoriaManoscritto": "bj:categoriaManoscritto",
+  "categoriaMotivo": {
+   "@id": "bj:categoriaMotivo",
+   "@type": "@id"
+  },
   "circa": {
    "@id": "bj:circa",
    "@type": "xsd:boolean"
+  },
+  "citaTestimone": {
+   "@id": "bj:citaTestimone",
+   "@type": "@id"
   },
   "citaVersetto": {
    "@id": "bj:citaVersetto",
@@ -248,8 +292,20 @@
    "@id": "bj:daVoceIndice",
    "@type": "@id"
   },
+  "daVoceTavola": {
+   "@id": "bj:daVoceTavola",
+   "@type": "@id"
+  },
   "dataStampata": "bj:dataStampata",
   "datazione": "bj:datazione",
+  "datazioneDi": {
+   "@id": "bj:datazioneDi",
+   "@type": "@id"
+  },
+  "datazioneLibro": {
+   "@id": "bj:datazioneLibro",
+   "@type": "@id"
+  },
   "dentroVersetto": {
    "@id": "bj:dentroVersetto",
    "@type": "xsd:boolean"
@@ -281,9 +337,14 @@
    "@id": "bj:edizioneDi",
    "@type": "@id"
   },
+  "equivaleA": {
+   "@id": "bj:equivaleA",
+   "@type": "@id"
+  },
   "esitoPercorso": "bj:esitoPercorso",
   "estensione": "bj:estensione",
   "etichetta": "bj:etichetta",
+  "fileFonte": "bj:fileFonte",
   "fine": {
    "@id": "bj:fine",
    "@type": "@id"
@@ -294,6 +355,7 @@
   },
   "firma": "bj:firma",
   "forma": "bj:forma",
+  "giorno": "bj:giorno",
   "haLetteraAcrostica": {
    "@id": "bj:haLetteraAcrostica",
    "@type": "@id"
@@ -310,6 +372,7 @@
    "@id": "bj:illustraVersetto",
    "@type": "@id"
   },
+  "immagine": "bj:immagine",
   "imprimatur": "bj:imprimatur",
   "inDivisione": {
    "@id": "bj:inDivisione",
@@ -323,8 +386,16 @@
    "@id": "bj:inPericope",
    "@type": "@id"
   },
+  "inVersetto": {
+   "@id": "bj:inVersetto",
+   "@type": "@id"
+  },
   "indicaNota": {
    "@id": "bj:indicaNota",
+   "@type": "@id"
+  },
+  "indicaPersona": {
+   "@id": "bj:indicaPersona",
    "@type": "@id"
   },
   "indicaVersetto": {
@@ -335,6 +406,7 @@
    "@id": "bj:inizio",
    "@type": "@id"
   },
+  "interpretando": "bj:interpretando",
   "interpretazione": "bj:interpretazione",
   "intestazione": "bj:intestazione",
   "introduce": {
@@ -343,6 +415,10 @@
   },
   "irrisolto": "bj:irrisolto",
   "isbn": "bj:isbn",
+  "legenda": {
+   "@id": "bj:legenda",
+   "@language": "it"
+  },
   "lettera": "bj:lettera",
   "letteraEbraica": "bj:letteraEbraica",
   "libroCitato": {
@@ -374,22 +450,64 @@
    "@id": "bj:mandaANota",
    "@type": "@id"
   },
+  "meseSolare": "bj:meseSolare",
   "metodo": "bj:metodo",
+  "metodoAllineamento": "bj:metodoAllineamento",
+  "motivi": "bj:motivi",
   "motivo": "bj:motivo",
+  "motivoAltraNumerazione": "bj:motivoAltraNumerazione",
+  "motivoAltro": "bj:motivoAltro",
+  "motivoExtracanonico": "bj:motivoExtracanonico",
+  "motivoFuoriIntervallo": "bj:motivoFuoriIntervallo",
+  "motivoIntervalloErrato": "bj:motivoIntervalloErrato",
+  "motivoLibroAmbiguo": "bj:motivoLibroAmbiguo",
+  "motivoNonCompreso": "bj:motivoNonCompreso",
   "nelMargine": {
    "@id": "bj:nelMargine",
+   "@type": "@id"
+  },
+  "nelMese": {
+   "@id": "bj:nelMese",
    "@type": "@id"
   },
   "nellIndice": {
    "@id": "bj:nellIndice",
    "@type": "@id"
   },
+  "nellaCronologia": {
+   "@id": "bj:nellaCronologia",
+   "@type": "@id"
+  },
   "nellaVoce": {
    "@id": "bj:nellaVoce",
    "@type": "@id"
   },
+  "nomeAntico": {
+   "@id": "bj:nomeAntico",
+   "@language": "it"
+  },
+  "nomeMacedone": {
+   "@id": "bj:nomeMacedone",
+   "@language": "it"
+  },
   "nomeMaiuscoletto": "bj:nomeMaiuscoletto",
   "nomeMaiuscolo": "bj:nomeMaiuscolo",
+  "nominaMese": {
+   "@id": "bj:nominaMese",
+   "@type": "@id"
+  },
+  "nominaMisura": {
+   "@id": "bj:nominaMisura",
+   "@type": "@id"
+  },
+  "nominaPersona": {
+   "@id": "bj:nominaPersona",
+   "@type": "@id"
+  },
+  "nominatoIn": {
+   "@id": "bj:nominatoIn",
+   "@type": "@id"
+  },
   "nonRiferimento": "bj:nonRiferimento",
   "notaChiave": {
    "@id": "bj:notaChiave",
@@ -432,6 +550,10 @@
    "@id": "bj:paginaPdf",
    "@type": "xsd:integer"
   },
+  "paginaPdfCarta": {
+   "@id": "bj:paginaPdfCarta",
+   "@type": "xsd:integer"
+  },
   "parallelo": "bj:parallelo",
   "paralleloA": {
    "@id": "bj:paralleloA",
@@ -465,13 +587,58 @@
    "@type": "@id"
   },
   "proprietaDiretta": "bj:proprietaDiretta",
+  "proprietaMapping": {
+   "@id": "bj:proprietaMapping",
+   "@type": "@id"
+  },
   "qualifica": "bj:qualifica",
   "qualificatore": "bj:qualificatore",
+  "raffiguraLibro": {
+   "@id": "bj:raffiguraLibro",
+   "@type": "@id"
+  },
+  "raffiguraPassaggio": {
+   "@id": "bj:raffiguraPassaggio",
+   "@type": "@id"
+  },
+  "rapporto": "bj:rapporto",
+  "rapportoA": {
+   "@id": "bj:rapportoA",
+   "@type": "@id"
+  },
+  "rapportoDecimale": "bj:rapportoDecimale",
+  "regola": {
+   "@id": "bj:regola",
+   "@type": "@id"
+  },
+  "regolaAggiunta": "bj:regolaAggiunta",
+  "regolaCapitolo": "bj:regolaCapitolo",
+  "regolaCatena": "bj:regolaCatena",
+  "regolaConversione": "bj:regolaConversione",
+  "regolaElenco": "bj:regolaElenco",
+  "regolaEster": "bj:regolaEster",
+  "regolaForma": "bj:regolaForma",
+  "regolaIndice": "bj:regolaIndice",
+  "regolaInizio": "bj:regolaInizio",
+  "regolaIntroduzione": "bj:regolaIntroduzione",
+  "regolaLettura": "bj:regolaLettura",
+  "regolaManuale": "bj:regolaManuale",
+  "regolaNotaEditoriale": "bj:regolaNotaEditoriale",
+  "regolaNudo": "bj:regolaNudo",
+  "regolaNumerazione": "bj:regolaNumerazione",
+  "regolaPaginaEstranea": "bj:regolaPaginaEstranea",
+  "regolaParagrafo": "bj:regolaParagrafo",
+  "regolaProsa": "bj:regolaProsa",
+  "regolaPuntatore": "bj:regolaPuntatore",
+  "regolaRefuso": "bj:regolaRefuso",
+  "regolaRimando": "bj:regolaRimando",
+  "regole": "bj:regole",
   "relazione": {
    "@id": "bj:relazione",
    "@type": "@id"
   },
   "relazioni": "bj:relazioni",
+  "revisore": "bj:revisore",
   "richiamaVoce": {
    "@id": "bj:richiamaVoce",
    "@type": "@id"
@@ -484,9 +651,22 @@
    "@id": "bj:riga",
    "@type": "xsd:integer"
   },
+  "rigaFonte": "bj:rigaFonte",
+  "righeTabella": {
+   "@id": "bj:righeTabella",
+   "@type": "xsd:integer"
+  },
   "rigo": {
    "@id": "bj:rigo",
    "@type": "xsd:integer"
+  },
+  "riguardaLibro": {
+   "@id": "bj:riguardaLibro",
+   "@type": "@id"
+  },
+  "riguardaPersona": {
+   "@id": "bj:riguardaPersona",
+   "@type": "@id"
   },
   "rimandaA": {
    "@id": "bj:rimandaA",
@@ -505,6 +685,14 @@
    "@type": "@id"
   },
   "risolto": "bj:risolto",
+  "schemaNumerazione": {
+   "@id": "bj:schemaNumerazione",
+   "@type": "@id"
+  },
+  "secondoVersione": {
+   "@id": "bj:secondoVersione",
+   "@type": "@id"
+  },
   "sede": "bj:sede",
   "segno": "bj:segno",
   "segue": {
@@ -513,7 +701,10 @@
   },
   "seguito": "bj:seguito",
   "sigla": "bj:sigla",
-  "significato": "bj:significato",
+  "significato": {
+   "@id": "bj:significato",
+   "@language": "it"
+  },
   "sottotitolo": "bj:sottotitolo",
   "stampaDi": {
    "@id": "bj:stampaDi",
@@ -536,16 +727,21 @@
   "statoFonte": "bj:statoFonte",
   "stile": "bj:stile",
   "suffisso": "bj:suffisso",
+  "tabellaFonte": "bj:tabellaFonte",
   "testo": "bj:testo",
   "testoCorretto": "bj:testoCorretto",
   "testoHtml": "bj:testoHtml",
+  "testoLetto": "bj:testoLetto",
   "testoRinvii": "bj:testoRinvii",
+  "testoStampato": "bj:testoStampato",
   "tipiCollegamento": "bj:tipiCollegamento",
   "tipoAbbreviazione": "bj:tipoAbbreviazione",
   "tipoCollegamento": {
    "@id": "bj:tipoCollegamento",
    "@type": "@id"
   },
+  "tipoDatazione": "bj:tipoDatazione",
+  "tipoMisura": "bj:tipoMisura",
   "tipoMotivo": "bj:tipoMotivo",
   "tipoSezione": "bj:tipoSezione",
   "titoletto": {
@@ -568,12 +764,26 @@
    "@id": "bj:traduttore",
    "@type": "@id"
   },
+  "unitaQudt": {
+   "@id": "bj:unitaQudt",
+   "@type": "@id"
+  },
+  "valore": "bj:valore",
+  "valoreStampato": "bj:valoreStampato",
   "vediAncheVoce": {
    "@id": "bj:vediAncheVoce",
    "@type": "@id"
   },
   "vediVoce": {
    "@id": "bj:vediVoce",
+   "@type": "@id"
+  },
+  "versettiComuni": {
+   "@id": "bj:versettiComuni",
+   "@type": "xsd:integer"
+  },
+  "versettoComune": {
+   "@id": "bj:versettoComune",
    "@type": "@id"
   },
   "voceCitaVersetto": {

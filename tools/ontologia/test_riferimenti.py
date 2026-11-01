@@ -247,8 +247,28 @@ CASES = [
      [dict(status='unresolved', reason='extra-canonical book Enoc')] * 3),
     (cites, ('con 3 Esdra 5,45 e la LXX', 'Ezra', 2),
      [dict(status='unresolved', reason='extra-canonical book 3 Esdra')]),
+    # a misprinted siglum: the book of the CEI siglum, said in 'refuso' (revisione R2-21)
     (cites, ('lo stagno è bᵉdîl in Zac 4,10 e', 'Amos', 7),
-     [dict(status='unresolved', reason='unknown siglum Zac (Zc?)')]),
+     [one('Zech.4.10', refuso='siglum Zac printed for Zc')]),
+    (cites, ('nel credere nella risurrezione dei giusti (cf. Dn 12,1–3; 2Mc 7,9+). Questa', 'Acts', 26),
+     [one('Dan.12.1', 'Dan.12.3'), one('2Macc.7.9', refuso='siglum 2Mc printed for 2Mac', keynote=True)]),
+    # "gr." glued to a verse: v 23 of the Greek text, and v 31 (R1 F6)
+    (cites, ('(cf. 1Sam 14,23gr.31)', 'Josh', 10),
+     [dict(status='resolved', ranges=[['1Sam.14.23', '1Sam.14.23'], ['1Sam.14.31', '1Sam.14.31']],
+           qualifier='gr.')]),
+    # a chain with a misprint the grammar cannot read, read as REFUSI says (Gen 6,5; revisione T2)
+    (cites, ('jahvista (6,5–8; 7,1–2.3b–5.7.–10.12.16b.17b.22–23; 8,2b–3a)', 'Gen', 6),
+     [one('Gen.6.5', 'Gen.6.8'),
+      dict(status='resolved', raw='7,1–2.3b–5.7.–10.12.16b.17b.22–23',
+           ranges=[['Gen.7.1', 'Gen.7.2'], ['Gen.7.3', 'Gen.7.5'], ['Gen.7.7', 'Gen.7.10'], ['Gen.7.12', 'Gen.7.12'],
+                   ['Gen.7.16', 'Gen.7.16'], ['Gen.7.17', 'Gen.7.17'], ['Gen.7.22', 'Gen.7.23']]),
+      dict(status='resolved')]),
+    (cites, ('sacerdotale (6,9–22; 7,6.11.13–16a.17a.18–21.–24; 8,1)', 'Gen', 6),
+     [one('Gen.6.9', 'Gen.6.22'),
+      dict(status='resolved', raw='7,6.11.13–16a.17a.18–21.–24',
+           ranges=[['Gen.7.6', 'Gen.7.6'], ['Gen.7.11', 'Gen.7.11'], ['Gen.7.13', 'Gen.7.16'], ['Gen.7.17', 'Gen.7.17'],
+                   ['Gen.7.18', 'Gen.7.21'], ['Gen.7.24', 'Gen.7.24']]),
+      dict(status='resolved')]),
     (cites, ('assegnato ai peccatori (Col 5,2). Le sue', '2Cor', 8),
      [dict(status='unresolved', reason='no chapter Col 5 (Col has 4)')]),
     (cites, ('l’originale ebraico del Sal 151 greco', 'Ps', None), [dict(status='unresolved')]),
@@ -372,7 +392,7 @@ CONTEXT = [
     ('note:Jdt.5.4', 'cf. Est 3,8+', 0, 'EsthGr.3.8', 'ester', 'resolved'),
     ('mref:Dan.6.9_1', 'Est 1,19+', 0, 'EsthGr.1.19', 'ester', 'resolved'),
     # inizio: a misprinted end, linked to the first verse
-    ('note:Sir.7.33', '2Mac 12,38–46', 0, '2Macc.12.38', 'inizio', 'partial'),
+    ('mref:Sir.9.8_1', '41,22–23', 0, 'Sir.41.22', 'inizio', 'partial'),
     ('mref:Luke.5.1_1', '‖Mt 4,18–29', 0, 'Matt.4.18', 'inizio', 'partial'),
     ('mref:2Cor.5.8_1', 'Fil 1,21–32', 0, 'Phil.1.21', 'inizio', 'partial'),
     # manuale: rows of the table CORREZIONI
@@ -391,6 +411,30 @@ CONTEXT = [
     ('note:Matt.8.3', '8,1–4,5', 0, 'Matt.8.1', 'manuale', 'partial'),            # a misprint: its first verse
     ('intro-atti.8', '15,22ss', 0, 'Rom.15.22', 'manuale', 'resolved'),
     ('intro-apocalisse.2', 'Giovanni (1,9', 0, 'Rev.1.9', 'manuale', 'resolved'),
+    ('note:Eph.3.18', 'cf. 1,17–19.23', 0, 'Eph.1.17', 'manuale', 'resolved'),    # after "Gb 11,8–9;" (R1 F6)
+    ('note:Eph.3.18', '3,8', 0, 'Eph.3.8', 'manuale', 'resolved'),
+    ('note:2Macc.13.23', '6,59', 0, '1Macc.6.59', 'manuale', 'resolved'),         # "il racconto di 1Maccabei"
+    ('note:2Macc.15.20', '7,40.45', 0, '1Macc.7.40', 'manuale', 'resolved'),
+    ('intro-giovanni.25', '2,29s', 0, '1John.2.29', 'manuale', 'resolved'),       # the first letter
+    ('intro-giovanni.25', '4,1–6', 0, '1John.4.1', 'manuale', 'resolved'),
+    # numerazione: numerazioni.tsv (revisione R2-05, R2-21)
+    ('mref:Matt.13.32_1', 'Sal 103,12 (LXX)', 0, 'Ps.104.12', 'numerazione', 'resolved'),
+    ('mref:Matt.26.23_1', '54,20 (LXX)', 0, 'Ps.55.21', 'numerazione', 'resolved'),
+    ('mref:2Thess.1.10_1', '68,35 (LXX)', 0, 'Ps.68.36', 'numerazione', 'resolved'),
+    ('mref:Ezek.9.9_2', 'Sal 9–10,32+', 0, 'Ps.10.11', 'numerazione', 'resolved'),
+    ('mref:Jdt.14.5_1', '13,27–28', 0, None, 'numerazione', 'numbering'),
+    ('note:Jdt.13.16', 'vv 20–21', 0, None, 'numerazione', 'unresolved'),
+    ('note:Exod.20.22', '22,28–31', 0, 'Exod.22.27', 'numerazione', 'resolved'),
+    ('note:Sir.7.33', '2Mac 12,38–46', 0, '2Macc.12.38', 'numerazione', 'resolved'),
+    ('note:Sir.36.26', '36,29', 0, None, 'numerazione', 'numbering'),
+    ('intro-siracide.14', '36,27–31', 0, 'Sir.36.24', 'numerazione', 'resolved'),
+    ('intro-atti.9', '19,23–41', 0, 'Acts.19.23', 'numerazione', 'resolved'),
+    ('intro-salmi.26', 'Sal 151', 0, None, 'numerazione', 'unresolved'),
+    # refuso: a misprint read as corrected, the text as printed
+    ('mref:Eph.5.17_2', 'Sal 23,31 (LXX)', 0, 'Prov.23.31', 'refuso', 'resolved'),
+    ('note:Amos.7.7', 'Zac 5,7', 0, 'Zech.5.7', 'refuso', 'resolved'),
+    ('note:Acts.26.7', '2Mc 7,9+', 0, '2Macc.7.9', 'refuso', 'resolved'),
+    ('note:Gen.6.5', '7,1–2.3b–5.7.–10.12.16b.17b.22–23', 0, 'Gen.7.1', 'refuso', 'resolved'),
     # introduzione: introductions to several books
     ('intro-pentateuco.6', '1,1–15,21', 0, 'Exod.1.1', 'introduzione', 'resolved'),
     ('intro-storici.11', '13,1–6', 0, 'Josh.13.1', 'introduzione', 'resolved'),
@@ -430,7 +474,7 @@ def test_contesto():
             bad.append('%s %r: %s, expected %s' % (src, raw, got, (want, rule, status)))
         if rule and not x.get('why'):
             bad.append('%s %r: no reason' % (src, raw))
-        if rule and rule not in R.AGGIUNTI and x.get('corrected_from') == want:
+        if rule and rule not in R.AGGIUNTI and want and x.get('corrected_from') == want:
             bad.append('%s %r: corrected_from is the new target' % (src, raw))
     first = next(x for x in links if x['id'] == 'note:Exod.12.48#c16')
     if first.get('corrected_from') != 'Exod.26.12':
@@ -444,6 +488,19 @@ def test_contesto():
     if sum(1 for x in links if x.get('corrected') == 'aggiunta') != len(R.AGGIUNTE):
         bad.append('the table AGGIUNTE: %d rows, %d links' % (
             len(R.AGGIUNTE), sum(1 for x in links if x.get('corrected') == 'aggiunta')))
+    # numerazioni.tsv: every row with a source read one reference; the ends of the ranges
+    rows = [r for r in R.numerazioni() if r['fonte']]
+    num = [x for x in links if x.get('corrected') == 'numerazione']
+    if len(num) != len(rows):
+        bad.append('numerazioni.tsv: %d rows with a source, %d links' % (len(rows), len(num)))
+    ends = {x['id']: x['ranges'][-1][-1] for x in num if x['ranges']}
+    for lid, last in (('note:Ezek.37.10#c9', '2Macc.12.45'), ('note:Exod.20.22#c5', 'Exod.22.19'),
+                      ('intro-atti.9#c30', 'Acts.19.40'), ('intro-siracide.14#c7', 'Sir.36.28')):
+        if ends.get(lid) != last:
+            bad.append('%s ends at %s, expected %s' % (lid, ends.get(lid), last))
+    jdt = next(x for x in links if x['id'] == 'mref:Jdt.14.5_1#1')
+    if (jdt['relation'], jdt['qualifier'], jdt['alt']) != ('numbering', 'volg.', '13,27–28'):
+        bad.append('Gdt 14,5 margin: %s' % [jdt[k] for k in ('relation', 'qualifier', 'alt')])
     added = [x for x in links if x.get('corrected') in R.AGGIUNTI]
     spans = {}
     for x in links:

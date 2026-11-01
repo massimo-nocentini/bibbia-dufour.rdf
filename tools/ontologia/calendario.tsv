@@ -1,0 +1,29 @@
+# The calendar of the appendices (progetti/appendici/appendici/calendario.tex, pp. 25-26, PDF 3026-3027),
+# by hand from the table of the months and the list of the annual feasts. tipo mese: n the Roman number of
+# the table, nome the Babylonian name (prefLabel), antico the old name with its reference, solare the solar
+# months, macedone the Macedonian name. tipo festa: nome as printed in italics, altri the other names
+# printed (separated by |), mese the month (its Roman number), giorno the day(s) as printed, riferimenti
+# as printed (the book of a bare reference is the one before), anche the same concept in the indices and
+# the dictionary (note.<n>, temi.<n>, voce:<slug>). parole: the words of the CEI text that name the month
+# (whole words, without accents).
+tipo	id	nome	altri	mese	giorno	solare	macedone	riferimenti	pagina	anche	parole
+mese	I	nisan	abib	I		marzo/aprile	artemisio	Es 13,4	25		nisan abib
+mese	II	ijjar	ziv	II		aprile/maggio	daísio	1Re 6,1	25		ziv
+mese	III	sivan		III		maggio/giugno	panemo		25		sivan
+mese	IV	tammuz		IV		giugno/luglio	loòs		25		
+mese	V	ab		V		luglio/agosto	gorpéo		25		
+mese	VI	elul		VI		agosto/settembre	iperberetéo		25		elul
+mese	VII	tisri	etanim	VII		settembre/ottobre	diós	1Re 8,2	25		etanim
+mese	VIII	marchesvan	bul	VIII		ottobre/novembre	apelléo	1Re 6,38	25		bul
+mese	IX	kisleu		IX		novembre/dicembre	odunéo		25		kisleu
+mese	X	tebet		X		dicembre/gennaio	perízio		25		tebet
+mese	XI	sebat		XI		gennaio/febbraio	distro		25		sebat
+mese	XII	adar		XII		febbraio/marzo	xántico		25		adar
+festa	pasqua	pasqua	Azzimi	I	14/15			Es 12s; 23,15; 34,18; Dt 16,1s; Lv 23,5s; Nm 28,16; Lv 23,11	26	note.416 note.71 voce:pasqua	
+festa	settimane	festa delle Settimane	della messe|delle primizie|pentecoste	III				Es 23,16; 34,22; Dt 16,9s; Lv 23,15s; Nm 28,26s; At 2,1	26	note.424 voce:pentecoste	
+festa	acclamazioni	giorno delle acclamazioni	rosh ha-shanah|capodanno del giudaismo	VII	1			Lv 23,23s; Nm 29,1s	26		
+festa	kippurim	jom ha-kippurim	giorno delle espiazioni	VII	10			Lv 16; 23,26s; Nm 29,7s; At 27,9	26	note.211	
+festa	capanne	festa delle Capanne o scenopegía	festa del raccolto|festa delle Tende	VII	15-23			Dt 16,13s; Lv 23,33s; Nm 29,12s; Gv 7,2; Es 23,16; 34,22	26	note.99 note.571	
+festa	encenie	encenie	dedicazione|hanukka|festa delle luci	IX	25			1Mac 4,52; 2Mac 10,5; Gv 10,22	26	note.156 note.277	
+festa	nicanore	giorno di Nicànore		XII	13			1Mac 7,49; 2Mac 15,36	26		
+festa	purim	festa dei purim	sorti|giorno di Mardocheo	XII	14/15			Est 9,21s; 2Mac 15,36	26	note.467 note.553	
