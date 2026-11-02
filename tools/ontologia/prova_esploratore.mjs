@@ -945,6 +945,23 @@ try {
       fogli: fogli.filter(f => f.querySelector('.ds')).length, aperti: fogli.filter(f => f.querySelector('.foglietto .foglietto, .ds .ds')).length };
   });
   verifica('grafo: i discorsi in corsivo nelle schede e nei foglietti', gc.radice.length && gc.radice[0][0].startsWith('Prendi tuo figlio') && gc.radice[0][1] === 'italic' && gc.carte > 0 && gc.fogli > 0 && !gc.aperti, JSON.stringify(gc));
+  // the two styles: the combo switches the stylesheet, the graph is laid out again, the choice is kept
+  const stile_ = () => p.evaluate(() => ({ stile: document.documentElement.dataset.stile, combo: document.querySelector('#stile').value,
+    spenti: ['tufte', 'giardino'].filter(n => document.querySelector('#stile-' + n).disabled).join(), font: getComputedStyle(document.body).fontFamily.split(',')[0],
+    sovrapposte: (() => { const r = [...document.querySelectorAll('.carta')].map(c => c.getBoundingClientRect()); return r.some((a, i) => r.some((b, j) => j > i && a.left < b.right - 1 && b.left < a.right - 1 && a.top < b.bottom - 1 && b.top < a.bottom - 1)); })() }));
+  const st0 = await stile_();
+  await p.selectOption('#stile', 'giardino');
+  await p.waitForTimeout(300);
+  const st1 = await stile_();
+  await p.reload();
+  await p.waitForSelector('.carta.radice .carta-testo');
+  const st2 = await stile_();
+  verifica('stili: Tufte di partenza, la tendina passa a Giardino, il grafo si ridispone, la scelta resta',
+    st0.stile === 'tufte' && st0.spenti === 'giardino' && st0.font === 'et-book' && st1.stile === 'giardino' && st1.spenti === 'tufte' && st1.font === 'Literata' && !st1.sovrapposte && st2.stile === 'giardino' && st2.combo === 'giardino',
+    JSON.stringify([st0, st1, st2]));
+  await p.selectOption('#stile', 'tufte');
+  await p.waitForTimeout(200);
+  verifica('stili: di nuovo Tufte', (await stile_()).spenti === 'giardino');
   verifica('nessun errore in console (desktop)', errori.length === 0, errori.slice(0, 5).join(' | '));
   await ctx.close();
 
@@ -1059,6 +1076,14 @@ try {
   await m.p.waitForSelector('#vista .apparato');
   const tab390 = await m.p.evaluate(() => ({ righe: (y => (Math.max(...y) - Math.min(...y) < 12 ? 1 : 2))([...document.querySelectorAll('.schede a, .comandi')].filter(x => x.offsetParent).map(x => x.getBoundingClientRect().top)), largo: document.documentElement.scrollWidth, attiva: document.querySelector('.schede a.attiva')?.dataset.vista }));
   verifica('E5: 390 px, «Appendici» tra le schede su una riga', tab390.righe === 1 && tab390.largo <= 390 && tab390.attiva === 'apparati', JSON.stringify(tab390));
+  // the other style on the phone: the tabs on one line, the search and the combo on the second
+  await m.p.selectOption('#stile', 'giardino');
+  await m.p.waitForTimeout(200);
+  const bg390 = await m.p.evaluate(() => ({ righe: (y => (Math.max(...y) - Math.min(...y) < 12 ? 1 : 2))([...document.querySelectorAll('.schede a, .comandi')].filter(x => x.offsetParent).map(x => x.getBoundingClientRect().top)), largo: document.documentElement.scrollWidth,
+    riga2: Math.abs(document.querySelector('.omni').getBoundingClientRect().top - document.querySelector('.stile-scelta').getBoundingClientRect().top) < 12, dentro: document.querySelector('.stile-scelta').getBoundingClientRect().right <= 390 }));
+  verifica('stili: 390 px in Giardino, schede su una riga, ricerca e tendina sulla seconda', bg390.righe === 1 && bg390.largo <= 390 && bg390.riga2 && bg390.dentro, JSON.stringify(bg390));
+  await foto(m.p, '72-telefono-giardino');
+  await m.p.selectOption('#stile', 'tufte');
   await foto(m.p, '72-telefono-appendici');
   for (const [h, sel, n] of [['#persona/P15', '.persona h1', '73-telefono-persona'], ['#misure', '.misure-t', '74-telefono-misure'], ['#calendario', '.festa', '75-telefono-calendario'], ['#indice-note/38', '.anche-in', '76-telefono-anche-in']]) {
     await m.p.evaluate(x => { location.hash = x; }, h);

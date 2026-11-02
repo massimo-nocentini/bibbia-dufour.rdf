@@ -36,7 +36,7 @@ make ontologia          # the same: vendor/venv/bin/python -I tools/ontologia/co
 | `interroga.py` | runs SPARQL queries (`ontologia/query/*.rq` or `-e`) and prints tables |
 | `statistiche.py` | writes the *Size* tables and the query table of `ontologia/README.md` from `bj-void.ttl` and `build/query.md` (`--controlla`: only check) |
 | `esploratore.py` | stage 4: the five JSON files + `esploratore/` → `ontologia/esplora.html` |
-| `esploratore/` | the page: `modello.html`, `stile.css`, `app.js` (inlined by `esploratore.py`) |
+| `esploratore/` | the page: `modello.html`, `font.css`, the two styles `stile-tufte.css` and `stile-giardino.css`, `app.js` (inlined by `esploratore.py`) |
 | `prova_esploratore.mjs` | stage 4 test: the page in headless Chromium (not run by `costruisci.py`) |
 | `costruisci.py` | runs every stage in order, stops at the first failed check |
 
@@ -707,7 +707,14 @@ old-style figures. `caratteri.py` needs fontTools and brotli and is run by hand 
 change; `esploratore.py` embeds the files through `esploratore/font.css` as `data:` URLs, so the
 page still makes no network request.
 
-Style (`stile.css`): the style of Tufte CSS (https://github.com/edwardtufte/tufte-css, MIT License,
+Styles: two complete stylesheets for the same markup, in the manner of the CSS Zen Garden, both
+embedded (`STILI` in `esploratore.py`); a combo at the right of the bar («Tufte», «Giardino»)
+switches them by disabling one `<style>`, the choice is kept (`localStorage`, `esplora.stile`) and a
+small script in the `<head>` applies it before the first paint; after a switch the graph is laid
+out again and the overview matrix repainted. On the phone the combo shares the second row of the bar
+with the search field.
+
+«Tufte» (`stile-tufte.css`, the default): the style of Tufte CSS (https://github.com/edwardtufte/tufte-css, MIT License,
 `esploratore/LICENSE-tufte-css.txt`) adapted to an application, with the markup of `modello.html` and
 `app.js` unchanged: ET Book on `#fffff8` paper in `#111` ink (`#ddd` on `#151515` in the dark theme),
 titles at 3.2rem in regular weight, headings and labels in italic (ET Book has no small capitals; the
@@ -718,6 +725,11 @@ only what is wrong) and shadows only on what floats (preview, help, tooltips). T
 of the chips, the graph and the overview are kept, since they carry data. Light and dark themes
 share the tokens at the top of the file. The page does not use the article layout of Tufte CSS
 (a 55% column and side notes floated into the right margin): the verse panel plays that part.
+
+«Giardino» (`stile-giardino.css`): the quieter style that preceded it. Literata alone for text and
+interface, black ink and one red (`--rubrica`) for verse numbers, rubrics and the current view;
+hairlines instead of boxes; labels in true small capitals (`--spazio`); old-style figures in the
+reading text; a warm, low-glare dark theme.
 
 
 | View | Route | What |

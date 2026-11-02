@@ -6,9 +6,26 @@
 <meta name="color-scheme" content="light dark">
 <title>Esploratore dei versetti</title>
 <link rel="icon" href="data:,">
-<style>
-/*@@CSS@@*/
+<style id="caratteri">
+/*@@FONT@@*/
 </style>
+<!-- the two styles of the same markup (stile-tufte.css, stile-giardino.css): the combo in the bar
+     turns one off; the choice is applied here, before the first paint -->
+<style id="stile-tufte">
+/*@@CSS:tufte@@*/
+</style>
+<style id="stile-giardino">
+/*@@CSS:giardino@@*/
+</style>
+<script>
+(function () {
+  var s = null;
+  try { s = localStorage.getItem('esplora.stile'); } catch (e) { /* private mode */ }
+  if (s !== 'giardino') s = 'tufte';
+  document.getElementById(s === 'tufte' ? 'stile-giardino' : 'stile-tufte').disabled = true;
+  document.documentElement.dataset.stile = s;
+})();
+</script>
 </head>
 <body>
 <header class="barra">
@@ -34,6 +51,9 @@
     </button>
     <button id="aiuto" class="icona" type="button" title="Tasti (?)">?</button>
   </div>
+  <label class="stile-scelta" title="Stile della pagina"><span class="solo-lettori">Stile della pagina</span>
+    <select id="stile"><option value="tufte">Tufte</option><option value="giardino">Giardino</option></select>
+  </label>
 </header>
 <div class="corpo">
   <main id="vista" tabindex="-1"><div class="attesa" id="attesa">Caricamento del testo e dei collegamenti…</div></main>

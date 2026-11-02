@@ -7,8 +7,8 @@ Reads ontologia/build/bibbia.json (estrai.py), ontologia/build/collegamenti.json
 into one compact JSON (verses, notes, margin entries, typed links, pericopes, divisions,
 introductions; the entries of the Dizionario di Teologia Biblica with their sections,
 paragraphs and citations), gzips it and embeds it as base64 in the page together with
-the stylesheet and the script of tools/ontologia/esploratore/ (modello.html, stile.css,
-app.js). The page has no external resource: it works from file:// and decompresses its
+the fonts, the stylesheets and the script of tools/ontologia/esploratore/ (modello.html,
+font.css, stile-tufte.css and stile-giardino.css, the two styles a combo switches, app.js). The page has no external resource: it works from file:// and decompresses its
 data with the browser's DecompressionStream.
 
 Verses are numbered by their canonical order (0-based index into V.id), and every
@@ -804,14 +804,20 @@ def fonts():
     return re.sub(r'@@FONT:([\w.-]+)@@', data_url, css)
 
 
+STILI = ['tufte', 'giardino']   # stile-<name>.css, the first one is the default
+
+
 def pagina(P):
     js = open(os.path.join(MODELLO, 'app.js'), encoding='utf-8').read()
-    css = fonts() + open(os.path.join(MODELLO, 'stile.css'), encoding='utf-8').read()
     html = open(os.path.join(MODELLO, 'modello.html'), encoding='utf-8').read()
     raw = json.dumps(P, ensure_ascii=False, separators=(',', ':')).encode('utf-8')
     gz = gzip.compress(raw, compresslevel=9, mtime=0)
     b64 = base64.b64encode(gz).decode('ascii')
-    page = html.replace('/*@@CSS@@*/', css).replace('/*@@JS@@*/', js).replace('@@DATI@@', b64)
+    page = html.replace('/*@@FONT@@*/', fonts())
+    for nome in STILI:
+        css = open(os.path.join(MODELLO, 'stile-%s.css' % nome), encoding='utf-8').read()
+        page = page.replace('/*@@CSS:%s@@*/' % nome, css)
+    page = page.replace('/*@@JS@@*/', js).replace('@@DATI@@', b64)
     return page, len(raw), len(gz), js
 
 
@@ -832,6 +838,9 @@ def main(a):
     page, nraw, ngz, js = pagina(P)
     if '</script' in js.lower():
         errors.append('app.js contains "</script"')
+    resto = re.search(r'/\*@@(FONT|CSS:\w+|JS)@@\*/', page)
+    if resto:
+        errors.append('modello.html has a placeholder no file filled: ' + resto.group(1))
     if len(page.encode('utf-8')) > LIMITE:
         errors.append('page is %d bytes, over the limit' % len(page.encode('utf-8')))
     with open(out, 'w', encoding='utf-8') as f:

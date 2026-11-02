@@ -2697,6 +2697,16 @@ function tema(nuovo) {
   $('#tema').setAttribute('aria-pressed', String(scuro()));
   if (S.vista === 'panoramica' && $('#mcv')) disegnaMatrice(viaAttuale().via.split('/').slice(1));
 }
+function stile(nome) {
+  // the two stylesheets of the same markup (modello.html applies the saved one before the first paint);
+  // what is measured or painted by the script is laid out again
+  $('#stile-tufte').disabled = nome !== 'tufte';
+  $('#stile-giardino').disabled = nome !== 'giardino';
+  document.documentElement.dataset.stile = nome;
+  memo.set('stile', nome);
+  if (S.vista === 'grafo' && S.albero) disegnaAlbero(null, true);
+  if (S.vista === 'panoramica' && $('#mcv')) disegnaMatrice(viaAttuale().via.split('/').slice(1));
+}
 function scuro() {
   const t = document.documentElement.dataset.theme;
   return t ? t === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
@@ -2925,6 +2935,8 @@ async function avvia() {
   const t = memo.get('tema');
   if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
   $('#tema').setAttribute('aria-pressed', String(scuro()));
+  $('#stile').value = document.documentElement.dataset.stile;
+  $('#stile').addEventListener('change', e => stile(e.target.value));
   if (!('DecompressionStream' in window)) {
     $('#attesa').textContent = 'Questo browser non sa decomprimere i dati (DecompressionStream): serve un browser recente.';
     return;
