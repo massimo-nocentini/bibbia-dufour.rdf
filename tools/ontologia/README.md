@@ -1042,7 +1042,8 @@ adjust the interfaces and the ontology in turn».
 - **Explorer**: the words of a quotation in italic, the guillemets, verse numbers and note calls upright,
   an `<em>` inside upright (`.ds`), in the reader (prose, poetry line by line, across verses), the
   verse panel, the notes (with their `\detto`), the introductions, the front-matter texts, the edition,
-  the canon, the abbreviations, the chronology and the index headwords. The verse runs are in the payload
+  the canon, the abbreviations, the chronology, the index headwords and the graph cards (verses and
+  note slips, also when cut short: `htmlTagliato` cuts the HTML at a word and closes its tags). The verse runs are in the payload
   (`V.q`, HTML offsets, merged with the note calls at render); the other texts are wrapped at build time
   (`virgolette.corsivo`, after the citations). A «Discorsi N» switch above the chapter (key `q`)
   highlights them; the panel lists the quotations through the verse (where they run, their first words,

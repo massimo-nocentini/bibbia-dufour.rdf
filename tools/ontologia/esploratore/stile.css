@@ -935,7 +935,8 @@ details.sez.chiusa[open] > summary h3::after { content: ' ▾'; }
 .ds { font-style: italic; }
 .ds em { font-style: normal; }
 .ds .nc, .ds sup { font-style: normal; }
-body.discorsi .testo .ds, body.discorsi .citazione .ds, body.discorsi .nota-testo .ds, body.discorsi .intro-testo .ds {
+body.discorsi .testo .ds, body.discorsi .citazione .ds, body.discorsi .nota-testo .ds, body.discorsi .intro-testo .ds,
+body.discorsi .carta-testo .ds, body.discorsi .foglietto .ds {
   background: color-mix(in srgb, var(--richiamo) 9%, transparent); border-radius: 0;
   -webkit-box-decoration-break: clone; box-decoration-break: clone;
 }

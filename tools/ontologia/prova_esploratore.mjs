@@ -936,6 +936,15 @@ try {
   verifica('F4: cerca «luce» nei discorsi: Gen 1,3, meno versetti che in tutto il testo', cl.gen && cl.ds > 0 && /tra virgolette/.test(cl.esito), JSON.stringify(cl));
   await vai_('#cerca?q=luce&in=discorsi', '#risultati .r');
   await foto(p, 'F4-04-cerca-discorsi');
+  // the graph: the quotations in italic in the cards and in the shortened note slips, the tags closed
+  await vai_('#grafo/Gen.22.2', '.carta.radice .carta-testo');
+  const gc = await p.evaluate(() => {
+    const ds = [...document.querySelectorAll('.carta.radice .carta-testo .ds')];
+    const fogli = [...document.querySelectorAll('.foglietto')];
+    return { radice: ds.map(x => [x.textContent.slice(0, 18), getComputedStyle(x).fontStyle]), carte: document.querySelectorAll('.carta:not(.radice) .carta-testo .ds').length,
+      fogli: fogli.filter(f => f.querySelector('.ds')).length, aperti: fogli.filter(f => f.querySelector('.foglietto .foglietto, .ds .ds')).length };
+  });
+  verifica('grafo: i discorsi in corsivo nelle schede e nei foglietti', gc.radice.length && gc.radice[0][0].startsWith('Prendi tuo figlio') && gc.radice[0][1] === 'italic' && gc.carte > 0 && gc.fogli > 0 && !gc.aperti, JSON.stringify(gc));
   verifica('nessun errore in console (desktop)', errori.length === 0, errori.slice(0, 5).join(' | '));
   await ctx.close();
 

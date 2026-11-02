@@ -977,7 +977,8 @@ details.sez.chiusa[open] > summary h3::after { content: ' ▾'; }
 .ds { font-style: italic; }
 .ds em { font-style: normal; }
 .ds .nc, .ds sup { font-style: normal; }
-body.discorsi .testo .ds, body.discorsi .citazione .ds, body.discorsi .nota-testo .ds, body.discorsi .intro-testo .ds {
+body.discorsi .testo .ds, body.discorsi .citazione .ds, body.discorsi .nota-testo .ds, body.discorsi .intro-testo .ds,
+body.discorsi .carta-testo .ds, body.discorsi .foglietto .ds {
   background: color-mix(in srgb, var(--richiamo) 9%, transparent); border-radius: 0;
   -webkit-box-decoration-break: clone; box-decoration-break: clone;
 }
@@ -3211,15 +3212,33 @@ function titoloGruppo(g) {
 
 // ---- what a card shows
 
+function htmlTagliato(h, max) {
+  // h on one line (<br> as « / »), cut at a word after max characters of text, the open tags closed;
+  // [html, characters of text]
+  const parti = h.replace(/<br>/g, ' / ').replace(/\s+/g, ' ').trim().split(/(<[^>]+>)/);
+  const aperti = [];
+  let out = '', len = 0;
+  for (const x of parti) {
+    if (x.startsWith('<')) {
+      if (x.startsWith('</')) aperti.pop(); else aperti.push(x.slice(1).split(/[\s>]/)[0]);
+      out += x;
+      continue;
+    }
+    const n = x.replace(/&[#\w]+;/g, '_').length;
+    if (len + n <= max) { out += x; len += n; continue; }
+    out += x.slice(0, Math.max(0, max - len)).replace(/\s+\S*$/, '') + '…';
+    return [out + aperti.reverse().map(t => `</${t}>`).join(''), max];
+  }
+  return [out, len];
+}
 function testoCarta(a, b, max) {
-  // the passage with its verse numbers, cut at a word after max characters
+  // the passage with its verse numbers and its quotations in italic, cut at a word after max characters
   const fine = Math.min(b, a + 8);
   let out = '', len = 0;
   for (let v = a; v <= fine; v++) {
-    let t = testoPiano(V.h[v]).replace(/\s+/g, ' ').trim();
-    if (len + t.length > max) { t = t.slice(0, Math.max(0, max - len)).replace(/\s+\S*$/, '') + '…'; }
-    out += (b > a ? `<sup>${esc(versoDi(v))}</sup>` : '') + esc(t) + ' ';
-    len += t.length;
+    const [t, n] = htmlTagliato(corsivoVerso(v), max - len);
+    out += (b > a ? `<sup>${esc(versoDi(v))}</sup>` : '') + t + ' ';
+    len += n;
     if (len >= max) break;
   }
   if (len < max && fine < b) out += '…';
@@ -3232,7 +3251,7 @@ function foglietti(c, radice) {
   const max = radice ? 6 : 2;
   const html = ks.slice(0, max).map(k => {
     const x = D.note[k], intera = S.noteAperte.has(k), piano = testoPiano(x[5]), lim = radice ? 420 : 120;
-    const corpo = intera || piano.length <= lim ? x[5] : esc(piano.slice(0, lim).replace(/\s+\S*$/, '')) + '…';
+    const corpo = intera || piano.length <= lim ? x[5] : htmlTagliato(x[5], lim)[0];
     const bottone = piano.length > lim ? `<button type="button" class="altro" data-nota="${k}">${intera ? 'riduci' : 'continua'}</button>` : '';
     return `<div class="foglietto" data-n="${k}"><b>${esc(x[3])}${esc(x[2] || 'nota')}</b>${corpo} ${bottone}</div>`;
   }).join('');
