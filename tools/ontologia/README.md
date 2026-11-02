@@ -694,10 +694,18 @@ Resolved `*words` become `<a class="vl" href="#voce/<slug>">`.
 
 **The page** (Italian, `app.js`, plain JavaScript, no library):
 
-Fonts: Literata for the text and Inter for the interface, the variable woff2 files of
-`@fontsource-variable` (Latin, Latin Extended, Greek for Literata), under the SIL Open
-Font License (`esploratore/font/OFL-*.txt`); `esploratore.py` embeds them through
+Fonts: Literata for the text and the interface alike, the variable woff2 files of
+`@fontsource-variable` (Latin, Latin Extended, Greek), under the SIL Open Font License
+(`esploratore/font/OFL-Literata.txt`); `esploratore.py` embeds them through
 `esploratore/font.css` as `data:` URLs, so the page still makes no network request.
+
+Style (`stile.css`), in the manner of the CSS Zen Garden: the markup of `modello.html` and
+`app.js` stays as it is and the stylesheet alone sets the page. One typeface; black ink and
+one red (`--rubrica`) for verse numbers, rubrics and the current view; hairlines (`--linea`)
+instead of boxes, cards and pills; labels in small letter-spaced capitals (`--spazio`);
+headings at regular weight, secondary text in italic; shadows only on what floats (preview,
+help, tooltips). The relation colours of the chips, the graph and the overview are kept,
+since they carry data. Light and dark themes share the tokens at the top of the file.
 
 
 | View | Route | What |

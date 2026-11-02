@@ -95,7 +95,7 @@ corrected link the editor's intervention in its preview. Direct speech and quote
 everywhere, as in the Tufte edition (the guillemets, verse numbers and note calls upright): a «Discorsi»
 switch above the chapter (key `q`) highlights them, the verse panel lists the quotations running through
 the verse, and the search can look only in the words between guillemets («Discorsi»). The search also looks for the other
-spellings of a name (`tools/ontologia/sinonimi.tsv`: Davide / David, Oreb / Horeb). The text is set in Literata and the interface in Inter, both embedded (SIL Open
+spellings of a name (`tools/ontologia/sinonimi.tsv`: Davide / David, Oreb / Horeb). Text and interface are set in Literata, embedded (SIL Open
 Font License, `tools/ontologia/esploratore/font/`). The reference box reads the forms printed in the BJ (`Gen 2,4b`, `Mt 5,3ss`,
 `Dt 7,9.12`, `Gen 1,1; 2,4`, `Sir prologo`). Ids in its addresses are those of the graph (`#John.3.16`), so a verse found
 there is `verso:John.3.16` here. Details in `tools/ontologia/README.md`, stage 4.
