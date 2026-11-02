@@ -957,3 +957,19 @@ body.discorsi .carta-testo .ds, body.discorsi .foglietto .ds {
 .ds-lista .frase { font-family: var(--serif); }
 .ds-lista small { color: var(--tenue); }
 .ds-lista .sbil { color: var(--rubrica); font-style: normal; }
+.mr { display: none; }
+
+/* the book-by-book small multiples of the overview (app.js libroPerLibro): word-sized lines, the red dot at the top */
+.scorre { overflow-x: auto; }
+table.libro-per-libro { border-collapse: collapse; font-size: .9rem; }
+.libro-per-libro th { font: 400 .86rem var(--ui); font-variant-caps: all-small-caps; letter-spacing: var(--spazio); color: var(--tenue); text-align: left; padding: .4rem .9rem .4rem 0; border-bottom: 1px solid var(--linea2); white-space: nowrap; }
+.libro-per-libro td { padding: .1rem .9rem .1rem 0; border-top: 1px solid var(--linea); vertical-align: middle; }
+.libro-per-libro .num { text-align: right; font-variant-numeric: tabular-nums; color: var(--tenue); }
+.libro-per-libro .lb-libro a { color: inherit; white-space: nowrap; }
+.libro-per-libro .lb-gruppo th { font: italic 400 1.15rem var(--serif); font-variant-caps: normal; letter-spacing: 0; color: var(--inchiostro); border-bottom: 1px solid var(--inchiostro); padding-top: 1.2rem; }
+.libro-per-libro tbody tr:not(.lb-gruppo):hover td { background: var(--sopra); }
+.spark { display: block; cursor: pointer; color: var(--secondo); overflow: visible; }
+.spark polyline { fill: none; stroke: currentColor; stroke-width: 1; stroke-linejoin: round; }
+.spark circle { fill: var(--rubrica); }
+.spark .cur { fill: var(--carta); stroke: var(--inchiostro); stroke-width: 1; display: none; }
+.spark .cur.on { display: inline; }

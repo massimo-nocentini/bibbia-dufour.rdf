@@ -279,7 +279,8 @@ main { min-width: 0; outline: none; }
 .intro-link:hover { text-decoration: none; border-bottom-color: currentColor; }
 
 /* ---------------------------------------------------------------- reader */
-.lettore { max-width: 41rem; margin: 0 auto; padding: 2.25rem 1.25rem 8rem 3rem; }
+/* the reading column leaves a right margin free for the margin references (.mr, at the end) */
+.lettore { max-width: 57.6rem; margin: 0 auto; padding: 2.25rem 18.1rem 8rem 3rem; }
 .testata { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; margin: .5rem 0 2.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--linea); }
 .testata h1 { font: 400 3.2rem/1 var(--serif); margin: .3rem 0 0; letter-spacing: 0; }
 .testata h1 a { color: inherit; }
@@ -1053,3 +1054,57 @@ body.discorsi .carta-testo .ds, body.discorsi .foglietto .ds {
 .ds-lista .frase { font-family: var(--serif); }
 .ds-lista small { color: var(--tenue); }
 .ds-lista .sbil { color: var(--errore); font-style: normal; }
+
+/* ---------------------------------------------------------------- Tufte CSS: tables, new thoughts, the margin */
+/* tables as in Tufte CSS and booktabs: a heavy rule above and below, a light one under the head,
+   hairlines between the rows, figures right-aligned in their own column */
+table.abbr { border-top: 2px solid var(--inchiostro); border-bottom: 2px solid var(--inchiostro); }
+table.abbr thead th { font: italic 400 1.05rem var(--ui); text-align: left; padding: .55rem 1rem .45rem 0; border-bottom: 1px solid var(--inchiostro); }
+table.abbr td { padding: .45rem 1rem .45rem 0; border-top: 0; }
+table.abbr tbody tr + tr { border-top: 1px solid var(--linea); }   /* on the row: some rows have fewer cells */
+table.abbr td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.misure-t details > summary { white-space: nowrap; font-style: italic; }
+.cron-testata { border-top: 2px solid var(--inchiostro); }
+.cron-tavola { border-bottom: 2px solid var(--inchiostro); }
+/* a long title printed in capitals (the periods of the chronology): small capitals, a calmer size */
+.cronologia h1 { font-size: 2.2rem; line-height: 1.15; font-variant-caps: all-small-caps; letter-spacing: .04em; }
+/* the newthought of Tufte CSS: the first line of a chapter and of each pericope in small capitals */
+.testo > p:first-child::first-line, .testo .pericope + p::first-line { font-variant-caps: small-caps; letter-spacing: .03em; }
+
+/* the margin references as printed, in the margin beside their verse (app.js margineVerso), in a
+   right margin the reading column leaves free; a script moves one down when it would touch the one
+   above. Where the page narrows (the verse panel open) the text column narrows first; below 52rem the
+   margin is hidden (the verse panel lists them anyway) */
+main { container-type: inline-size; }
+.mr {
+  position: absolute; left: calc(100% + 4.6rem); width: 12.5rem;
+  font: 1rem/1.35 var(--ui); color: var(--secondo); text-indent: 0; white-space: normal; user-select: none;
+}
+.mr b { font: 400 .95rem var(--cifre); color: var(--tenue); margin-right: .3rem; }
+.mr a { color: inherit; text-decoration: underline; text-decoration-thickness: .05em; text-underline-offset: .1em; text-decoration-color: color-mix(in srgb, currentColor 35%, transparent); }
+.mr a:hover { color: var(--inchiostro); text-decoration-color: currentColor; }
+.mr:has(+ .v.sel) { color: var(--inchiostro); }
+@container (max-width: 52rem) {
+  .mr { display: none; }
+}
+@container (min-width: 45.01rem) and (max-width: 52rem) {
+  .lettore { max-width: 41rem; padding-right: 1.25rem; }
+}
+
+/* the overview: big figures proportional (tabular only in columns), the tables as booktabs, and the
+   book-by-book small multiples (app.js libroPerLibro): word-sized lines in the ink, the dot at the top */
+.tessera b { font-variant-numeric: normal; }
+table.classifica { border-top: 2px solid var(--inchiostro); border-bottom: 2px solid var(--inchiostro); }
+.scorre { overflow-x: auto; }
+table.libro-per-libro { border-collapse: collapse; border-top: 2px solid var(--inchiostro); border-bottom: 2px solid var(--inchiostro); font-size: 1.02rem; }
+.libro-per-libro th { font: italic 400 1rem var(--ui); text-align: left; padding: .55rem .9rem .45rem 0; border-bottom: 1px solid var(--inchiostro); white-space: nowrap; }
+.libro-per-libro td { padding: .1rem .9rem .1rem 0; vertical-align: middle; }
+.libro-per-libro .num { text-align: right; font-variant-numeric: tabular-nums; color: var(--secondo); }
+.libro-per-libro .lb-libro a { color: inherit; white-space: nowrap; }
+.libro-per-libro .lb-gruppo th { font: italic 400 1.3rem var(--serif); border-bottom: 0; padding-top: 1.1rem; }
+.libro-per-libro tbody tr:not(.lb-gruppo):hover td { background: var(--sopra); }
+.spark { display: block; cursor: pointer; color: var(--inchiostro); overflow: visible; }
+.spark polyline { fill: none; stroke: currentColor; stroke-width: 1; stroke-linejoin: round; }
+.spark circle { fill: currentColor; }
+.spark .cur { fill: var(--carta); stroke: currentColor; stroke-width: 1; display: none; }
+.spark .cur.on { display: inline; }

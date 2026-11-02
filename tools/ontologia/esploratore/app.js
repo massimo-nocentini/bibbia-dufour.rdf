@@ -933,6 +933,38 @@ function segnoMargine(i) {
   const seg = rel.has('parallel') ? '‖' : rel.has('quoted-later') ? '↗' : rel.has('doublet') ? '=' : rel.has('keynote') ? '+' : '•';
   return `<span class="mm${seg === '‖' ? ' forte' : ''}" title="${n} ${n === 1 ? 'rimando' : 'rimandi'} a margine">${seg}</span>`;
 }
+function margineVerso(i) {
+  // the margin references of verse i as printed, each reference a link with its preview (a style
+  // shows them in the margin beside the verse, stile-tufte.css; the panel lists them anyway)
+  const ms = S.mrefAt[i];
+  if (!ms) return '';
+  const righe = ms.map(m => {
+    const t = D.mref[m][2];
+    let out = '', p = 0;
+    for (const k of S.mlOf[m]) {
+      const l = D.ml[k], s = l[11], j = s ? t.indexOf(s, p) : -1;
+      if (j < 0 || !l[2].length) continue;
+      const h = l[2].length === 2 ? hashVerso(l[2][0], l[2][1]) : hashVerso(l[2][0]);
+      out += esc(t.slice(p, j)) + `<a href="${h}" data-r="${runsAttr(l[2])}" tabindex="-1">${esc(s)}</a>`;
+      p = j + s.length;
+    }
+    return out + esc(t.slice(p));
+  });
+  return `<span class="mr"><b>${esc(V.l[i])}</b>${righe.join('<br>')}</span>`;
+}
+function disponiMargine() {
+  // the margin references one below the other: one that would touch the one above moves down
+  const els = $$('#vista .testo .mr');
+  els.forEach(el => { el.style.marginTop = ''; });
+  const rs = els.map(el => el.getBoundingClientRect());
+  let fondo = -Infinity;
+  els.forEach((el, k) => {
+    if (!rs[k].height) return;
+    const giu = Math.max(0, fondo + 6 - rs[k].top);
+    if (giu) el.style.marginTop = giu + 'px';
+    fondo = rs[k].bottom + giu;
+  });
+}
 function mostraCapitolo(b, c) {
   if (S.capitolo && S.capitolo[0] === b && S.capitolo[1] === c && $('#vista .lettore')) return;
   const L = D.libri[b];
@@ -971,7 +1003,7 @@ function mostraCapitolo(b, c) {
     const acr = n => (V.ac[i] || []).filter(x => x[1] === n).map(([l]) => lettera(l)).join('');
     if (poesia) corpo = corpo.split('<br>').map((r, n) => `<span class="r">${acr(n + 1)}${r}</span>`).join('');
     else if (V.ac[i]) corpo = V.ac[i].map(([l]) => lettera(l)).join('') + corpo;
-    h += `<span class="${cl}" id="v${i}" data-i="${i}" tabindex="0" role="button" aria-label="${esc(aria)}">${segnoMargine(i)}${segnoDiz(i, dv.get(i))}${pg}<span class="vn" aria-hidden="true">${esc(V.l[i])}</span>${corpo}</span>${poesia ? '' : ' '}`;
+    h += `${margineVerso(i)}<span class="${cl}" id="v${i}" data-i="${i}" tabindex="0" role="button" aria-label="${esc(aria)}">${segnoMargine(i)}${segnoDiz(i, dv.get(i))}${pg}<span class="vn" aria-hidden="true">${esc(V.l[i])}</span>${corpo}</span>${poesia ? '' : ' '}`;
   }
   chiudi();
   const prec = c > 0 ? [b, c - 1] : b > 0 ? [b - 1, D.libri[b - 1].c.length - 1] : null;
@@ -994,6 +1026,10 @@ function mostraCapitolo(b, c) {
     <div class="fine">${prec ? `<a href="${capRif(prec)}">‹ ${esc(capNome(prec))}</a>` : '<span></span>'}${succ ? `<a href="${capRif(succ)}">${esc(capNome(succ))} ›</a>` : ''}</div>
   </article>`);
   S.capitolo = [b, c, s, e];
+  // the margin is laid out again whenever the text changes size (window, panel, style, fonts)
+  S.osservaMargine = S.osservaMargine || new ResizeObserver(() => requestAnimationFrame(disponiMargine));
+  S.osservaMargine.disconnect();
+  S.osservaMargine.observe($('#vista .testo'));
   document.title = `${L.s} ${titCap} · ${L.t}`;
   if (S.avviso) { $('#vista .testo').insertAdjacentHTML('beforebegin', `<p class="avviso" role="status">${esc(S.avviso)}</p>`); S.avviso = null; }
 }
@@ -2495,6 +2531,78 @@ function matriceDati() {
   S.matrice = { M, max };
   return S.matrice;
 }
+// [key, name in the tooltip, column head]
+const SERIE_SPARK = [['note', 'note della BJ', 'note della BJ'], ['rimandi', 'rimandi a margine', 'rimandi a margine'], ['discorsi', 'discorsi e citazioni tra virgolette', 'discorsi']];
+function libroPerLibro() {
+  // small multiples, after Tufte: a row per book, a word-sized line across its chapters for the notes
+  // (by the verse calling them), the margin references (by the verse they are printed at) and the
+  // quotations (by their first verse); each line on its own scale, the dot at its highest chapter
+  const per = SERIE_SPARK.map(() => new Uint16Array(S.n));
+  for (let i = 0; i < S.n; i++) {
+    per[0][i] = (S.noteAt[i] || []).length;
+    for (const m of S.mrefAt[i] || []) per[1][i] += S.mlOf[m].length;
+  }
+  D.ds.forEach(r => { per[2][r[0]]++; });
+  S.spark = D.libri.map(L => per.map(a => L.c.map(([, s, e]) => { let n = 0; for (let i = s; i <= e; i++) n += a[i]; return n; })));
+  const linea = v => {
+    const n = v.length, mx = Math.max(...v);
+    if (!mx) return '';
+    const x = j => n === 1 ? 60 : 2 + j * 116 / (n - 1), y = c => 20 - c / mx * 17;
+    const j = v.indexOf(mx);
+    return (n > 1 ? `<polyline points="${v.map((c, k) => `${x(k).toFixed(1)},${y(c).toFixed(1)}`).join(' ')}"/>` : '')
+      + `<circle cx="${x(j).toFixed(1)}" cy="${y(mx).toFixed(1)}" r="2"/>`;
+  };
+  let T = null, righe = '';
+  D.libri.forEach((L, b) => {
+    if (L.T !== T) { T = L.T; righe += `<tr class="lb-gruppo"><th colspan="8">${T === 'AT' ? 'Antico' : 'Nuovo'} Testamento</th></tr>`; }
+    righe += `<tr><td class="lb-libro"><a href="#${L.o}">${esc(L.t)}</a></td><td class="num">${L.c.length}</td>${S.spark[b].map((v, k) => {
+      const mx = Math.max(...v), tot = v.reduce((a, c) => a + c, 0);
+      const cap = mx ? L.c[v.indexOf(mx)][0] : '';
+      return `<td class="lb-sp"><svg class="spark" data-b="${b}" data-k="${k}" width="120" height="22" viewBox="0 0 120 22" role="img" aria-label="${esc(SERIE_SPARK[k][1])} per capitolo${mx ? `, al più ${mx} al capitolo ${esc(cap)}` : ''}">${linea(v)}<circle class="cur" r="2.5" cx="0" cy="0"/></svg></td><td class="num">${num(tot)}</td>`;
+    }).join('')}</tr>`;
+  });
+  return `<div class="h2">Libro per libro</div>
+    <p class="sotto" style="margin-bottom:.6rem">Per ogni libro, capitolo dopo capitolo: le note della BJ, i rimandi a margine e i discorsi tra virgolette, ciascuna linea sulla sua scala (il punto è il capitolo che ne ha di più), poi il totale. Passa sopra una linea per il capitolo, clic per aprirlo.</p>
+    <div class="scorre"><table class="libro-per-libro"><thead><tr><th>Libro</th><th class="num">capitoli</th>${SERIE_SPARK.map(([, , t]) => `<th colspan="2">${esc(t)}</th>`).join('')}</tr></thead><tbody>${righe}</tbody></table></div>`;
+}
+function agganciaSpark() {
+  // over a line: the chapter and its count in a tooltip and a dot; a click opens the chapter
+  const tab = $('.libro-per-libro');
+  if (!tab) return;
+  const tip = document.createElement('div');
+  tip.className = 'suggerimento'; tip.hidden = true;
+  document.body.appendChild(tip);
+  S.tipSpark?.remove();
+  S.tipSpark = tip;
+  const punto = e => {
+    const sv = e.target.closest('svg.spark');
+    if (!sv) return null;
+    const b = +sv.dataset.b, k = +sv.dataset.k, v = S.spark[b][k], n = v.length;
+    const r = sv.getBoundingClientRect();
+    const j = n === 1 ? 0 : Math.max(0, Math.min(n - 1, Math.round((e.clientX - r.left - 2) / 116 * (n - 1))));
+    return { sv, b, k, j, v };
+  };
+  tab.addEventListener('pointermove', e => {
+    const p = punto(e);
+    $$('.libro-per-libro .cur.on').forEach(c => { if (!p || c.parentNode !== p.sv) c.classList.remove('on'); });
+    if (!p) { tip.hidden = true; return; }
+    const { sv, b, k, j, v } = p, n = v.length, mx = Math.max(...v);
+    const c = sv.querySelector('.cur');
+    c.classList.add('on');
+    c.setAttribute('cx', (n === 1 ? 60 : 2 + j * 116 / (n - 1)).toFixed(1));
+    c.setAttribute('cy', (mx ? 20 - v[j] / mx * 17 : 20).toFixed(1));
+    const L = D.libri[b];
+    tip.innerHTML = `${esc(L.s)} ${esc(L.c[j][0])}: <b>${num(v[j])}</b> ${esc(SERIE_SPARK[k][1])}`;
+    tip.hidden = false;
+    tip.style.left = Math.min(e.clientX + 14, window.innerWidth - tip.offsetWidth - 8) + 'px';
+    tip.style.top = (e.clientY + 14) + 'px';
+  });
+  tab.addEventListener('pointerleave', () => { tip.hidden = true; $$('.libro-per-libro .cur.on').forEach(c => c.classList.remove('on')); });
+  tab.addEventListener('click', e => {
+    const p = punto(e);
+    if (p) location.hash = `#${D.libri[p.b].o}.${D.libri[p.b].c[p.j][0]}`;
+  });
+}
 function mostraPanoramica(sel) {
   const t = D.meta.totali, r = D.meta.riepilogo;
   const top = Array.from({ length: S.n }, (_, i) => i).sort((a, b) => S.indeg[b] - S.indeg[a] || a - b).slice(0, 50);
@@ -2521,6 +2629,7 @@ function mostraPanoramica(sel) {
     <div class="h2">Rimandi a margine per relazione</div>
     <div class="relazioni-barre">${barre.map(([k, v]) => `<span>${REL[k].seg} ${k === 'numbering' ? 'Altra numerazione, commenti' : REL[k].nome}</span><div class="barra-r" style="--c:var(${REL[k].col});width:${(100 * v / mx).toFixed(1)}%"></div><span class="val">${num(v)}</span>`).join('')}</div>
     <p class="sotto nota-barre">${num(totBarre)} rimandi a margine, raggruppati come nel pannello del versetto: un riferimento con «+» sta sotto Nota chiave qualunque sia il suo segno. In tutto i riferimenti con «+» sono ${num(r.keynotes)}: ${num(conta.keynote || 0)} a margine e ${num(r.keynotes - (conta.keynote || 0))} citati nelle note e nelle introduzioni.</p>
+    ${libroPerLibro()}
     <div class="h2">Matrice libro × libro dei rimandi a margine</div>
     <p class="sotto" style="margin-bottom:.6rem">Righe: il libro dove il rimando è stampato; colonne: il libro indicato. Clic su una cella per l’elenco dei rimandi.</p>
     <div class="matrice-box" id="mbox"><canvas id="mcv"></canvas></div>
@@ -2534,6 +2643,7 @@ function mostraPanoramica(sel) {
   </div>`);
   document.title = 'Panoramica · Esploratore dei versetti';
   disegnaMatrice(sel, sel.length === 2);
+  agganciaSpark();
   $('#dtop-scelta').addEventListener('click', e => {
     const b = e.target.closest('button');
     if (!b) return;

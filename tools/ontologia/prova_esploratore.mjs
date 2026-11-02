@@ -962,6 +962,39 @@ try {
   await p.selectOption('#stile', 'tufte');
   await p.waitForTimeout(200);
   verifica('stili: di nuovo Tufte', (await stile_()).spenti === 'giardino');
+  // Tufte: the margin references as printed beside their verse, one below the other, with the panel too
+  const margine_ = () => p.evaluate(() => {
+    const t = document.querySelector('.testo').getBoundingClientRect();
+    const ms = [...document.querySelectorAll('.testo .mr')].filter(x => x.offsetParent).map(x => x.getBoundingClientRect());
+    return { n: ms.length, fuori: ms.every(r => r.left > t.right && r.right <= innerWidth), sovrapposti: ms.some((r, k) => k && r.top < ms[k - 1].bottom),
+      link: document.querySelector('.testo .mr a')?.dataset.r, testo: document.querySelector('.testo .mr')?.textContent };
+  });
+  await vai_('#Gen.1', '.testo .v');
+  await p.waitForTimeout(300);
+  const mr0 = await margine_();
+  await vai_('#Gen.1.3', '#pannello:not([hidden])');
+  await p.waitForTimeout(300);
+  const mr1 = await margine_();
+  verifica('Tufte: i rimandi a margine accanto ai versetti, senza sovrapporsi, anche col pannello aperto',
+    mr0.n > 10 && mr0.fuori && !mr0.sovrapposti && /^\d+-\d+$/.test(mr0.link) && mr0.testo.startsWith('1') && mr1.n === mr0.n && mr1.fuori && !mr1.sovrapposti, JSON.stringify([mr0, mr1]));
+  await p.selectOption('#stile', 'giardino');
+  await p.waitForTimeout(200);
+  verifica('Giardino: i rimandi a margine solo nel pannello', (await margine_()).n === 0);
+  await p.selectOption('#stile', 'tufte');
+  // the overview: a row per book with three lines across its chapters; over a line the chapter, a click opens it
+  await vai_('#panoramica', '.libro-per-libro');
+  const lpl = await p.evaluate(() => ({ righe: document.querySelectorAll('.libro-per-libro tbody tr:not(.lb-gruppo)').length, linee: document.querySelectorAll('.libro-per-libro svg.spark').length }));
+  const sv = await p.$('.libro-per-libro svg.spark[data-b="0"][data-k="0"]');
+  await sv.scrollIntoViewIfNeeded();
+  const bb = await sv.boundingBox();
+  await p.mouse.move(bb.x + 2, bb.y + 11);
+  await p.waitForTimeout(100);
+  lpl.tip = await p.evaluate(() => document.querySelector('.suggerimento:not([hidden])')?.textContent);
+  await p.mouse.click(bb.x + 2, bb.y + 11);
+  await p.waitForSelector('.testo .v');
+  lpl.vai = await hash(p);
+  verifica('panoramica: libro per libro, 3 linee per libro, il capitolo al passaggio, il clic lo apre',
+    lpl.righe === 74 && lpl.linee === 222 && /^Gen 1: \d+ note della BJ$/.test(lpl.tip) && lpl.vai === '#Gen.1', JSON.stringify(lpl));
   verifica('nessun errore in console (desktop)', errori.length === 0, errori.slice(0, 5).join(' | '));
   await ctx.close();
 
