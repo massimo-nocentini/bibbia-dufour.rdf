@@ -1,5 +1,6 @@
 # SHACL shapes for the data of the verse ontology (ontologia/bj-dati.ttl.gz): the Bible, the
-# Dizionario di Teologia Biblica, the front matter and the appendices (last two sections).
+# Dizionario di Teologia Biblica, the front matter and the appendices, the links between the parts, the
+# quotations and the time line (the last sections).
 # Checked by tools/ontologia/verifica_rdf.py with pyshacl, on the whole graph.
 
 @prefix bj:      <https://massimo-nocentini.github.io/bibbia-gerusalemme/ontologia#> .
@@ -507,16 +508,18 @@ bjf:EventoCronologia a sh:NodeShape ;
                 [ sh:path bj:ordine ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ; sh:minInclusive 1 ] ,
                 [ sh:path bj:anniMargine ; sh:maxCount 1 ; sh:datatype xsd:string ] ,
                 [ sh:path bj:datazione ; sh:maxCount 1 ; sh:datatype xsd:string ] ,
-                [ sh:path bj:annoInizio ; sh:maxCount 1 ; sh:datatype xsd:integer ] ,
-                [ sh:path bj:annoFine ; sh:maxCount 1 ; sh:datatype xsd:integer ] ,
-                [ sh:path bj:circa ; sh:maxCount 1 ; sh:datatype xsd:boolean ] ,
                 [ sh:path bj:citaVersetto ; sh:class bj:Versetto ] ,
                 [ sh:path bj:pagina ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ] ,
-                [ sh:path prov:wasDerivedFrom ; sh:minCount 1 ; sh:maxCount 1 ; sh:class bj:PaginaAppendice ] ;
-    sh:xone ( [ sh:property [ sh:path bj:annoInizio ; sh:maxCount 0 ] , [ sh:path bj:annoFine ; sh:maxCount 0 ] ]
-              [ sh:property [ sh:path bj:annoInizio ; sh:minCount 1 ] , [ sh:path bj:annoFine ; sh:minCount 1 ] ,
-                            [ sh:path bj:datazione ; sh:minCount 1 ] ,
-                            [ sh:path bj:annoInizio ; sh:lessThanOrEquals bj:annoFine ] ] ) .
+                [ sh:path prov:wasDerivedFrom ; sh:minCount 1 ; sh:maxCount 1 ; sh:class bj:PaginaAppendice ] ,
+                # every entry is on the time line (bjf:LineaDelTempo: its years), dated by its own text or its row
+                [ sh:path bj:posizioneLinea ; sh:minCount 1 ] ,
+                [ sh:path bj:datataDa ; sh:minCount 1 ] ;
+    # the date as printed when the entry has one (stage 2c, or the first date of its text), none when its row dates it
+    sh:xone ( [ sh:property [ sh:path bj:datataDa ; sh:in ( "tavola" "testo" ) ] , [ sh:path bj:datazione ; sh:minCount 1 ] ]
+              [ sh:property [ sh:path bj:datataDa ; sh:in ( "riga: anno a margine" "riga: date delle altre voci"
+                                                            "riga: tra le voci della colonna" "riga: tra le righe vicine"
+                                                            "periodo" "colonna: intestazione" ) ] ,
+                            [ sh:path bj:datazione ; sh:maxCount 0 ] ] ) .
 
 # The dynasties: persons of the chart with their family links.
 bjf:TavolaGenealogica a sh:NodeShape ;
@@ -532,7 +535,9 @@ bjf:PersonaStorica a sh:NodeShape ;
                 [ sh:path schema:children ; sh:class bj:PersonaStorica ] ,
                 [ sh:path schema:spouse ; sh:class bj:PersonaStorica ] ,
                 [ sh:path bj:numeroTavola ; sh:maxCount 1 ; sh:pattern "^[0-9]+[a-c]?$" ] ,
-                [ sh:path bj:corsivo ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:boolean ] .
+                [ sh:path bj:corsivo ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:boolean ] ,
+                [ sh:path bj:datazione ; sh:maxCount 1 ; sh:datatype xsd:string ] ,
+                [ sh:path bj:tipoDatazione ; sh:maxCount 1 ; sh:in ( "morte" "regno" ) ] .
 
 # An acrostic letter: one of the 22 letters, its name without parentheses (the bracketed ones are
 # flagged bj:mancanteNelTesto), the line it opens.
@@ -670,3 +675,51 @@ bjf:Discorso a sh:NodeShape ;
     sh:or ( [ sh:property [ sh:path bj:iniziaIn ; sh:minCount 1 ] , [ sh:path bj:finisceIn ; sh:minCount 1 ] ,
                           [ sh:path bj:lunghezza ; sh:minCount 1 ] , [ sh:path bj:sbilanciato ; sh:maxCount 0 ] ]
             [ sh:property [ sh:path bj:sbilanciato ; sh:minCount 1 ] , [ sh:path bj:motivo ; sh:minCount 1 ] ] ) .
+
+# ================================================================== the time line (stage 2f, eventi.py)
+
+# every object of the time line: its place, years (start <= end), precision, era rule and the rest
+bjf:LineaDelTempo a sh:NodeShape ;
+    sh:targetSubjectsOf bj:posizioneLinea ;
+    sh:or ( [ sh:class bj:EventoCronologia ] [ sh:class bj:EventoDatato ] [ sh:class bj:PersonaStorica ]
+            [ sh:class bj:Datazione ] [ sh:class bj:Carta ] ) ;
+    sh:property [ sh:path bj:posizioneLinea ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ; sh:minInclusive 1 ] ,
+                [ sh:path bj:annoInizio ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ;
+                  sh:lessThanOrEquals bj:annoFine ] ,
+                [ sh:path bj:annoFine ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ] ,
+                [ sh:path bj:circa ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:boolean ] ,
+                [ sh:path bj:precisione ; sh:minCount 1 ; sh:maxCount 1 ;
+                  sh:in ( "anno" "intervallo" "circa" "secolo" "millennio" "riga" "periodo" ) ] ,
+                [ sh:path bj:regolaEra ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:minLength 1 ] ,
+                [ sh:path bj:datataDa ; sh:maxCount 1 ;
+                  sh:in ( "tavola" "testo" "riga: anno a margine" "riga: date delle altre voci"
+                          "riga: tra le voci della colonna" "riga: tra le righe vicine" "periodo"
+                          "colonna: intestazione" ) ] ,
+                [ sh:path bj:limite ; sh:maxCount 1 ; sh:in ( "ante" "post" ) ] ,
+                [ sh:path bj:incerto ; sh:maxCount 1 ; sh:in ( true ) ] ,
+                [ sh:path bj:annoAlternativo ; sh:maxCount 1 ; sh:datatype xsd:integer ] ,
+                [ sh:path bj:nelPeriodo ; sh:maxCount 1 ; sh:class bj:SezioneCronologia ] ,
+                [ sh:path bj:stessoEvento ;
+                  sh:or ( [ sh:class bj:EventoCronologia ] [ sh:class bj:EventoDatato ] [ sh:class bj:PersonaStorica ]
+                          [ sh:class bj:Datazione ] [ sh:class bj:Carta ] ) ] .
+
+# a date read in a note, an introduction, a front-matter text or a paragraph of the Dizionario: the expression
+# and where it starts in its source, the sentence, its citations and their verses; a note's has its anchor verse
+bjf:EventoDatato a sh:NodeShape ;
+    sh:targetClass bj:EventoDatato ;
+    sh:property [ sh:path rdfs:label ; sh:minCount 1 ; sh:maxCount 1 ; sh:languageIn ( "it" ) ] ,
+                [ sh:path bj:parte ; sh:minCount 1 ; sh:maxCount 1 ; sh:in ( "nota" "introduzione" "preliminari" "dizionario" ) ] ,
+                [ sh:path oa:hasSource ; sh:minCount 1 ; sh:maxCount 1 ;
+                  sh:or ( [ sh:class bj:Nota ] [ sh:class bj:Paragrafo ] [ sh:class bj:ParagrafoVoce ] ) ] ,
+                [ sh:path bj:datazione ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:minLength 1 ] ,
+                [ sh:path bj:posizioneTesto ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ; sh:minInclusive 0 ] ,
+                [ sh:path bj:testo ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype rdf:langString ; sh:minLength 1 ] ,
+                [ sh:path bj:testoHtml ; sh:maxCount 1 ; sh:datatype xsd:string ] ,
+                [ sh:path bj:posizioneLinea ; sh:minCount 1 ] ,
+                [ sh:path bj:datataDa ; sh:maxCount 0 ] ,
+                [ sh:path bj:citazioneNellaFrase ; sh:class bj:Citazione ] ,
+                [ sh:path bj:citaVersetto ; sh:class bj:Versetto ] ,
+                [ sh:path bj:versettoAncora ; sh:maxCount 1 ; sh:class bj:Versetto ] ;
+    sh:xone ( [ sh:property [ sh:path bj:parte ; sh:in ( "nota" ) ] , [ sh:path bj:versettoAncora ; sh:minCount 1 ] ]
+              [ sh:property [ sh:path bj:parte ; sh:in ( "introduzione" "preliminari" "dizionario" ) ] ,
+                            [ sh:path bj:versettoAncora ; sh:maxCount 0 ] ] ) .

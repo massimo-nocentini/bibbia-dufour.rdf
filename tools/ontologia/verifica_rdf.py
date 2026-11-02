@@ -22,6 +22,11 @@ bj-contesto.jsonld:
             their verse and no correction: the candidates of new misprints of the index
             the quotations (bj:Discorso): counts by part equal to virgolette.py's, nesting acyclic, spans
             inside existing verses, offsets inside the text at their guillemets
+            the time line (eventi.json): one position per event, counts by source, a start and an end,
+            start <= end, in order, the years and periods of the JSON, the dates read in free text
+            (bj:EventoDatato) at their offset in the text of their source, the sentence there, the anchor
+            verse the note's, every cited verse a verse backed by a citation of the sentence, same-event
+            links symmetric and between equal years
   SHACL     pyshacl with bj-forme.ttl on the whole graph (about 4.5 minutes)
   JSON-LD   a few resources (John 3,16, the entry ABELE) serialised with the context and
             parsed back unchanged
@@ -39,8 +44,8 @@ from multiprocessing import Pool
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-from rdf import BJ, BIBBIA, COLLEGAMENTI, CONTESTO, DISCORSI, DUFOUR, INTEGRAZIONE, NT, ONTOLOGIA, PARATESTO, \
-    PREFISSI, TESTO_DISCORSO, TTL, link_paratesto  # noqa: E402
+from rdf import BJ, BIBBIA, COLLEGAMENTI, CONTESTO, DISCORSI, DUFOUR, EVENTI, FONTI_TESTO, INTEGRAZIONE, NT, \
+    ONTOLOGIA, PARATESTO, PREFISSI, TESTO_DISCORSO, TTL, link_paratesto  # noqa: E402
 import grafo  # noqa: E402
 
 FORME = os.path.join(os.path.dirname(ONTOLOGIA), 'bj-forme.ttl')
@@ -181,7 +186,8 @@ def integrita(data, coll, dz, P, I):
          ' { ?r bj:daVersetto ?a ; bj:aPassaggio/bj:comprende ?b }'
          ' UNION { ?r bj:daVersetto ?b ; bj:aPassaggio/bj:comprende ?a } } }', 0),
         ('citaVersetto: (note, intro, front text or chronology entry, verse) pairs of the JSON',
-         'SELECT (COUNT(*) AS ?n) WHERE { ?x bj:citaVersetto ?v }', len(cited)),
+         'SELECT (COUNT(*) AS ?n) WHERE { ?x bj:citaVersetto ?v FILTER NOT EXISTS { ?x a bj:EventoDatato } }',
+         len(cited)),
         ('citaVersetto backed by a citation of that note, introduction, text or entry',
          'SELECT (COUNT(*) AS ?n) WHERE { SELECT DISTINCT ?x ?v WHERE { { ?c bj:daNota ?x }'
          ' UNION { ?c bj:daParagrafo/dcterms:isPartOf ?x } UNION { ?c bj:daEvento ?x } UNION { ?c bj:daVoceTavola ?x }'
@@ -192,7 +198,7 @@ def integrita(data, coll, dz, P, I):
          ' bj:daVersetto ?a ; bj:aPassaggio/bj:comprende ?b FILTER (?a != ?b)'
          ' FILTER NOT EXISTS { ?a bj:citatoIn ?b } }', 0),
     ] + integrita_dizionario(dz) + integrita_paratesto(P, data) + integrita_integrazione(I, P) + \
-        integrita_discorsi(data)
+        integrita_discorsi(data) + integrita_eventi()
 
 
 # the plain text a quotation's offsets count in: bj:testo (verses, paragraphs, the edition, canon items, chronology
@@ -249,6 +255,93 @@ def integrita_discorsi(data):
          'SELECT (COUNT(?x) AS ?n) WHERE { ?x a bj:Discorso ; bj:lunghezza ?l { FILTER (?l <= %d)'
          ' FILTER NOT EXISTS { ?x bj:testo ?t } } UNION { ?x bj:testo ?t FILTER (?l > %d || STRLEN(?t) != ?l) } }'
          % (TESTO_DISCORSO, TESTO_DISCORSO), 0),
+    ]
+    return out
+
+
+def integrita_eventi():
+    """The time line (eventi.json of eventi.py): every event on its resource, in order, with its years; the
+    dates read in free text (bj:EventoDatato) at their place in their source, with their verses."""
+    E = json.load(open(EVENTI, encoding='utf-8'))['eventi']
+    per = defaultdict(int)
+    for e in E:
+        per[FONTI_TESTO[e['fonte']][0] if e['fonte'] in FONTI_TESTO else e['fonte']] += 1
+    testo = [e for e in E if e['fonte'] in FONTI_TESTO]
+    coppie = {(e['id'], y) for e in E for y in e.get('stesso_evento', [])}
+    coppie |= {(y, x) for x, y in coppie}
+    out = [
+        ('time line: one position per event (bj:posizioneLinea)', 'SELECT (COUNT(*) AS ?n) WHERE { ?x bj:posizioneLinea ?p }',
+         len(E)),
+        ('time line: positions distinct, from 1 to the number of events',
+         'SELECT (COUNT(DISTINCT ?p) AS ?n) WHERE { ?x bj:posizioneLinea ?p FILTER (?p >= 1 && ?p <= %d) }' % len(E),
+         len(E)),
+    ]
+    out += [('time line: %s' % k, conta(c, '; bj:posizioneLinea ?p '), per[k]) for k, c in (
+        ('cronologia', 'bj:EventoCronologia'), ('dinastie', 'bj:PersonaStorica'), ('datazione', 'bj:Datazione'),
+        ('carta', 'bj:Carta'))]
+    out += [('time line: dates read in a text, %s' % k, conta('bj:EventoDatato', '; bj:parte "%s" ; bj:posizioneLinea ?p '
+                                                              % k), per[k])
+            for k in ('nota', 'introduzione', 'preliminari', 'dizionario')]
+    out += [
+        ('time line: every object has a start and an end, start <= end',
+         'SELECT (COUNT(?x) AS ?n) WHERE { ?x bj:posizioneLinea ?p FILTER NOT EXISTS { ?x bj:annoInizio ?a ;'
+         ' bj:annoFine ?z FILTER (?a <= ?z) } }', 0),
+        ('time line: the start years of eventi.json (their sum)',
+         'SELECT (SUM(?a) AS ?n) WHERE { ?x bj:posizioneLinea ?p ; bj:annoInizio ?a }', sum(e['inizio'] for e in E)),
+        ('time line: the end years of eventi.json (their sum)',
+         'SELECT (SUM(?z) AS ?n) WHERE { ?x bj:posizioneLinea ?p ; bj:annoFine ?z }', sum(e['fine'] for e in E)),
+        ('time line: in order (the start never decreases along the line)',
+         'SELECT (COUNT(?x) AS ?n) WHERE { ?x bj:posizioneLinea ?p ; bj:annoInizio ?a . BIND (?p + 1 AS ?q)'
+         ' ?y bj:posizioneLinea ?q ; bj:annoInizio ?b FILTER (?b < ?a) }', 0),
+        ('time line: each object with its precision and era rule',
+         'SELECT (COUNT(?x) AS ?n) WHERE { ?x bj:posizioneLinea ?p FILTER NOT EXISTS { ?x bj:precisione ?r ;'
+         ' bj:regolaEra ?e } }', 0),
+        ('time line: in a period of the table (bj:nelPeriodo)',
+         'SELECT (COUNT(*) AS ?n) WHERE { ?x bj:nelPeriodo ?s . ?s a bj:SezioneCronologia }',
+         sum(1 for e in E if e['periodo'])),
+        ('time line: the period of a chronology entry is its section',
+         'SELECT (COUNT(?x) AS ?n) WHERE { ?x a bj:EventoCronologia FILTER NOT EXISTS { ?x bj:nelPeriodo ?s ;'
+         ' dcterms:isPartOf ?s } }', 0),
+        ('time line: bj:stessoEvento symmetric', 'SELECT (COUNT(*) AS ?n) WHERE { ?a bj:stessoEvento ?b'
+         ' FILTER NOT EXISTS { ?b bj:stessoEvento ?a } }', 0),
+        ('time line: bj:stessoEvento, the links of eventi.json both ways',
+         'SELECT (COUNT(*) AS ?n) WHERE { ?a bj:stessoEvento ?b }', len(coppie)),
+        ('time line: the same event, the same years',
+         'SELECT (COUNT(*) AS ?n) WHERE { ?a bj:stessoEvento ?b . ?a bj:annoInizio ?x ; bj:annoFine ?y .'
+         ' ?b bj:annoInizio ?u ; bj:annoFine ?w FILTER (?x != ?u || ?y != ?w) }', 0),
+        ('dated text: the source of its part (note, introduction, front matter, dictionary paragraph)',
+         'SELECT (COUNT(?x) AS ?n) WHERE { { ?x bj:parte "nota" ; oa:hasSource/a bj:Nota } UNION'
+         ' { ?x bj:parte "introduzione" ; oa:hasSource/dcterms:isPartOf/a bj:Introduzione } UNION'
+         ' { ?x bj:parte "preliminari" ; oa:hasSource/dcterms:isPartOf/a bj:TestoPreliminare } UNION'
+         ' { ?x bj:parte "dizionario" ; oa:hasSource/a bj:ParagrafoVoce } ?x a bj:EventoDatato }', len(testo)),
+        ('dated text: the date as printed at its offset in the text of its source',
+         'SELECT (COUNT(?x) AS ?n) WHERE { ?x a bj:EventoDatato ; oa:hasSource ?r ; bj:datazione ?d ; bj:posizioneTesto ?o'
+         ' FILTER NOT EXISTS { %s FILTER (SUBSTR(STR(?t), ?o + 1, STRLEN(?d)) = ?d) } }' % TESTO_DI, 0),
+        ('dated text: the sentence holds the date',
+         'SELECT (COUNT(?x) AS ?n) WHERE { ?x a bj:EventoDatato ; bj:datazione ?d ; bj:testo ?f'
+         ' FILTER (!CONTAINS(STR(?f), ?d)) }', 0),
+        ('dated text: the sentence is in the text of its source',
+         'SELECT (COUNT(?x) AS ?n) WHERE { ?x a bj:EventoDatato ; oa:hasSource ?r ; bj:testo ?f'
+         ' FILTER NOT EXISTS { %s FILTER (CONTAINS(STR(?t), STR(?f))) } }' % TESTO_DI, 0),
+        ('dated text: a note\'s date anchored at the verse calling the note',
+         'SELECT (COUNT(?x) AS ?n) WHERE { ?x bj:parte "nota" ; oa:hasSource/bj:richiamataDa ?v ; bj:versettoAncora ?v }',
+         per['nota']),
+        ('dated text: anchor verses only on notes', 'SELECT (COUNT(?x) AS ?n) WHERE { ?x bj:versettoAncora ?v }',
+         per['nota']),
+        ('dated text: (date, verse cited) pairs of eventi.json',
+         'SELECT (COUNT(*) AS ?n) WHERE { ?x a bj:EventoDatato ; bj:citaVersetto ?v }',
+         sum(z - a + 1 for e in testo for a, z in zip(e['versetti'][::2], e['versetti'][1::2]))),
+        ('dated text: every anchor and cited verse a declared verse',
+         'SELECT (COUNT(*) AS ?n) WHERE { ?x a bj:EventoDatato ; bj:versettoAncora|bj:citaVersetto ?v'
+         ' FILTER NOT EXISTS { ?v a bj:Versetto } }', 0),
+        ('dated text: every cited verse backed by a citation of the sentence',
+         'SELECT (COUNT(*) AS ?n) WHERE { ?x a bj:EventoDatato ; bj:citaVersetto ?v FILTER NOT EXISTS {'
+         ' ?x bj:citazioneNellaFrase/bj:aPassaggio/bj:comprende ?v } }', 0),
+        ('dated text: the citations of the sentence, citations of its source',
+         'SELECT (COUNT(*) AS ?n) WHERE { ?x bj:citazioneNellaFrase ?c ; oa:hasSource ?s'
+         ' FILTER NOT EXISTS { ?c bj:daNota|bj:daParagrafo ?s } }', 0),
+        ('dated text: citations of eventi.json', 'SELECT (COUNT(*) AS ?n) WHERE { ?x bj:citazioneNellaFrase ?c }',
+         sum(len(e['riferimenti']) for e in testo)),
     ]
     return out
 
@@ -384,7 +477,10 @@ def integrita_paratesto(P, data):
          'SELECT (COUNT(*) AS ?n) WHERE { ?c bj:testoCorretto ?t ; bj:aPassaggioCorretto ?p ; bj:testo ?s ;'
          ' bj:correzione ?w }', sum(1 for l in ilinks if l.get('correction'))),
         ('chronology: entries', conta('bj:EventoCronologia'), len(P['cronologia']['voci'])),
-        ('chronology: entries with a year range', conta('bj:EventoCronologia', '; bj:annoInizio ?a '),
+        ('chronology: entries with a year range (their own or their row\'s: all)',
+         conta('bj:EventoCronologia', '; bj:annoInizio ?a ; bj:annoFine ?z '), len(P['cronologia']['voci'])),
+        ('chronology: the dates of stage 2c kept (bj:datataDa "tavola", with bj:datazione)',
+         conta('bj:EventoCronologia', '; bj:datataDa "tavola" ; bj:datazione ?d '),
          sum(1 for v in P['cronologia']['voci'] if v['start'] is not None)),
         ('chronology: year ranges out of order',
          'SELECT (COUNT(?e) AS ?n) WHERE { ?e bj:annoInizio ?a ; bj:annoFine ?z FILTER (?a > ?z) }', 0),

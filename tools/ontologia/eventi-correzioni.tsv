@@ -1,0 +1,42 @@
+# The dates of free text that the rules of eventi.py read wrongly or cannot read (stage 2f, session of
+# 2026-11-02), each read by hand in its sentence from the review table of `eventi.py --rivedi`.
+# fonte: the note, paragraph or entry; espressione: the date expression as eventi.py prints it (field
+# 'data'); n: its occurrence among the expressions so printed in that source (0 = all); decisione: a.C. or
+# d.C. (the era, overruling the default of the source; it also accepts a candidate refused only for a weak
+# cue or a single digit) or scarta (not the date of an event); motivo: why, in Italian. A row that matches
+# no expression stops the stage.
+fonte	espressione	n	decisione	motivo
+note:Josh.3.16	nel 1267	0	d.C.	un cronista arabo medievale: il blocco del Giordano del 1267 d.C.
+note:Sir.1.1	fine del secolo XIX	0	d.C.	i manoscritti medievali della Genizah del Cairo, ritrovati dal 1896 (cf. l’introduzione al Siracide)
+note:2Macc.5.2	nel 70	0	d.C.	la distruzione del tempio da parte di Tito, raccontata da Giuseppe Flavio
+note:Gen.6.1	dal IV secolo	0	d.C.	i Padri della Chiesa
+note:2Sam.5.9	dall’anno 2000	0	a.C.	il nome di Gerusalemme nei testi egiziani di esecrazione, II millennio a.C.
+note:Hab.1.9	nel 1947	0	d.C.	la scoperta delle grotte di Qumran
+note:Matt.24.15	nel 168	0	a.C.	l’altare pagano di Antioco Epìfane (cf. 1Mac 1,54: 167 a.C.)
+note:Acts.17.28	III sec.	0	a.C.	lo stoico Cleante (331–232 a.C.)
+note:Rev.11.13	1000	0	scarta	un numero simbolico (gran numero), non un anno
+note:Rom.7.15	1074–1080	0	scarta	i versi della Medea di Euripide, non anni
+intro-pentateuco.10	alla fine del XIX secolo	0	d.C.	Graf e Wellhausen, la critica del XIX secolo
+intro-siracide.1	a partire dal 1896	0	d.C.	i manoscritti della Genizah del Cairo
+intro-siracide.1	nel 1964	0	d.C.	il rotolo di Masada
+intro-siracide.1	al IV sec.	0	d.C.	i rabbini che citano il Siracide fino al IV secolo dopo Cristo (Talmud)
+intro-siracide.5	del 1965	0	d.C.	l’edizione critica di Ziegler
+intro-siracide.6	nel III sec.	0	d.C.	san Cipriano
+intro-sapienza.14	IV sec.	0	d.C.	il codice Vaticano (B)
+intro-tobia.5	del 382	0	d.C.	il sinodo romano del 382
+intro-tobia.5	nel 692	0	d.C.	il concilio «in Trullo»
+intro-cantico.5	fine del I sec.	0	d.C.	il IV libro di Esdra, apocrifo della fine del I secolo d.C.
+prefazione-verdon.5	all’inizio del terzo millennio	0	d.C.	il tempo della prefazione (2008)
+apostoli.2	dopo il 70	0	d.C.	il giudaismo rabbinico dopo la distruzione del tempio
+sapienza.1	del sec. VI	0	a.C.	la Grecia dei filosofi presocratici
+vangelo.15	nel corso del sec. II	0	d.C.	l’uso della parola «vangelo» per i libri scritti, nella Chiesa del II secolo
+visita.4	del sec. I	0	d.C.	i Giudei del tempo di Gesù (Lc 1–2)
+note:EsthGr.1.1a	1971	0	d.C.	la traduzione italiana della CEI per la liturgia
+note:EsthGr.1.1a	1974	0	d.C.	la seconda edizione della traduzione CEI per la liturgia
+note:Sir.1.1	1971	0	d.C.	la traduzione italiana della CEI per la liturgia
+note:Sir.1.1	1974	0	d.C.	la seconda edizione della traduzione CEI per la liturgia
+note:Sir.1.1	1979	0	d.C.	la Nova Vulgata
+note:Sir.1.1	1986	0	d.C.	la seconda edizione della Nova Vulgata
+note:Luke.3.2	dal 6 (?) al 15	0	d.C.	Anna sommo sacerdote dal 6 al 15 d.C. (così la tavola cronologica, voce 422)
+agnello-di-dio.5	al 55-57	0	d.C.	la prima lettera ai Corinzi (55–57 d.C.)
+unzione.11	Verso il primo secolo	0	scarta	vago: la comunità di Qumran va dal II secolo a.C. al I d.C.

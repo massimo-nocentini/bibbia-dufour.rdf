@@ -41,6 +41,14 @@ id/discorso/<kind>/<local>.<n> (nota/Gen.1.2.1, paragrafo/pentateuco.3.1, ...), 
 bj:attraversa (the verses spanned), bj:lunghezza, bj:testo when at most TESTO_DISCORSO characters,
 bj:sbilanciato and bj:motivo; they count in the subset of the resource they are read in.
 
+The time line (build/eventi.json, eventi.py): every dated event in one order. The chronology entries, the
+persons of the dynasties, the datings of the books and the maps are already resources and take on themselves
+their place (bj:posizioneLinea), years (bj:annoInizio, bj:annoFine), precision, era rule, period and the
+same-event links; a date read in a note, an introduction, a front-matter text or a paragraph of the dictionary
+is a bj:EventoDatato: id/evento/<source>/<offset> (evento:nota/Exod.2.10/474, evento:paragrafo/storici.16/2202,
+evento:voce/gerusalemme/paragrafo/2/95), an oa:SpecificResource of its source with the date as printed, the
+sentence, its citations and their verses, the anchor verse of a note. Counted in the subset of its source.
+
 No blank nodes: every resource has an IRI under ID, so the graph can be compared as a
 set of triples. Output is deterministic (same order, gzip without timestamps).
 
@@ -72,6 +80,7 @@ COLLEGAMENTI = os.path.join(OUT, 'build', 'collegamenti.json')
 PARATESTO = os.path.join(OUT, 'build', 'paratesto.json')
 DUFOUR = os.path.join(OUT, 'build', 'dufour.json')
 DISCORSI = os.path.join(OUT, 'build', 'discorsi.json')
+EVENTI = os.path.join(OUT, 'build', 'eventi.json')
 TESTO_DISCORSO = 200        # a quotation's words as bj:testo only up to this many characters (README)
 ONTOLOGIA = os.path.join(OUT, 'bj-ontologia.ttl')
 TTL = os.path.join(OUT, 'bj-dati.ttl.gz')
@@ -98,6 +107,8 @@ RISORSE_PARATESTO = [('testopre', ID + 'testo/'), ('canone', ID + 'canone/'), ('
 RISORSE_INTEGRAZIONE = [('allineamento', ID + 'allineamento/'), ('intervento', ID + 'intervento/'),
                         ('versione', ID + 'versione/'), ('schemanum', ID + 'numerazione/'),
                         ('calendario', ID + 'calendario/'), ('misura', ID + 'misura/'), ('carta', ID + 'carta/')]
+# the dates read in free text, on the time line (eventi.json, stage 2f)
+RISORSE_EVENTI = [('evento', ID + 'evento/')]
 PREFISSI = dict([
     ('bj', BJ), ('rdf', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#'),
     ('rdfs', 'http://www.w3.org/2000/01/rdf-schema#'), ('xsd', 'http://www.w3.org/2001/XMLSchema#'),
@@ -106,8 +117,10 @@ PREFISSI = dict([
     ('oa', 'http://www.w3.org/ns/oa#'), ('cito', 'http://purl.org/spar/cito/'),
     ('prov', 'http://www.w3.org/ns/prov#'), ('id', ID)] + [(r, ID + r + '/') for r in RISORSE]
     + RISORSE_DIZIONARIO + [('foaf', 'http://xmlns.com/foaf/0.1/')] + RISORSE_PARATESTO
-    + [('schema', 'https://schema.org/')] + RISORSE_INTEGRAZIONE + [('unit', 'http://qudt.org/vocab/unit/')])
-NOSTRI = RISORSE + ['id'] + [k for k, _ in RISORSE_DIZIONARIO + RISORSE_PARATESTO + RISORSE_INTEGRAZIONE]
+    + [('schema', 'https://schema.org/')] + RISORSE_INTEGRAZIONE + [('unit', 'http://qudt.org/vocab/unit/')]
+    + RISORSE_EVENTI)
+NOSTRI = RISORSE + ['id'] + [k for k, _ in RISORSE_DIZIONARIO + RISORSE_PARATESTO + RISORSE_INTEGRAZIONE
+                             + RISORSE_EVENTI]
 INTEGRAZIONE = os.path.join(OUT, 'build', 'integrazione.json')   # prefixes of described resources
 
 RELAZIONE = {'related': 'bj:correlato', 'parallel': 'bj:parallelo', 'doublet': 'bj:doppione',
@@ -1489,6 +1502,139 @@ def discorsi(G, Q, data, books):
     G.parte = 'bibbia'
 
 
+# ---------------------------------------------------------------- the time line (eventi.py, eventi.json)
+
+# the sources of a date read in free text: bj:parte, the part of the graph, the IRI of the source
+FONTI_TESTO = {
+    'nota': ('nota', 'bibbia', nota),
+    'introduzione': ('introduzione', 'bibbia', lambda x: paragrafo(x.rsplit('.', 1)[0], int(x.rsplit('.', 1)[1]))),
+    'testo': ('preliminari', 'paratesto', lambda x: iri('paragrafo', x)),
+    'dizionario': ('dizionario', 'dizionario', paragrafo_voce),
+}
+# the resources already in the graph, and their part
+FONTI_RISORSE = {
+    'cronologia': ('paratesto', lambda e: iri('cronologia', 'voce/%d' % e['cronologia']['voce'])),
+    'dinastie': ('paratesto', lambda e: iri('dinastia', e['sorgente'])),
+    'datazione': ('integrazione', lambda e: iri('cronologia', 'datazione/%s' % e['sorgente'])),
+    'carta': ('integrazione', lambda e: iri('carta', e['sorgente'])),
+}
+
+
+def risorsa_evento(e):
+    """The resource of an event of eventi.json: the one already in the graph, or the bj:EventoDatato of a date
+    read in free text, named after its source and offset (evento:nota/Exod.2.10/474)."""
+    if e['fonte'] in FONTI_RISORSE:
+        return FONTI_RISORSE[e['fonte']][1](e)
+    src = FONTI_TESTO[e['fonte']][2](e['sorgente'])
+    return iri('evento', '%s/%d' % (src.replace(':', '/', 1), e['offset']))
+
+
+def citazione_di(e, lid):
+    """The bj:Citazione of a reference of an event's sentence (stage 2 for the BJ, 2b for the dictionary)."""
+    return citazione_voce(lid) if e['fonte'] == 'dizionario' else citazione(lid)
+
+
+def eventi(G, E, data):
+    """The time line: each event of eventi.json on its resource (see the module docstring). The years of the
+    chronology entries dated by stage 2c are already there (G.link drops them, the checks compare them)."""
+    vs = data['verses']
+    ids = {e['id']: risorsa_evento(e) for e in E['eventi']}
+    for e in E['eventi']:
+        X = ids[e['id']]
+        if e['fonte'] in FONTI_TESTO:
+            parte, G.parte, sorgente = FONTI_TESTO[e['fonte']]
+            G.add(X, 'rdf:type', 'bj:EventoDatato')
+            G.add(X, 'rdfs:label', it(e['etichetta']))
+            G.add(X, 'dcterms:identifier', s(e['id'][len('ev:'):]))
+            G.add(X, 'bj:parte', s(parte))
+            G.add(X, 'oa:hasSource', sorgente(e['sorgente']))
+            G.add(X, 'bj:datazione', s(e['data']))
+            G.add(X, 'bj:posizioneTesto', i(e['offset']))
+            G.add(X, 'bj:testo', it(e['frase']))
+            html(G, X, e['frase'], e['html'])
+            if e['verso']:
+                G.add(X, 'bj:versettoAncora', verso(e['verso']))
+            for _, lid in e['riferimenti']:
+                G.add(X, 'bj:citazioneNellaFrase', citazione_di(e, lid))
+            r = e['versetti']
+            for a, z in zip(r[::2], r[1::2]):
+                for k in range(a, z + 1):
+                    G.add(X, 'bj:citaVersetto', verso(vs[k]['id']))
+        else:
+            G.parte = FONTI_RISORSE[e['fonte']][0]
+            if e['fonte'] == 'cronologia' and e.get('data_da') == 'testo':
+                G.add(X, 'bj:datazione', s(e['data']))      # the date its text gives (stage 2c gave none)
+            if e['fonte'] == 'dinastie':
+                G.add(X, 'bj:tipoDatazione', s(e['tipo']))
+        G.add(X, 'bj:posizioneLinea', i(e['n']))
+        G.link(X, 'bj:annoInizio', i(e['inizio']))
+        G.link(X, 'bj:annoFine', i(e['fine']))
+        G.link(X, 'bj:circa', b(e['circa']))
+        G.add(X, 'bj:precisione', s(e['precisione']))
+        G.add(X, 'bj:regolaEra', s(e['era_da']))
+        if e.get('data_da'):
+            G.add(X, 'bj:datataDa', s(e['data_da']))
+        if e['limite']:
+            G.add(X, 'bj:limite', s(e['limite']))
+        if e['incerto']:
+            G.add(X, 'bj:incerto', b(True))
+        if e.get('alternativa') is not None:
+            G.add(X, 'bj:annoAlternativo', i(e['alternativa']))      # signed as the years
+        if e['periodo']:
+            G.add(X, 'bj:nelPeriodo', iri('cronologia', 'sezione/%d' % e['periodo']))
+        for y in e.get('stesso_evento', []):    # symmetric, as in eventi.json (G.link drops the second copy)
+            G.link(X, 'bj:stessoEvento', ids[y])
+            G.link(ids[y], 'bj:stessoEvento', X)
+    G.parte = 'bibbia'
+
+
+def checks_eventi(G, E, data, coll, dz):
+    """The time line against eventi.json: one resource per event, its years (the chronology's of stage 2c
+    unchanged), the date at its offset in the text of its source, the verses equal to the targets of the
+    citations of the sentence, the same-event links both ways."""
+    tipi = Counter(o for po in G.per.values() for p, o in po if p == 'rdf:type')
+    attesi = sum(1 for e in E['eventi'] if e['fonte'] in FONTI_TESTO)
+    err = [] if tipi['bj:EventoDatato'] == attesi else [
+        'bj:EventoDatato: %d resources, %d in eventi.json' % (tipi['bj:EventoDatato'], attesi)]
+    vix = {v['id']: k for k, v in enumerate(data['verses'])}
+    targets = {l['id']: l for l in coll['links'] + dz['citations']}
+    testo = {}                                  # the plain text of each source, as the graph has it
+    for X, po in G.per.items():
+        for p, o in po:
+            if p == 'bj:testo' or (p == 'rdf:value' and X.startswith('corpo:')):
+                testo[X.replace('corpo:', 'nota:', 1) if X.startswith('corpo:') else X] = o[1]
+    for e in E['eventi']:
+        X = risorsa_evento(e)
+        po = G.per.get(X)
+        if po is None:
+            err.append('%s: no resource %s' % (e['id'], X))
+            continue
+        val = {}
+        for p, o in po:
+            val.setdefault(p, []).append(o)
+        if val.get('bj:annoInizio') != [i(e['inizio'])] or val.get('bj:annoFine') != [i(e['fine'])]:
+            err.append('%s: years %s %s in the graph, %d %d in eventi.json' % (
+                e['id'], val.get('bj:annoInizio'), val.get('bj:annoFine'), e['inizio'], e['fine']))
+        if val.get('bj:posizioneLinea') != [i(e['n'])]:
+            err.append('%s: position %s, %d in eventi.json' % (e['id'], val.get('bj:posizioneLinea'), e['n']))
+        if e['fonte'] not in FONTI_TESTO:
+            continue
+        src = val['oa:hasSource'][0]
+        t = testo.get(src, '')
+        if t[e['offset']:e['offset'] + len(e['data'])] != e['data']:
+            err.append('%s: %r not at %d in the text of %s' % (e['id'], e['data'], e['offset'], src))
+        if e['frase'] not in t:
+            err.append('%s: the sentence is not in the text of %s' % (e['id'], src))
+        attesi = {vix[v] for _, lid in e['riferimenti'] if targets[lid]['status'] in ('resolved', 'partial')
+                  for v in targets[lid]['targets']}
+        got = {vix[o.split(':', 1)[1]] for o in val.get('bj:citaVersetto', [])}
+        if got != attesi:
+            err.append('%s: %d verses cited, %d targets of its citations' % (e['id'], len(got), len(attesi)))
+    coppie = {(x, o) for x, po in G.per.items() for p, o in po if p == 'bj:stessoEvento'}
+    err += ['bj:stessoEvento %s %s without its inverse' % xy for xy in sorted(coppie) if xy[::-1] not in coppie]
+    return err
+
+
 # ---------------------------------------------------------------- the links between the parts (integrazione.json)
 
 MOTIVAZIONE = {'editing': 'oa:editing', 'linking': 'oa:linking', 'describing': 'oa:describing',
@@ -1928,12 +2074,14 @@ def void(G, tipi):
             'Gerusalemme (EDB: testo CEI 2008, note e rimandi della Bible de Jérusalem), '
             'collegati al versetto, con le voci del Dizionario di Teologia Biblica e le loro citazioni '
             'bibliche, le pagine iniziali e le appendici (edizione, canone, abbreviazioni e codici, indici, '
-            'tavola cronologica, dinastie, calendario, misure e monete, carte), i collegamenti tra le parti e le '
-            'correzioni."@it , "Verses, notes, margin references and citations of La Bibbia '
+            'tavola cronologica, dinastie, calendario, misure e monete, carte), i collegamenti tra le parti, le '
+            'correzioni e la linea del tempo di ogni evento datato (anche le date lette nelle note, nelle '
+            'introduzioni e nel Dizionario)."@it , "Verses, notes, margin references and citations of La Bibbia '
             'di Gerusalemme (EDB: CEI 2008 text, Bible de Jérusalem notes and margins), linked at the '
             'verse, with the entries of the Dizionario di Teologia Biblica and their Bible citations, the front '
             'matter and the appendices (edition, canon, abbreviations and codices, indices, chronological table, '
-            'dynasties, calendar, measures and coins, maps), the links between the parts and the corrections."@en ;',
+            'dynasties, calendar, measures and coins, maps), the links between the parts, the corrections and the '
+            'time line of every dated event (also the dates read in the notes, introductions and dictionary)."@en ;',
             '    dcterms:rights "Testi protetti da diritto d\'autore (EDB, Marietti): solo per uso '
             'locale, non pubblicare."@it , "The texts are copyrighted (EDB, Marietti): local use only, '
             'do not publish."@en ;',
@@ -2177,7 +2325,12 @@ def main(a):
         sys.exit('%s is missing: run tools/ontologia/virgolette.py first' % os.path.relpath(DISCORSI, C))
     Q = json.load(open(DISCORSI, encoding='utf-8'))['discorsi']
     discorsi(G, Q, data, books)
+    if not os.path.exists(EVENTI):
+        sys.exit('%s is missing: run tools/ontologia/eventi.py first' % os.path.relpath(EVENTI, C))
+    E = json.load(open(EVENTI, encoding='utf-8'))
+    eventi(G, E, data)
     err, tipi, usati = checks(G, ont, data, coll, dz, passaggi, P, I, Q)
+    err += checks_eventi(G, E, data, coll, dz)
     scrivi(G)
     err += void(G, tipi)
     with open(CONTESTO, 'w', encoding='utf-8') as f:

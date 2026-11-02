@@ -1108,3 +1108,81 @@ table.libro-per-libro { border-collapse: collapse; border-top: 2px solid var(--i
 .spark circle { fill: currentColor; }
 .spark .cur { fill: var(--carta); stroke: currentColor; stroke-width: 1; display: none; }
 .spark .cur.on { display: inline; }
+
+/* ---------------------------------------------------------------- the time line (#tempo, app.js mostraTempo)
+   A chronicle set as a table: a heavy rule over each period, the printed title in small capitals, hairlines
+   between the spans of years; the years in a left gutter in old-style figures, sticky while their events
+   scroll; the date of each sentence on a paper tint. The strip above it: bars in the muted ink counting the
+   events, the part on screen as a band in the ink, period by period; no accent colour. */
+.tm-filtri { display: flex; flex-wrap: wrap; gap: .5rem 1.4rem; align-items: center; margin: 0 0 .6rem; }
+.tm-fonti { flex-wrap: wrap; gap: 0 1rem; }
+.tm-fonti button .n { color: var(--tenue); margin-left: .15rem; }
+.tm-fonti button[aria-pressed="false"] { text-decoration: line-through; text-decoration-thickness: 1px; text-decoration-color: var(--linea2); }
+.tm-filtri select, .tm-vai select { height: 2.2rem; border: 0; border-bottom: 1px solid var(--linea2); border-radius: 0; background: none; color: var(--inchiostro); padding: 0; font: italic 1.05rem var(--ui); max-width: 100%; }
+.tm-spunta { display: inline-flex; align-items: center; gap: .4rem; font: italic 1.05rem var(--ui); color: var(--secondo); cursor: pointer; }
+.tm-spunta input { accent-color: var(--inchiostro); margin: 0; }
+#tm-q { flex: 1 1 12rem; height: 2.2rem; border: 0; border-bottom: 1px solid var(--linea2); border-radius: 0; background: none; color: var(--inchiostro); font: 1.15rem var(--ui); padding: 0; }
+#tm-q::placeholder, #tm-anno::placeholder { color: var(--tenue); font-style: italic; }
+#tm-q:focus, #tm-anno:focus { outline: none; border-bottom-color: var(--inchiostro); }
+.tm-vai { display: inline-flex; align-items: center; gap: .5rem; position: relative; }
+.tm-vai label { font: italic 1.05rem var(--ui); color: var(--secondo); white-space: nowrap; }
+#tm-anno { width: 5.5rem; height: 2.2rem; border: 0; border-bottom: 1px solid var(--linea2); border-radius: 0; background: none; color: var(--inchiostro); font: 1.15rem var(--cifre); padding: 0; }
+.tm-vai .errore { position: absolute; top: 100%; left: 0; white-space: nowrap; font: italic .85rem var(--ui); color: var(--errore); }
+.tm-esito { margin: 0 0 .4rem; }
+.tm-avviso { margin: 0 0 .8rem; }
+.tm-testa { position: sticky; top: var(--barra); z-index: 6; background: var(--carta); padding: .5rem 0 .3rem; border-bottom: 1px solid var(--linea); }
+.tm-striscia { position: relative; cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none; }
+.tm-striscia:focus-visible { outline-offset: 4px; }
+.tm-striscia svg { display: block; overflow: visible; }
+.tm-barre rect { fill: var(--tenue); }
+.tm-barre rect.on { fill: var(--inchiostro); }
+.tm-sep line, .tm-base { stroke: var(--linea2); stroke-width: 1; shape-rendering: crispEdges; }
+.tm-vista { fill: color-mix(in srgb, var(--inchiostro) 9%, transparent); stroke: var(--inchiostro); stroke-width: 1; pointer-events: none; }
+.tm-cur { stroke: var(--inchiostro); stroke-width: 1; display: none; pointer-events: none; shape-rendering: crispEdges; }
+.tm-cur.on { display: inline; }
+.tm-sete { position: relative; height: 1.1rem; }
+.tm-set { position: absolute; top: .1rem; text-align: center; font: italic .82rem/1 var(--ui); color: var(--secondo); white-space: nowrap; overflow: hidden; }
+.tm-scala { margin: .25rem 0 0; font: italic .78rem/1.35 var(--ui); color: var(--tenue); }
+.tm-periodo { margin: 2.6rem 0 0; border-top: 2px solid var(--inchiostro); }
+.tm-ptit { font: 400 1.5rem/1.2 var(--serif); font-variant-caps: all-small-caps; letter-spacing: .04em; margin: .7rem 0 .2rem; }
+.tm-psotto { font: italic 1rem var(--ui); color: var(--tenue); margin: 0 0 .6rem; }
+.tm-gruppo { display: grid; grid-template-columns: 9.5rem minmax(0, 1fr); gap: 0 1.6rem; border-top: 1px solid var(--linea); padding: .55rem 0 .2rem; }
+.tm-psotto + .tm-gruppo { border-top-color: var(--inchiostro); }
+.tm-anni {
+  position: sticky; top: calc(var(--barra) + var(--tm-testa, 5rem) + .4rem); align-self: start;
+  margin: 0; text-align: right; font: 400 1.3rem/1.3 var(--cifre); color: var(--inchiostro); font-variant-numeric: oldstyle-nums;
+}
+.tm-anni small { font: italic .85rem var(--ui); color: var(--secondo); margin-left: .1rem; }
+.tm-anni .tm-c { font-style: italic; color: var(--secondo); }
+.tm-eventi { list-style: none; margin: 0; padding: 0; }
+.tm-ev { padding: .1rem 0 .65rem; scroll-margin-top: calc(var(--barra) + var(--tm-testa, 5rem) + 1rem); outline: none; }
+.tm-ev.sel { background: var(--sel); box-shadow: 0 0 0 6px var(--sel); }
+.tm-testo { font: 1.2rem/1.55 var(--serif); }
+.tm-testo .tm-chips { display: inline-flex; flex-wrap: wrap; gap: 0 .9rem; margin-left: .4rem; vertical-align: baseline; }
+mark.tm-data { background: var(--rubrica-lieve); color: inherit; padding: 0 .12em; font-variant-numeric: oldstyle-nums; }
+.tm-ev.sel mark.tm-data { background: color-mix(in srgb, var(--sel-bordo) 35%, transparent); }
+.tm-meta { display: flex; flex-wrap: wrap; gap: .1rem 1.1rem; margin-top: .2rem; font: .9rem var(--ui); color: var(--tenue); }
+.tm-meta a { color: var(--secondo); }
+.tm-fonte { font-style: italic; }
+.tm-pos { font-style: italic; }
+.tm-link { font: italic .85rem var(--ui); color: var(--secondo); margin-left: .3rem; white-space: nowrap; }
+.tm-sez .tm-tutti { margin: .4rem 0 0; font: italic .95rem var(--ui); }
+.carta-voce.sel { background: var(--sopra); }
+.tm-scala .tm-breve { display: none; }
+/* the tab of the time line only where the bar has room for it (the view is in the Appendici hub) */
+@media (max-width: 1280px) {
+  .schede a.ampio { display: none; }
+}
+@media (max-width: 720px) {
+  .tm-scala .tm-lungo { display: none; }
+  .tm-scala .tm-breve { display: inline; }
+  .tm-filtri { gap: .4rem 1rem; }
+  .tm-fonti { display: flex; width: 100%; gap: 0 .9rem; }
+  .tm-fonti button { height: 2rem; }
+  #tm-q { flex-basis: 100%; }
+  .tm-gruppo { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .tm-anni { position: static; text-align: left; font-size: 1.2rem; }
+  .tm-testo { font-size: 1.1rem; }
+  .tm-set { font-size: .7rem; }
+  .tm-scala { font-size: .7rem; }
+}

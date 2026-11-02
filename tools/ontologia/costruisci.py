@@ -21,6 +21,10 @@ the first stage whose checks fail.
                         calendario, misure, carte) + the four JSON files -> ontologia/build/integrazione.json
                         (links between the parts, calendar, measures, maps, every correction as an intervention)
   test_integrazione.py  the links and the interventions on real rows
+  eventi.py             the five JSON files + eventi-correzioni.tsv -> ontologia/build/eventi.json (every dated
+                        event on one time line: the chronology, the dynasties, the datings of the books, the
+                        maps, the dates written in the notes, introductions, front matter and dictionary)
+  test_eventi.py        the rules on strings, real dates, the chronology and the order
   rdf.py                the six JSON files (Bible, links, dictionary, front matter and appendices, quotations,
                         integration)
                         -> ontologia/bj-dati.{ttl,nt}.gz, bj-contesto.jsonld, bj-void.ttl
@@ -53,6 +57,8 @@ PASSI = [
     ['test_virgolette.py'],
     ['integrazione.py', '-q'],
     ['test_integrazione.py'],
+    ['eventi.py', '-q'],
+    ['test_eventi.py'],
     ['rdf.py', '-q'],
     ['verifica_rdf.py', '-q'],
     ['interroga.py', '--limite', '5', '--riepilogo', os.path.join(C, 'ontologia', 'build', 'query.md')] + QUERY,

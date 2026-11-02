@@ -29,8 +29,11 @@ make ontologia          # the same: vendor/venv/bin/python -I tools/ontologia/co
 | `integrazione.py` | stage 2d: the links between the parts, the calendar, measures and maps, every correction as an intervention (hand tables below) → `ontologia/build/integrazione.json` |
 | `test_integrazione.py` | stage 2d tests: reviewed alignments and rejected ones, persons and their exceptions, datings, codices (D by book), measures and the prose misprints, the rows of every correction table (run by `costruisci.py`) |
 | `allineamenti.tsv`, `persone.tsv`, `cronologia-libri.tsv`, `testimoni.tsv`, `calendario.tsv`, `misure.tsv`, `carte.tsv` | the hand tables of stage 2d, each with its header comment (what a row says, who reviewed it) |
+| `eventi.py` | stage 2f: every dated event (the chronological table, the dynasties, the datings of the books, the maps, the dates written in the notes, introductions, front matter and Dizionario) on one time line → `ontologia/build/eventi.json` |
+| `test_eventi.py` | stage 2f tests: 106 string cases (dated, never a candidate, refused), the sentence of a date, no reference ever a year, 38 real dates, the 585 entries, counts and order (run by `costruisci.py`) |
+| `eventi-correzioni.tsv` | the dates of free text read by hand (era or not a date), stage 2f |
 | `sinonimi.tsv` | the spellings that differ between the dictionary and the CEI text (David / Davide): the explorer's search |
-| `rdf.py` | stage 3: the five JSON files (Bible, links, dictionary, front matter and appendices, integration) → `ontologia/bj-dati.ttl.gz`, `bj-dati.nt.gz`, `bj-contesto.jsonld`, `bj-void.ttl` |
+| `rdf.py` | stage 3: the JSON files of stages 1–2f (Bible, links, dictionary, front matter and appendices, quotations, integration, time line) → `ontologia/bj-dati.ttl.gz`, `bj-dati.nt.gz`, `bj-contesto.jsonld`, `bj-void.ttl` |
 | `grafo.py` | loads `bj-dati.nt.gz` (and the ontology) into rdflib, fast |
 | `verifica_rdf.py` | stage 3 checks: parsers, OWL sanity, SPARQL integrity, SHACL, JSON-LD |
 | `interroga.py` | runs SPARQL queries (`ontologia/query/*.rq` or `-e`) and prints tables |
@@ -515,6 +518,231 @@ sub-entries, 1,663 references (all resolved; 1,590 at a note's first verse, 48 i
 label printed twice in one theme), 3,285 references (3,259 resolved), 9 whole books;
 chronology 585 entries, 174 citations; 34 persons; 16 corrections.
 
+## Stage 2f: `eventi.py`, every dated event on one time line
+
+```sh
+vendor/venv/bin/python -I tools/ontologia/eventi.py [-q] [--rivedi review.tsv]
+vendor/venv/bin/python -I tools/ontologia/test_eventi.py [-v]
+```
+
+Run after `test_integrazione.py`. Reads `bibbia.json`, `collegamenti.json`, `dufour.json`,
+`paratesto.json`, `integrazione.json` and the hand table `eventi-correzioni.tsv`, and writes
+`build/eventi.json`: one list of every dated event of the material, in chronological order, for the
+time line of the graph (`rdf.py`, stage 10 below) and of the explorer. Nothing is deduplicated: a note and a chronology entry on the same event
+are two events, linked when that is certain (below). `--rivedi` writes a TSV of every date read in
+free text and every candidate refused, for the review by hand.
+
+| Key | Content |
+|---|---|
+| `meta` | `summary` (counts by source, precision, rule of the era, period, the placement of the chronology entries, the reasons of `non_datati`), `precisioni`, `fonti`, `ordine` |
+| `periodi` | the 9 periods of the chronological table: `n`, `romano`, `titolo`, `inizio`, `fine` (the span that gives a date its period, below) |
+| `eventi` | the events in order (fields below) |
+| `non_datati` | every candidate the rules refused: `fonte`, `sorgente`, `apri`, `data` (as printed), `offset`, `motivo`, `frase` |
+
+| Event field | Content |
+|---|---|
+| `id`, `n` | `ev:cronologia.<n>`, `ev:dinastie.<person>`, `ev:datazione.<dating>`, `ev:carta.<map>`, `ev:<source>@<offset>` (a date in free text); `n`: the position on the line, from 1 |
+| `fonte`, `sorgente` | `cronologia` (entry `cronologia.<n>`), `dinastie` (person `P05`), `datazione` (row of `datazioni` of `integrazione.json`), `carta` (map id), `nota` (note id), `introduzione` (`intro-….<paragraph>`), `testo` (front matter `<text>.<paragraph>`), `dizionario` (paragraph `<entry>.<n>`) |
+| `apri` | where the explorer opens it: `#cronologia/<period>?v=<n>`, `#persona/<id>`, `#carte?c=<map>`, `#<anchor verse>` for a note, `#intro/<id>.<n>`, `#introduzione-generale/<id>.<n>`, `#voce/<entry>/<n>` |
+| `data`, `offset` | the date as printed and where it starts in the plain text of its source (`text` of the note, paragraph or entry; none for rows, persons, datings and maps) |
+| `inizio`, `fine` | first and last year, integers, negative = B.C. (no year 0) |
+| `precisione` | `anno`, `intervallo`, `circa` (verso, intorno, ca.), `secolo`, `millennio`, `riga` (a chronology entry placed by its row), `periodo` (by its period only; none now) |
+| `circa`, `limite`, `incerto`, `alternativa`, `parte` | approximate; `ante` (prima del, entro, fino al, anteriore al) or `post` (dopo il, a partire dal, sin dal, posteriore al, «Dalla fine del II sec.»; a negation turns it: «non potrebbe essere anteriore agli anni 80» is `post`; not the date of an origin, «che data dal II sec.»); a `?`; the other year, an integer signed like the years: «114 (o 78) a.C.» -78, «59 o 60» 60, «dal 52 al 59 o 60» 59; `inizio`, `metà`, `fine`… of a century |
+| `era`, `era_da` | `a.C.`, `d.C.`, `a.C.–d.C.`; the rule that decided it (below) |
+| `periodo` | the period (1–9) of the table: its section for an entry, else the period of `inizio`; null after 135 d.C. |
+| `etichetta`, `frase`, `html` | a short plain label (the sentence, or a window of it around the date), the whole sentence (the entry's text), its HTML (the slice of the source's HTML, tags reopened and closed) |
+| `verso`, `versetti`, `riferimenti` | the note's anchor verse; the verses the sentence (entry, map) cites as runs of verse indices of `bibbia.json` `[a, b, a, b, …]`; the references `[as printed, link id]` (stage 2, 2b, 2c, 2d links) |
+| `cronologia` | entries: `voce`, `sezione`, `riga`, `colonna`, `margine` (the year printed in the margin of the row); and `data_da`: `tavola` (the date of stage 2c), `testo` (read in its text), `riga: anno a margine`, `riga: date delle altre voci`, `riga: tra le voci della colonna`, `riga: tra le righe vicine`, `periodo`, `colonna: intestazione` (the heading of a column) |
+| `persona`, `tipo`, `libri`, `voce` | dynasties: the person, `morte` or `regno`; datings: the books (OSIS), `composizione`/`ministero`/`evento`, the entry |
+| `stesso_evento`, `stesso_perche` | the events that are the same event (both ways: an entry lists its datings too), and why |
+
+**The sources.**
+- *The chronological table*: all 585 entries, each one event with its period, column, row and link. The
+  388 dates of stage 2c are kept; an entry without one takes the first date its text gives under the
+  rules below, with the era of the table (B.C. up to its turn, row 122 of section IX, A.D. after; a bound,
+  «fino al 200», and a birth, «TIRAKA, … nato verso il 710; verso il 690 è coreggente», do not place an
+  entry), and in the table also a year opening the entry («841 Salmanassar III…»), a hypothesis in
+  parentheses («(428: missione di Esdra, se …)», `incerto`), a span after a name and a colon («GIOVANNI
+  IRCANO (I): 134–104»), spans of reigns «N/M–K» («(305/4–281)», «(359/8–338/7)» is 359–337) and «N–M/K»
+  («(404–359/358)» is 404–358), spans in parentheses of one or two digits («(9–6)», «(6–41)»), a span set
+  off by a comma («(= Amenofi IV, 1374–1347)») and the first of two spans («Demetrio II (145–140 e
+  129–125)»): 68 entries. Else its row: the year printed in its
+  margin («1300; 1250» is 1300–1250), else the dates of the other entries of the row, narrowed in both
+  cases to the dated entries before and after it in its column, since a column of a row reads in order
+  (`riga: tra le voci della colonna`, 36: «Pasqua 70 … / Presa delle terze e delle seconde mura … / Inizio
+  di agosto: cessano i sacrifici … / 29 agosto 70» puts the two undated entries at 70, not at the 69–79 of
+  the row, which sorted them before «Pasqua 70»; «Fine marzo – inizio aprile: morte di Erode» between two
+  entries of 4 B.C. is 4 B.C., not 6–4; not where the column is out of order; margin 32, other entries
+  49), else the rows
+  around it (9, across the sections: from the latest start of the row before to the earliest of the row
+  after, or, where the table is not in order there, from the earliest before to the latest after), else
+  its period (none). The 3 headings of a column («ISRAELE», «GIUDA», «EGITTO»: one word in italic
+  capitals naming its column, `intestazione()`) are not events: they open their column at the first year
+  of the dated entry under them (`colonna: intestazione`: «ISRAELE» and «GIUDA» at 931 B.C., with Geroboamo
+  and Roboamo, not at the 945–925 of Sisak's row). The text dates refused are listed in `non_datati` («(la voce resta nella linea…)»).
+- *The dynasties*: the 6 persons with a date, «† 166» a death, «134–104» the years of a reign (as the
+  chronology prints them). The era: «a.C.» is printed on Herod (37–4 a.C.); the Hasmoneans before him are
+  B.C., his descendants (Agrippa I † 44, Agrippa II 48–95) A.D. (`ERE_DINASTIE`).
+- *The datings of the books*: the 40 rows of `cronologia-libri.tsv` (`composizione`, `ministero`,
+  `evento`), dated by their entry; the 120 `citato` rows are not datings of a book and are left out.
+- *The maps*: the 8 maps with a period in `carte.tsv` («XIII sec. a.C.», «II-I millennio a.C.»), read
+  by the same rules, with the verses of their passages; the two maps of the endpapers have none
+  (`non_datati`).
+- *Free text*: the 10,762 notes, the 21 introductions, the 7 front-matter texts and the 4,149 paragraphs of
+  the Dizionario. One event per date expression, with its sentence (the sentence ends of stage 2; after
+  «a.C.», «d.C.», «ca.», «sec.» or an initial only before a word that opens a sentence, `APRE`: «nel 19 a.C.
+  Ciò situa la scena», «… 14 d.C. L’anno quindicesimo», not «nel 63 a.C. Pompeo», «All’inizio del II sec.
+  a.C. Gesù Ben Sira»; never inside
+  «a. C.» nor after «J. Ziegler», «F.M. Abel», «F.Ch. Baur», «per es.», «Ant. Giud.», «Ann.», «gr.»; a dash
+  ends a sentence only after a full stop, the lemmas of a note, not inside one: «del tempio — dal 538 al
+  520 — alla negligenza»; a sentence that opens with its date starts there, «… Ez 27,21). Nel 715, Sargon
+  …»), the references of that sentence and their verses.
+
+**The rules on strings** (`espressioni()`, then `data()`; `leggi(text, context)` runs both on a string).
+The references are masked first: the citations of stage 2 (notes, introductions), 2b (dictionary), 2c
+(front matter, chronology), with their offsets, and the tokens of a reference in words (`v 5`, `vv 3–5`,
+`cap. 10`, `c 2`, `p. 123`, `nota 3`, `salmo 110`). A candidate is then:
+- a number after a cue. Strong cues take two digits or more: `nel`, `nell’`, `verso il`, `intorno al`,
+  `attorno al`, `circa il`, `prima del`, `dopo il`, `a partire dal`, `sin dal`, `fin dal`, `entro il`,
+  `cioè il`, `nell’anno`, `dall’anno`, `l’anno`, `†`, a month or season before the year («giugno-luglio
+  587», «Pentecoste 163», three digits; two digits are a weak cue read in the New Testament only: «febbraio
+  44», «nell’inverno 54–55»), `gli anni`, `negli anni`, `degli anni`, `verso gli anni` («negli anni 61–63»,
+  «negli anni 8–6»; «gli anni 80» alone is the decade 80–89), a colon or comma after «anno …» or «date …»
+  (three digits: «Nel quarto anno di Ioiakìm: 605», «anno centosettantaquattro: 139–138», «Le date … sono
+  quindi: 598, 587 e 582», «(quinto anno dell’esilio di Ioiachin, 593–592)»). Weak cues (`dal`, `al`, `del`, `fino al`, `anno`, `cioè`,
+  `ossia`) take three digits or more, or an era suffix; «il 587» is read only with a suffix; a month
+  before a weak cue makes it strong («16 marzo del 597»);
+- `dal N al M`, `tra il N e il M`, `fra il N e il M` (one range; two digits need a suffix after `dal`);
+- a number before an era suffix: `a.C.`, `a. C.`, `d.C.`, `avanti Cristo`, `dopo Cristo`, `della nostra
+  èra`, `prima della nostra èra`, `dell’èra cristiana`; a suffix after the last of a list or a range
+  applies to all («dal 445 al 433 a.C.»), two suffixes make a range across the eras («dal 4 a.C. al 39
+  d.C.», «(20 a.C. – 54 d.C.)»);
+- a number of three or four digits (or with a suffix) right after «(» and followed by «)», «;» or «,»
+  («Ramses II (1290–1224)», «Acazia (841)», «(598; cf. 2Re 24,14s)»; two years of four digits, «(1955 e
+  1973)», «(1971; 1974)»), or of one or two digits after a title or «anni» («procuratore Cuspio Fado
+  (44–46)», «regno di Claudio (41–54)», «due anni (52–54)», «sotto Nerone (64 o 67?)»; not «in Cristo
+  (9–11)», chapters; a single year of two digits after «regno di», «dal regno di Erode (37)»; two
+  descending spans, «(145–140 e 129–125)»), a number followed by `ca.` (also after «dal … al …»: «dal 1720
+  al 1552 ca.»);
+- set off by commas: a descending span of three or four digits after a word or «)» («Cofra (Aprie),
+  589–570, presso cui», «(= Amenofi IV, 1374–1347)»; not «Ant. Giud. XIII, 171–173», ascending), a year
+  after an event and its name («battaglia di Gaza, 312,», «morte di Pietro, 64 o 67,»: `EVENTO_VIRGOLA`);
+- «il N e il M» with a suffix on the second («il 30 e il 33 d.C.»: both);
+- the next years of a list after one of these («nel 597, 587, 582»: three digits; «gli anni 50–52 e 53–58»);
+- a century: `IV secolo`, `sec. VIII`, `XIII sec.`, `nei sec. VIII–IX`, `dal IV al III sec.`, `dal sec.
+  VIII al sec. IV`, `secoli XIII e XII`, `primo secolo`, with `inizio`, `prima metà`, `metà`, `seconda
+  metà`, `fine` (the first 25, 50, the middle 50, the last 50, 25 years); a millennium: `II millennio`,
+  `secondo millennio`, `II-I millennio`. The Roman numerals are upper case only («i secoli» is not I sec.);
+- the turn of the era: «all’inizio (dal principio) della nostra èra» is 1–25 d.C., «alla vigilia della
+  nostra èra» 25–1 a.C., both `circa` (`NOSTRA_ERA`; not «il 753 come inizio della nostra èra»).
+
+A range `N–M`, `N/M` (`589/8` is 589–588: the short form only after a slash; `143-37` is 143–37; a longer
+second year only when it is larger, «(64–135 d.C.)»), `N/M–K` («(455/454–403 ca.)»), `N–M/K`
+(«(404–359/358)»), `N o M`, `N oppure M`, `dal N al M o K` («dal 52 al 59 o 60»: 52–60) is one event. Refused (with the reason in `non_datati`): an ordinal («15°»), a count («40
+anni», «400 m»: a unit after the number), a day («14 nisan», «il 14 del mese» and, after a weak cue, a
+number up to 31 in a sentence that names a month), a regnal year («nell’anno 15 di Tiberio»), a year of
+another era («169 seleucidico», «782 di Roma»), a sum («10+7»), one digit without a suffix, a weak cue
+with fewer than three digits, a number in parentheses right after a reference («di 12,11 (1290)»: the
+number of the verse), a psalm number in parentheses in the Psalms («un inno regale (144)»). Never a
+candidate: a number glued to letters (`2Re`, `4QSam`), followed by `,5` or `.000`, or a book ordinal
+(«nel 1 Sam»).
+
+**The era** (`era_da`): the suffix (174); else a row of `eventi-correzioni.tsv` (31); else the order of a
+range (descending is B.C., ascending A.D.: «(736–716)», «dal 59 al 67»; an ascending one in a text of the
+Old Testament is refused, «Hallel (113–118)»: 151); else the source: notes and introductions of the Old
+Testament B.C. (455; a year of four digits from 1500 or a century from XV without a suffix is refused
+there: «nel 1947», «alla fine del XIX secolo», modern, go through the table), of the New Testament A.D.
+(117: Paul, the war of 66–70, the Fathers, the canon, the manuscripts; their B.C. dates carry the suffix,
+the exceptions «nel 168» (Antiochus) and «III sec.» (Cleanthes) are in the table; there a weak cue takes
+two digits too, «dal 52 al 59», «febbraio 44»: the 17 so read were checked, all years), the front matter
+A.D. (22), a paragraph
+of the Dizionario by its section (`VT` B.C., `NT` A.D. up to 135 and B.C. above), else by the testament
+of the references of its sentence, else of its paragraph, else B.C. above 135 and refused below («dopo il
+70»). The chronology, datings and maps: the table (556 + 40), the dynasties as above.
+
+**`eventi-correzioni.tsv`** (34 rows, each read in its sentence; a row that matches nothing stops the
+stage): `fonte`, `espressione` (as `data` prints it), `n` (the occurrence, 0 = all), `decisione`
+(`a.C.`, `d.C.`, `scarta`), `motivo`. The A.D. years of Old Testament texts (the Arab chronicler of
+1267 in the note on Gs 3,16, the Genizah and Masada of Siracide, Qumran 1947, Graf and Wellhausen, the
+synod of 382 and the Trullo of 692, the Vaticanus, Cyprian, the editions of 1965–1986 and the CEI
+translations of 1971 and 1974 in the notes on Est and Sir), the two B.C.
+dates of New Testament notes, «dall’anno 2000» (B.C., 2Sam 5,9), the Dizionario's «dopo il 70», «sec. VI»
+(Greece), «sec. II» (the Church), «sec. I» (the Jews of Jesus' time), and 3 numbers that are not dates
+(Rev 11,13 «(1000)», the verses of Euripides' Medea in the note on Rm 7,15, a vague «verso il primo
+secolo»).
+
+**Periods.** Each period starts at the years of its title (IV 1200, V 931, VI 721, VII 538, VIII 333, IX
+63 a.C.) or, for I–III, at the year in the margin of its first row (2000000, 3000, 1500), and ends the
+year before the next starts; IX ends at 135 d.C. A date takes the period its start falls in; after 135
+d.C. none (80 events: the Fathers, the manuscripts, the modern editions).
+
+**The same event** (`stesso_evento`, both ways, 63 links): a date of free text with exactly the years of a
+chronology entry dated by stage 2c or by its text, sharing a cited verse or a name the entry prints in
+small capitals or capitals (four letters or more, generic words out: «Ramses», «Geroboamo», «Nabucodònosor»);
+a person of the dynasties and an entry that names them (`persone.tsv`) with the same years; a dating and
+its entry.
+
+**Order**: by `inizio`, then `fine`, then the source (chronology, dynasties, datings, maps, notes in
+canonical order, introductions, front matter, dictionary) and the position in it.
+
+**Checks** (exit 1): the 585 entries on the line; integer years, start ≤ end, a precision and a source;
+ordered; distinct ids; every row of the table used; every offset at its date as printed in its source;
+every HTML well nested. `test_eventi.py` (11 tests): 129 string cases (81 dated, 19 never a candidate, 16
+refused with their reasons, 2 never dated, 11 bounds), the sentence of a date (a dash inside it does not
+end it; one that opens with its date starts there; after «a.C.» or an initial a sentence ends before a word
+that opens one, not before a name; the references of the sentence before are not the date's), the bounds
+(«anteriore al 735», «non … anteriore agli anni 80», «che data dal II sec.»), no reference of a sentence ever a year (strings parsed by
+`riferimenti.scan_prose`, and every date of the file against the citation spans of its source), 38 real
+dates read in their note, introduction, paragraph or entry (`nel 587` in the note on 2Re 25,8, `(736–716)`
+in Gs 15,45, `nel 70 d.C.` and its reference Lc 21,20 in 2Sam 5,9, `Dal IV secolo d.C.` in Es 19,2, the
+list of ESILIO, the rows of the table, the dates added by the adversarial review: «(41–54)», «verso gli anni
+80», «negli anni 8–6», «febbraio 44», «(305/4–281)», «(6–41)», «(428: …)», TIRAKA; round 2: «(404–359/358)»,
+AKNATON, Demetrio II, «Cofra (Aprie), 589–570», «battaglia di Gaza, 312», «morte di Pietro, 64 o 67», «regno
+di Erode (37)», «dal 52 al 59 o 60», «verso l’inizio della nostra èra», «dal sec. VIII al sec. IV»: 48), all
+585 entries with the dates of stage 2c unchanged, the counts,
+the order, `non_datati`, the table, the HTML.
+
+**Results**: 1,555 events: chronology 585 (388 dated by stage 2c, 68 by their text, 129 by their row),
+notes 557 (in 394 notes), introductions 268, Dizionario 66, front matter 25, datings 40, maps 8, dynasties
+6; precision: year 709, range 365, circa 142, century 187, millennium 10, row 142. From 2,000,000 B.C.
+(the first row of the table) to the third millennium of the preface; 1,114 B.C., 431 A.D., 10 across; 88
+bounds.
+`non_datati` 46: psalm numbers 11, days of a month 8, weak cues 4, Seleucid years 4, bounds of an entry 3,
+ordinals 3, numbers of a verse 3, maps without a period 2, single digits 2, a birth, a regnal year, a sum,
+three rows of the table. `build/eventi.json`: 1.38 MB.
+
+**Review** (round 1, adversarial): every one of the 934 dates read in free text and in the entries of the
+table was read in its source; no date read in free text had a wrong year or era; the errors were 11 entries
+of the table placed by a birth, by a later date of their text or by their row instead of their own span
+(«(305/4–281)» and 5 more «N/M–K», «(6–41)», 3 hypotheses «(428: …)», TIRAKA; 5 entries of the same rows and
+4 datings moved with them), 2 «ca.» lost after «dal … al», 2 lower bounds lost («dall’anno 200») and 7
+sentences cut at a dash inside them; an independent scan of every number not read added 31 dates (the rules above
+marked with «anni», a title, a month in the NT, a colon after «anno», «(1955 e 1973)», «il 30 e il 33
+d.C.»). Still not read: «Cofra (Aprie), 589–570,», «battaglia di Gaza, 312,», «morte di Pietro, 64 o 67,»
+(a bare apposition), «in tutto il 1900» (the century), bibliographic years («EDB 1992», «La Sacra Bibbia,
+2008»).
+
+**Review** (round 2, adversarial): the 908 dates of free text and the 65 entries dated by their text were
+read again in their source, and mechanically: the sentence contains the date and is a slice of the source,
+its HTML text is the sentence, the label holds the date, the references are the stage 2/2b/2c links whose
+offset lies in the sentence, the verses their targets, the anchor the note's. No year, era, century or
+circa was wrong. The errors were sentences (80 changed, 24 with other verses): 55 ran across a sentence end
+after «a.C.», «d.C.», «sec.» into the next sentence or from the one before («… nel XIII sec. a.C. A Meneijeh
+…», «… dell’anno 14 d.C. L’anno quindicesimo …», with its references), 18 began one sentence too early because the date opened its sentence (the
+look-ahead of the sentence end was cut at the date: «… Ez 27,21). Nel 715, Sargon …», with the references
+of the sentence before), 7 were cut at an abbreviation («J. Ziegler», «per es. Codex», «F.Ch. Baur», «(Gr.
+II)», «Ant. Giud.», «ad es. Qumrân», «Ann. XV», «F.M. Abel»); 36 bounds were not marked («anteriore al 735», «a partire dal IV
+secolo», «non … prima del III sec.»); «alternativa» was `true` for «N o M» and is now the other year; «dal
+sec. VIII al sec. IV» was two events. Three entries of the table were placed by their row although their
+text gives their span: «Artaserse II Mnemone (404–359/358)» (at 401), «AKNATON (= Amenofi IV, 1374–1347)» (at
+the margin 1400), «Demetrio II (145–140 e 129–125)» (145–116). An independent scan of every number and era
+word not read added 9 dates: «Cofra (Aprie), 589–570», «battaglia di Gaza, 312», «morte di Pietro, 64 o
+67», «regno di Erode (37)», the turn of the era (5: «all’inizio della nostra èra», «alla vigilia …»),
+and «dal 52 al 59 o 60» now ends at 60. 20 random entries checked on the scanned pages (46, 68, 125, 164,
+191, 198, 205, 208, 332, 387, 415, 418, 425, 454, 479, 529, 560, 573, 579, 581): all match. Still not read:
+«dal 626 circa al luglio del 587» (two events, 626 and 587), «tra la fine del 486 e l’inizio del 485» (two
+events), «nel secondo quarto del II sec. a.C.» (the whole century), «prima della nostra èra» (no year).
+
 ## Stage 3: `rdf.py`, `verifica_rdf.py`, `interroga.py`
 
 ```sh
@@ -678,6 +906,22 @@ dynasties and the Hebrew letters. The citations of notes and introductions now c
 reading of the sense of the sentence as their reason («letto nel libro del riferimento
 precedente: la catena continua», …).
 
+The time line is the key `tempo` (`tempo()`, from `build/eventi.json` of stage 2f; its docstring
+lists the columns): the sources, the precisions, the 9 periods, the rules of the era, and the 1,555
+events in the order of the line, each with its source and where it is read (an entry, a person, a
+dating, a map, a note, a paragraph of an introduction, of a front-matter text or of an entry of the
+Dizionario), its years (negative = B.C.), precision, the flags circa / uncertain / bound, the date as
+printed, the period, the verses cited (runs), the anchor verse, the same-event links (both ways, as in
+`eventi.json`), the column of the table, how a row was placed, the other year of «N o M» (signed, as in
+`eventi.json`) and the rule of the era. A date read in free text
+carries its sentence as HTML cut from the payload's own HTML of its source, so its citations are the
+`<a class="ci">` / `<a class="cd">` already there (the same targets, previews and reasons) and the date
+is wrapped in `<mark class="tm-data">`; a lemma's dash opening a sentence is dropped. The other events
+take their text from the payload at run time (the chronology entry, the person, the map with its
+references). Checks: every event is in, every sentence is found in its source and its HTML has its
+text, the wrapped citations of each sentence are as many as its references in `eventi.json`, every
+date is marked (916 of 916). 353 KB of JSON, 94 KB gzipped; the page grows by 0.13 MB.
+
 The dictionary is the key `diz`: `voci` (slug, name, full or redirect, letter, pages,
 authors and the part they signed, signatures and the paragraph they follow, targets of a
 redirect or a see-also list with the printed section path and the paragraph it starts at,
@@ -752,6 +996,7 @@ reading text; a warm, low-glare dark theme.
 | entry | `#voce/abele`, `#voce/abele/2`, `#voce/abele/1?v=Gen.4.5` | an entry as printed: name, authors, pages, the sections with their headings (`VT`, `I.`, `1.`, `a)`, «…»), the paragraphs with italics, page numbers and the signatures, `*words` linking the other entries, the citations as links to the passage with the preview of the chips (unresolved ones grey, reachable with `Tab`, their reason in the preview on hover, tap or focus); section headings as headings for screen readers; a section index beside the text (a link clicked again scrolls again); see-also list and the entries pointing here (the path `0` shown as `introd.`; a target that is itself a redirect shows where it leads); a redirect lists its entries (at the section printed) and counts the distinct ones; `/n` scrolls to paragraph n (with its headings) and highlights it, or says the entry has no such paragraph, `v=` also marks the citations naming that verse, outlined inside the highlighted paragraph; the slug is normalised (`#voce/AGNELLO-DI-DIO`, `#voce/agnello di dio`) |
 | front matter | `#introduzione-generale[/presentazione[.3]]`, `#introduzione-generale/abbreviazioni` | the edition (publisher, ISBN, printings, the colophon), the texts with their author, signature and position, printed in italics where the print is (the words in roman inside them upright), their citations as links; the two divisions of the canon with the list as printed and the books or chapters of this Bible each item is (an apocryphal one says it is not here); the Avvertenze and the 73 woodcuts as chips; the abbreviations and codices grouped as printed, book sigla linked, Gregory-Aland numbers |
 | index of notes, themes | `#indice-note[?q=]`, `#temi`, `#indice-note/91[.2]` | the entries by letter with a filter kept in the address (as `#dizionario`); an entry: headword as printed (small caps, italics), its sub-entries, each printed reference as a chip (preview, unresolved grey with the reason; a misprint struck through with the corrected chip «→ Gs 14,6» beside it), in the index of notes the BJ note each points to («nota 14,6», a link opening the verse with that note) and the notes themselves below, closed, to read in place; «v.» to other entries, page numbers to the introductions; `.k` highlights a sub-entry |
+| time line | `#tempo[?f=nota,introduzione&c=giuda&v=1&q=ciro&a=-587&e=<event>&p=6]` | «Linea del tempo»: every event of `eventi.json` by period of the table (its title as printed as the section head, the span and the count) and, inside, in the order of the line, one group per span of years with the years in a left gutter (`587 a.C.`, `171–138 a.C.`, `4 a.C. – 39 d.C.`, `fine II sec. a.C.`, `II mill. a.C.`, as the first event of the group dated by itself prints them, not an entry placed by its row; «c.» when every event of the group is approximate; sticky while its events scroll; on top on phones); each row: the sentence (the date marked, its tooltip the rule of the era) or the entry, person, map, with the references as links and previews; then the source as a link (the entry at `#cronologia/<period>?v=`, the note opened in the reader on that note, the paragraph of the introduction, of the front matter or of the entry, the person, the map at `#carte?c=`; a dating's books in its text), the column of the table, «≈ dalla riga» for a row placed by its row (the tooltip says how), «ipotesi», «non dopo» / «non prima» for a bound, «o N» and «= …» links to the same event. Above it one row of filters (the 8 sources as switches with their counts, the column of the table with its counts, «solo con versetti citati», words as in the search, «Vai all’anno» with a.C./d.C.); every count follows the other filters. Under them the strip, sticky: one segment per period (the same width each, the years in proportion inside it, period I on a logarithmic scale; «dopo» half as wide), bars counting the events shown, a band over the rows on screen, a hairline and a tooltip over a bar (count, years, period), click or drag to move (touch too), a slider for the keyboard (arrows a span of years, PageUp/PageDown a period, Home/End; its value says the years and the period). The address: `f` the sources, `c` the column, `v=1`, `q`, kept as you filter (a filter is a step of the history, the words replace it), `a` the year at the top, written as you scroll, with the row at the top and its offset in the history entry (`history.state.tm`), so Back and Forward return to that row and not to the first of its year (a year can hold dozens), `e` an event highlighted and focused (scrolled to unless `a` is there too; «nascosto dai filtri» only when it is), `p` a period; a jump lands a group with its rule under the head's (no sliver of the group before); a filter change keeps the first row on screen. The fonts may load after the first render: the place is sought again when they have. Links into it: the verse panel («Nel tempo»: the events anchored at the verse or citing it, in order, with their years), a book page (its datings), a period of the chronology and its highlighted entry, the index of the chronology, a person, a map, the Appendici hub, the overview (a tile), the first page; the tab «Tempo» only where the bar has room (wider than 1280 px; `largo ampio`), else the hub. All rows are rendered at once (about 200 ms for 1,555) |
 | chronology | `#cronologia`, `#cronologia/6[?v=133]`, `#cronologia/dinastie` | the introduction of the table and its 9 periods (with the span of their years); a period as a table: the margin years and printed pages at the left, one column per column of the print (in print order), the entries with their italics and small caps, the citations as links, the date and years in the tooltip; `v=` highlights an entry; on phones the cells stack with the column name; the dynasties as a tree (children under the father, «da Mariamne I» when the wives are several, ∞ for marriages, numbers, italics and dates as printed) |
 
 The reference box takes CEI sigla (`Gv 3,16`, `Sal 23,1-4`, `Gen 1`, `1 Cor 13`, `Gd 3`,
@@ -1080,3 +1325,167 @@ adjust the interfaces and the ontology in turn».
   quotation, notes, introductions, the Presentazione, an index headword, the colophon, the switch and
   its key, the search, the phone). The page grows 8.84 → 9.09 MB; first render about 600 ms as before.
 
+
+## Stage 10: the time line in the graph (2026-11-02)
+
+The user asked for a time line of every event in the explorer; stage 2f (`eventi.py`) built it as
+`build/eventi.json`, and this stage brings it into the graph, extending the model the chronological table
+already had (integer years `bj:annoInizio` / `bj:annoFine`, `bj:circa`, `bj:datazione`; no OWL-Time, no
+`xsd:gYear`: see `ontologia/README.md`, *The front matter and the appendices*) instead of a parallel one.
+
+- **RDF** (`rdf.py`, `eventi()` after `discorsi()`, `FONTI_TESTO`, `FONTI_RISORSE`, `risorsa_evento`):
+  every event of `eventi.json` on one resource. The chronology entries, the dated persons of the dynasties,
+  the datings of the books and the maps with a period are already resources: they take on themselves
+  `bj:posizioneLinea` (the place on the line, 1–1,555), the years (`G.link`, so the 388 years of stage 2c
+  are not added twice: `checks_eventi` asks for exactly one value, the JSON's), `bj:circa`,
+  `bj:precisione`, `bj:regolaEra` (`era_da`), `bj:datataDa` (`data_da`, entries and datings),
+  `bj:limite`, `bj:incerto`, `bj:annoAlternativo`, `bj:nelPeriodo` (the section of the period) and
+  `bj:stessoEvento`; an entry dated by its text gets that date as `bj:datazione`, a person
+  `bj:tipoDatazione` `morte` or `regno`. A date read in free text is a new `bj:EventoDatato` at
+  `evento:<source with / for :>/<offset>` (`evento:nota/2Kgs.25.8/66`, `evento:paragrafo/storici.16/2202`,
+  `evento:paragrafo/prefazione-verdon.2/517`, `evento:voce/gerusalemme/paragrafo/2/95`) with
+  `dcterms:identifier` (the id of `eventi.json` without `ev:`), `rdfs:label` (`etichetta`), `bj:parte`
+  (`nota`, `introduzione`, `preliminari`, `dizionario`), `oa:hasSource` (the note, the paragraph of the
+  introduction or front-matter text, the paragraph of the entry), `bj:datazione` (`data`),
+  `bj:posizioneTesto` (`offset`), `bj:testo` (`frase`) and `bj:testoHtml` (`html`, when it differs),
+  `bj:versettoAncora` (a note's anchor), `bj:citazioneNellaFrase` (the `bj:Citazione` of each reference:
+  `citazione()` for the BJ, `citazione_voce()` for the dictionary) and `bj:citaVersetto` (the verse runs).
+  It counts in the VoID subset of its source (`vp:bibbia` for notes and introductions, `vp:paratesto` for
+  the front matter, `vp:dizionario`); the triples added to the entries and persons count in
+  `vp:paratesto`, to the datings and maps in `vp:integrazione`. `bj:annoAlternativo` is `alternativa`,
+  signed like the years («del 587 (o 586?) a.C.»: -586), and `bj:stessoEvento` is stored both ways
+  (symmetric), as `eventi.json` lists it (both were mended here until the review of stage 12 fixed them in
+  `eventi.py`). `checks_eventi()`: one resource per event, its years and
+  position the JSON's, a free-text date at its offset in the text of its source as the graph holds it, the
+  sentence in that text, the verses equal to the targets of the sentence's resolved and partial citations,
+  `bj:EventoDatato` count, `bj:stessoEvento` both ways. The VoID description names the time line.
+- **Vocabulary** (`bj-ontologia.ttl`, version 1.4): the class `bj:EventoDatato` (`schema:Event`,
+  `oa:SpecificResource`) and 11 properties (`bj:posizioneLinea`, `bj:precisione`, `bj:regolaEra`,
+  `bj:datataDa`, `bj:limite`, `bj:incerto`, `bj:annoAlternativo`, `bj:nelPeriodo`, `bj:stessoEvento`
+  (symmetric), `bj:versettoAncora`, `bj:citazioneNellaFrase`); `bj:annoInizio`, `bj:annoFine`, `bj:circa`
+  open to the five classes of the line, `bj:datazione` and `bj:citaVersetto` to `bj:EventoDatato`,
+  `bj:tipoDatazione` to `bj:PersonaStorica`, `bj:parte` to `bj:EventoDatato`, the comments say so.
+- **Shapes** (`bj-forme.ttl`): `bjf:LineaDelTempo` (every subject of `bj:posizioneLinea`: one of the five
+  classes, one position, start and end with start ≤ end, `bj:circa`, a precision of the list, an era rule,
+  `bj:datataDa`, `bj:limite`, `bj:incerto` from their lists, a period a section, `bj:stessoEvento` to the
+  line) and `bjf:EventoDatato` (label, part, a source of its kind, the expression, the offset, the
+  sentence, citations and verses, the anchor exactly for the notes); `bjf:EventoCronologia` now asks
+  every entry for its place and `bj:datataDa`, and a `bj:datazione` exactly when dated by the table or its
+  text (the old rule, years only with a printed date, is gone); `bjf:PersonaStorica` takes
+  `bj:tipoDatazione`. 57 node shapes.
+- **Checks** (`verifica_rdf.py`, `integrita_eventi()`): 31 SPARQL queries (147 in all, 115 before): one position per event and
+  1–N distinct, the counts by source against `eventi.json`, a start and an end with start ≤ end, the sums
+  of the start and end years equal the JSON's, in order (each next position starts no earlier), precision
+  and era rule everywhere, the periods (their count, an entry's its section), `bj:stessoEvento` symmetric,
+  as many as the JSON's links both ways, between equal years; for the dates of free text the source of its
+  part, the date at its offset in the source's text, the sentence holding the date and in that text, a
+  note's date anchored at the verse calling the note, anchors only there, the (date, verse) pairs of the
+  JSON, every anchor and cited verse a declared verse, every cited verse backed by a citation of the
+  sentence, those citations citations of the source, their number. Changed: «entries with a year range»
+  is now all 585, a new query counts the 388 dated by stage 2c (`bj:datataDa` «tavola» with
+  `bj:datazione`), the `bj:citaVersetto` count of the notes, introductions, texts and entries leaves the
+  dates out.
+- **Queries**: `35-eventi-di-un-secolo.rq` (the 6th century B.C. on the line: every object starting in it,
+  of every kind, with the date as printed, years, precision, where it is read and the verses cited) and
+  `36-date-nelle-note-dei-re.rq` (the dates of the notes on 1–2 Kings in order, with the anchor verse, the
+  era rule and the chronology entry that is the same event).
+- **Numbers**: 916 `bj:EventoDatato` (notes 557, introductions 268, front matter 25, dictionary 66) and
+  639 resources already there on the line (585 entries, 6 persons, 40 datings, 8 maps); 26,225 triples
+  (3,976,937 → 4,003,162; `vp:bibbia` +19,484, `vp:dizionario` +2,156, `vp:paratesto` +4,207,
+  `vp:integrazione` +378: the 80 triples of the 40 same-event links between a dating and its entry count in
+  `vp:paratesto` since `eventi.json` lists them on the entry too, stage 12); 345 `bj:` terms (333 before). `make ontologia`: green (147 of 147 SPARQL
+  queries, SHACL with 57 node shapes on 267,149 typed resources conforms, parsers and JSON-LD equal, the 36
+  queries return rows: 35 has 215, 36 has 33, 22 now 35 instead of 34 since «Labashimarduk (556)», dated by its text, has a
+  `bj:datazione`); `prova_esploratore.mjs` 247/247 (the explorer does not read the graph).
+
+## Stage 11: the time line in the explorer (2026-11-02)
+
+The user asked for «a timeline with *all* the events ordered chronologically, to the web interface, so that I can
+explore content also from there». `esploratore.py` reads `build/eventi.json` (stage 2f) into the key `tempo` and
+`app.js` shows it at `#tempo` (stage 4: the payload paragraph and the row «time line» of the table).
+
+- **Form.** The list is the table view of the line: every event can be read, filtered and opened from it. The
+  strip above it is a histogram, one series in the muted ink (no legend: the caption names it), thin bars with a
+  2 px gap, hairline separators and baseline, a hover tooltip per bar with the count first, the hit target the
+  whole column of a bar; the part on screen is a band (the ink in Tufte, the red in Giardino). The span from
+  2,000,000 B.C. to 2008 A.D. has no honest linear scale: each period of the table gets the same width, the years
+  are in proportion inside it, period I (2,000,000–3001 B.C.) is logarithmic, the 80 events after 135 A.D. a
+  half-width segment; the caption under the strip says so. An event placed by its period (`periodo`) sits in its
+  segment even when its first year falls in another one: 16 entries of the table, in the section that prints
+  them (cronologia.12 at 3100 B.C. in II, 54–56 at 945 B.C. in V, 113 at 721 B.C. in V, 199 at 525 B.C. in VI,
+  241–245 at 333–323 B.C. in VII, …); inside a period the order is the line's.
+- **Order.** By period (the section of the table for an entry, else the period of the first year; after 135 A.D.
+  last), then the order of `eventi.json`: inside each period the years never go back. Groups of rows share a
+  span of years (720 groups).
+- **Styles.** Both stylesheets, light and dark: Tufte (ET Book, the years in its old-style figures, a heavy rule
+  over each period as booktabs, hairlines between the years, the date of a sentence on a paper tint, no accent);
+  Giardino (Literata with old-style figures, the years, the dates and the titles of the periods in the red of the
+  rubrics, the labels in small capitals). On a phone the years go above their rows, the filters wrap, the strip
+  keeps its width and a short caption, the tab is hidden (the hub and the Appendici tab lead there).
+- **Also changed.** `#carte?c=<map>` highlights a map; the tooltip of the overview's small multiples is hidden
+  on a route change (it stayed on screen after a click).
+- **Checks.** `esploratore.py`: the events and their sentences (above). `prova_esploratore.mjs`: 18 more (265):
+  all 1,555 rows in the expected order with years never going back inside a period; the counts per source
+  against `eventi.json`; the first render under 300 ms (about 180–210 ms); every reference a link with its
+  target; the gutter of an entry, a person, a map, a note; the preview of a reference; the source filter in the
+  address and Back; words and «solo con versetti citati» with the counts of the buttons; the strip (tooltip, a
+  click on VI, a drag to IX, the band, the year in the address); the slider keys; «Vai all’anno» 30 d.C.; the
+  panel of 2Re 25,8 («Nel tempo», as many as `eventi.json` has) and its link landing on the note's date,
+  highlighted, in view and focused; the note opened from the row and Back to the row; the links from Sir, the
+  period VI, the hub and the overview; both styles in light and dark; on the phone no horizontal scrolling, the
+  filters inside the screen, the tabs on one line, a short sticky head, the event in view, a tap on the strip.
+  Screenshots `T1`–`T11` with `--foto`.
+
+## Stage 12: review of the time line (2026-11-02)
+
+An end-to-end adversarial review of stages 2f, 10 and 11: 40 random events of every source read in their
+source (all right), 10 more entries of the table on the scanned pages (pp. 4, 16, 18, 20: all right; with
+them every entry of p. 4 and the rows of pp. 16, 20–21 around the found defect), the order at the origins,
+the turn of the era, the centuries and 135 A.D., the graph (`verifica_rdf.py`, the example queries, and a
+scan of `bj-dati.nt.gz` for orphan or duplicated resources of the line: none), the explorer used as a reader
+(the tab, the hub, the verse panel, a chronology entry, a book, a map, a person, the filters, the strip,
+Back and Forward, the previews, the keys, both styles, dark, 390 px), and these READMEs against the code.
+
+- **Entries placed by their row sorted out of the order the table prints them.** An undated entry took the
+  whole span of its row, so «Presa delle terze e delle seconde mura», «Inizio di agosto: cessano i sacrifici»
+  and «Davanti al tempio, si sacrifica alle insegne romane» (row 153 of IX, 69–79) came before «Pasqua 70»
+  on the line, and «Fine marzo – inizio aprile: morte di Erode» (6–4 B.C.) before «4: in marzo». Fixed in
+  `eventi.py` (`riga: tra le voci della colonna`, stage 2f): 36 entries and 2 datings narrowed (`test_reali`
+  checks 402, 404, 539, 33 and the order of 537–542). A row across the eras (-4…39) said `a.C.`; now
+  `a.C.–d.C.` (2 entries).
+- **Three headings of a column on the line as events.** «ISRAELE», «GIUDA» (row 23 of V) and «EGITTO» (row 40
+  of VI) are the italic headings of the columns that open there, transcribed as entries by stage 2c; they
+  sat on the line as rows «≈ dalla riga» at the span of their row. They stay entries (the 585 are all on
+  the line), placed at the first year of the dated entry they head (`colonna: intestazione`) and marked
+  «intestazione» in the explorer.
+- **`eventi.json` half-done.** `alternativa` was unsigned and a dating's same-event link one way, mended
+  downstream twice (`rdf.py`, `esploratore.py`): both now in `eventi.py` (the graph is unchanged: the same
+  `bj:annoAlternativo` values, the same 206 `bj:stessoEvento` triples, 80 of them now counted in
+  `vp:paratesto`). A map's `apri` was `#carte`, now `#carte?c=<map>`; «Composizione: Abdia (Abdia)» lost its
+  repeated parenthesis.
+- **Back to a highlighted event showed «L’evento è nascosto dai filtri»** and left the row off screen
+  (`posiziona_` printed the notice whenever `e` and `a` were both in the address). **Back returned to the
+  first row of the year**, not to the row the reader had left (a year holds up to some dozens of rows), and
+  `memoTempo` did not record a scroll inside one year at all. Now the row and its offset are kept in the
+  history entry (`history.state.tm`, `ripristinaTempo`).
+- **A jump to a year left a 7 px gap** under the sticky head where the sticky year of the group before
+  peeked out (a red or black sliver over the rule); a group now lands with its rule under the head's.
+- **The gutter of a group** took the years of its first row even when that row was an entry placed by its
+  row («1800–1601 a.C.» for «Sec. XVIII e XVII»): now the first row dated by itself prints them.
+- **On a 390 px phone in Giardino «dopo»**, the label of the last segment of the strip, was cut to «do»; it
+  now keeps the right edge, grows to the left, and Giardino sets those labels without letter spacing on a
+  phone so it clears the «IX». The page said «a sinistra gli anni», wrong on a phone: «ogni gruppo porta i
+  suoi anni».
+- **Docs.** Stage 11 claimed 10 events set in a period their year is not in, «the -539 of a note in VI» among
+  them (539 B.C. is in VI): it is 16 entries of the table, in the section that prints them. Stage 10 and
+  `ontologia/README.md` still described the mended fields and the VoID subsets before the fix.
+- **Left as they are.** At 721–1100 px the top bar is too narrow (the search field shrinks to a letter at
+  1024 px): older than the time line, as stage 11 says. Literata italic sets narrow word spaces («≈ dalla
+  riga»), as everywhere in Giardino. «44–66: Cuspio Fado procuratore» is a misprint of the book (44–46), kept as
+  printed. The entries of a column narrowed by their neighbours rest on the table reading in order inside a
+  cell; where it does not (the start after the end), the row's span stays.
+- **Checks.** `test_eventi.py` 11 tests (129 string cases, 48 real dates) with the new placements, the order
+  of the siege of 70, the era of a row across the eras, links both ways, `alternativa` signed, a map's link;
+  `prova_esploratore.mjs` 267 (2 new: a jump to 70 A.D. with no sliver and the siege in order; Back to a
+  highlighted event in view with no notice and Back to the same row inside a year of many rows; the phone
+  check of the strip now also asks for an unclipped «dopo» clear of «IX» in both styles).

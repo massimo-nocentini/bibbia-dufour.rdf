@@ -1,0 +1,19 @@
+# Le date lette nelle note dei libri dei Re, nell'ordine del tempo: il versetto da cui la nota è
+# richiamata, la data come stampata, gli anni, la regola dell'èra e la voce della tavola cronologica che è lo stesso evento.
+# The dates read in the notes on the books of Kings, in the order of time: the verse the note is
+# called from, the date as printed, the years, the era rule and the chronology entry that is the same event.
+PREFIX bj: <https://massimo-nocentini.github.io/bibbia-gerusalemme/ontologia#>
+PREFIX libro: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/libro/>
+PREFIX oa: <http://www.w3.org/ns/oa#>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?versetto ?data ?inizio ?fine ?era ?voce WHERE {
+  ?v bj:inLibro ?b . FILTER (?b = libro:1Kgs || ?b = libro:2Kgs)
+  ?x bj:versettoAncora ?v ; bj:datazione ?data ; bj:annoInizio ?inizio ; bj:annoFine ?fine ; bj:regolaEra ?era ;
+     bj:posizioneLinea ?n .
+  ?v rdfs:label ?versetto .
+  OPTIONAL { ?x bj:stessoEvento ?e . ?e a bj:EventoCronologia ; rdfs:label ?voce0 }
+  BIND (COALESCE(?voce0, "") AS ?voce)
+}
+ORDER BY ?n

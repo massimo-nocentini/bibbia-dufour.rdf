@@ -54,6 +54,7 @@
   "misura": "https://massimo-nocentini.github.io/bibbia-gerusalemme/id/misura/",
   "carta": "https://massimo-nocentini.github.io/bibbia-gerusalemme/id/carta/",
   "unit": "http://qudt.org/vocab/unit/",
+  "evento": "https://massimo-nocentini.github.io/bibbia-gerusalemme/id/evento/",
   "Abbreviazione": "bj:Abbreviazione",
   "Allineamento": "bj:Allineamento",
   "Ambito": "bj:Ambito",
@@ -71,6 +72,7 @@
   "Dizionario": "bj:Dizionario",
   "Edizione": "bj:Edizione",
   "EventoCronologia": "bj:EventoCronologia",
+  "EventoDatato": "bj:EventoDatato",
   "Festa": "bj:Festa",
   "GruppoCanone": "bj:GruppoCanone",
   "Indice": "bj:Indice",
@@ -163,6 +165,10 @@
   "ambitoLibro": "bj:ambitoLibro",
   "ambitoVersetti": "bj:ambitoVersetti",
   "anniMargine": "bj:anniMargine",
+  "annoAlternativo": {
+   "@id": "bj:annoAlternativo",
+   "@type": "xsd:integer"
+  },
   "annoFine": {
    "@id": "bj:annoFine",
    "@type": "xsd:integer"
@@ -215,6 +221,10 @@
   },
   "citatoNellaVoce": {
    "@id": "bj:citatoNellaVoce",
+   "@type": "@id"
+  },
+  "citazioneNellaFrase": {
+   "@id": "bj:citazioneNellaFrase",
    "@type": "@id"
   },
   "codiceOsis": "bj:codiceOsis",
@@ -303,6 +313,7 @@
    "@type": "@id"
   },
   "dataStampata": "bj:dataStampata",
+  "datataDa": "bj:datataDa",
   "datazione": "bj:datazione",
   "datazioneDi": {
    "@id": "bj:datazioneDi",
@@ -408,6 +419,10 @@
    "@id": "bj:inVersetto",
    "@type": "@id"
   },
+  "incerto": {
+   "@id": "bj:incerto",
+   "@type": "xsd:boolean"
+  },
   "indicaNota": {
    "@id": "bj:indicaNota",
    "@type": "@id"
@@ -455,6 +470,7 @@
    "@id": "bj:libroImplicito",
    "@type": "xsd:integer"
   },
+  "limite": "bj:limite",
   "livello": {
    "@id": "bj:livello",
    "@type": "xsd:integer"
@@ -494,6 +510,10 @@
   },
   "nelMese": {
    "@id": "bj:nelMese",
+   "@type": "@id"
+  },
+  "nelPeriodo": {
+   "@id": "bj:nelPeriodo",
    "@type": "@id"
   },
   "nellIndice": {
@@ -605,6 +625,10 @@
    "@id": "bj:posizioneHtml",
    "@type": "xsd:integer"
   },
+  "posizioneLinea": {
+   "@id": "bj:posizioneLinea",
+   "@type": "xsd:integer"
+  },
   "posizioneTesto": {
    "@id": "bj:posizioneTesto",
    "@type": "xsd:integer"
@@ -613,6 +637,7 @@
    "@id": "bj:precede",
    "@type": "@id"
   },
+  "precisione": "bj:precisione",
   "proprietaDiretta": "bj:proprietaDiretta",
   "proprietaMapping": {
    "@id": "bj:proprietaMapping",
@@ -643,6 +668,7 @@
   "regolaCatena": "bj:regolaCatena",
   "regolaConversione": "bj:regolaConversione",
   "regolaElenco": "bj:regolaElenco",
+  "regolaEra": "bj:regolaEra",
   "regolaEster": "bj:regolaEster",
   "regolaForma": "bj:regolaForma",
   "regolaIndice": "bj:regolaIndice",
@@ -756,6 +782,10 @@
    "@type": "@id"
   },
   "statoFonte": "bj:statoFonte",
+  "stessoEvento": {
+   "@id": "bj:stessoEvento",
+   "@type": "@id"
+  },
   "stile": "bj:stile",
   "suffisso": "bj:suffisso",
   "tabellaFonte": "bj:tabellaFonte",
@@ -812,6 +842,10 @@
   "versettiComuni": {
    "@id": "bj:versettiComuni",
    "@type": "xsd:integer"
+  },
+  "versettoAncora": {
+   "@id": "bj:versettoAncora",
+   "@type": "@id"
   },
   "versettoComune": {
    "@id": "bj:versettoComune",

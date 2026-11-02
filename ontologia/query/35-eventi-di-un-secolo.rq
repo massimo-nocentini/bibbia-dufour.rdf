@@ -1,0 +1,28 @@
+# Il VI secolo a.C. (600-501) sulla linea del tempo: ogni evento datato che vi comincia (voci della tavola
+# cronologica, date lette nelle note, nelle introduzioni e nel Dizionario, persone, datazioni dei libri, carte),
+# nell'ordine della linea, con la data come stampata, gli anni, la precisione, dove è letto e i versetti citati.
+# The 6th century BC (600-501) on the time line: every dated event starting in it (chronology entries, dates read
+# in the notes, introductions and Dizionario, persons, datings of the books, maps), in the order of the line,
+# with the date as printed, the years, the precision, where it is read and the verses cited.
+PREFIX bj: <https://massimo-nocentini.github.io/bibbia-gerusalemme/ontologia#>
+PREFIX libro: <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/libro/>
+PREFIX oa: <http://www.w3.org/ns/oa#>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?n ?tipo ?data ?inizio ?fine ?precisione ?evento ?dove (GROUP_CONCAT(DISTINCT ?vl; separator=" ") AS ?versetti)
+WHERE {
+  ?x bj:posizioneLinea ?n ; bj:annoInizio ?inizio ; bj:annoFine ?fine ; bj:precisione ?precisione ;
+     rdfs:label ?evento ; a ?c .
+  FILTER (?inizio >= -600 && ?inizio <= -501)
+  FILTER (?c IN (bj:EventoCronologia, bj:EventoDatato, bj:PersonaStorica, bj:Datazione, bj:Carta))
+  OPTIONAL { ?x bj:datazione ?d0 }
+  OPTIONAL { ?x oa:hasSource/rdfs:label ?s0 }
+  OPTIONAL { ?x bj:citaVersetto/rdfs:label ?v0 }
+  BIND (STRAFTER(STR(?c), "#") AS ?tipo)
+  BIND (COALESCE(?d0, "") AS ?data)
+  BIND (COALESCE(?s0, "") AS ?dove)
+  BIND (COALESCE(?v0, "") AS ?vl)
+}
+GROUP BY ?n ?tipo ?data ?inizio ?fine ?precisione ?evento ?dove
+ORDER BY ?n

@@ -29,8 +29,8 @@
 
 <https://massimo-nocentini.github.io/bibbia-gerusalemme/ontologia>
     a owl:Ontology ;
-    owl:versionInfo "1.3" ;
-    dcterms:modified "2026-11-01" ;
+    owl:versionInfo "1.4" ;
+    dcterms:modified "2026-11-02" ;
     dcterms:title "Ontologia dei versetti della Bibbia di Gerusalemme"@it ,
                   "Verse ontology of the Jerusalem Bible"@en ;
     rdfs:label "Ontologia dei versetti BJ"@it , "BJ verse ontology"@en ;
@@ -406,11 +406,11 @@ bj:rinviaANotaChiave a owl:ObjectProperty ;
 
 bj:citaVersetto a owl:ObjectProperty ;
     rdfs:subPropertyOf cito:cites ;
-    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:Nota bj:Introduzione bj:TestoPreliminare bj:EventoCronologia bj:Mese bj:Festa bj:Unita bj:Carta ) ] ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:Nota bj:Introduzione bj:TestoPreliminare bj:EventoCronologia bj:Mese bj:Festa bj:Unita bj:Carta bj:EventoDatato ) ] ;
     rdfs:range bj:Versetto ;
     rdfs:label "cita il versetto"@it , "cites verse"@en ;
-    rdfs:comment "Scorciatoia: la nota, l'introduzione, il testo preliminare o la voce della tavola cronologica cita nel suo testo un passaggio che comprende il versetto (riassume le bj:Citazione risolte o parziali)."@it ,
-                 "Shortcut: the note, introduction, front-matter text or chronology entry cites in its text a passage including the verse (sums up the resolved or partial bj:Citazione)."@en .
+    rdfs:comment "Scorciatoia: la nota, l'introduzione, il testo preliminare o la voce della tavola cronologica cita nel suo testo un passaggio che comprende il versetto (riassume le bj:Citazione risolte o parziali); un bj:EventoDatato, nella sua frase (bj:citazioneNellaFrase)."@it ,
+                 "Shortcut: the note, introduction, front-matter text or chronology entry cites in its text a passage including the verse (sums up the resolved or partial bj:Citazione); a bj:EventoDatato, in its sentence (bj:citazioneNellaFrase)."@en .
 
 bj:proprietaDiretta a owl:AnnotationProperty ;
     rdfs:label "proprietà diretta"@it , "direct property"@en ;
@@ -566,8 +566,8 @@ bj:posizione a owl:DatatypeProperty , owl:FunctionalProperty ;
 bj:posizioneTesto a owl:DatatypeProperty , owl:FunctionalProperty ;
     rdfs:range xsd:integer ;
     rdfs:label "posizione nel testo"@it , "text offset"@en ;
-    rdfs:comment "Posizione (in caratteri, da 0) nel testo semplice: del richiamo di una nota o margine nel testo del versetto, o di una citazione nel testo della nota o del paragrafo."@it ,
-                 "Character offset (from 0) in the plain text: of a note or margin call in the verse text, or of a citation in the note or paragraph text."@en .
+    rdfs:comment "Posizione (in caratteri, da 0) nel testo semplice: del richiamo di una nota o margine nel testo del versetto, o di una citazione nel testo della nota o del paragrafo; di un bj:EventoDatato, della data come stampata (bj:datazione) nel testo della sua fonte (oa:hasSource)."@it ,
+                 "Character offset (from 0) in the plain text: of a note or margin call in the verse text, or of a citation in the note or paragraph text; of a bj:EventoDatato, of the date as printed (bj:datazione) in the text of its source (oa:hasSource)."@en .
 
 bj:posizioneHtml a owl:DatatypeProperty , owl:FunctionalProperty ;
     rdfs:range xsd:integer ;
@@ -1179,8 +1179,8 @@ bj:SezioneCronologia a owl:Class ;
 bj:EventoCronologia a owl:Class ;
     rdfs:subClassOf schema:Event ;
     rdfs:label "Voce della tavola cronologica"@it , "Chronology entry"@en ;
-    rdfs:comment "Un capoverso di una cella della tavola cronologica: il testo come stampato, la colonna, la riga, la data come stampata (bj:datazione) e, quando non è ambigua, l'intervallo di anni (bj:annoInizio, bj:annoFine), le citazioni bibliche."@it ,
-                 "A paragraph of a cell of the chronological table: the text as printed, the column, the row, the date as printed (bj:datazione) and, when unambiguous, the year range (bj:annoInizio, bj:annoFine), the Bible citations."@en .
+    rdfs:comment "Un capoverso di una cella della tavola cronologica: il testo come stampato, la colonna, la riga, la data come stampata (bj:datazione), l'intervallo di anni (bj:annoInizio, bj:annoFine: la sua data, o quella della sua riga, bj:datataDa dice quale) e il suo posto sulla linea del tempo, le citazioni bibliche."@it ,
+                 "A paragraph of a cell of the chronological table: the text as printed, the column, the row, the date as printed (bj:datazione), the year range (bj:annoInizio, bj:annoFine: its own date or its row's, bj:datataDa says which) and its place on the time line, the Bible citations."@en .
 
 bj:ColonnaCronologia a owl:Class ;
     rdfs:subClassOf skos:Concept ;
@@ -1467,25 +1467,25 @@ bj:anniMargine a owl:DatatypeProperty , owl:FunctionalProperty ;
                  "The dates of the scale printed in the margin beside the row («1300; 1250»)."@en .
 
 bj:datazione a owl:DatatypeProperty , owl:FunctionalProperty ;
-    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:EventoCronologia bj:PersonaStorica ) ] ; rdfs:range xsd:string ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:EventoCronologia bj:PersonaStorica bj:EventoDatato ) ] ; rdfs:range xsd:string ;
     rdfs:label "datazione"@it , "date as printed"@en ;
-    rdfs:comment "La data come stampata: in testa alla voce («Nov. 164», «Fra il 34 e il 45») o nell'unico intervallo tra parentesi («51–30»); per una persona della tavola delle dinastie, le date accanto al nome («37–4 a.C.», «† 44»)."@it ,
-                 "The date as printed: at the start of the entry («Nov. 164», «Fra il 34 e il 45») or in the one range in parentheses («51–30»); for a person of the dynasties chart, the dates beside the name («37–4 a.C.», «† 44»)."@en .
+    rdfs:comment "La data come stampata: in testa alla voce («Nov. 164», «Fra il 34 e il 45») o nell'unico intervallo tra parentesi («51–30»), o, per una voce che ne è priva, la prima data che il suo testo dà (bj:datataDa «testo»: «verso il 690»); per una persona della tavola delle dinastie, le date accanto al nome («37–4 a.C.», «† 44»); per un bj:EventoDatato, l'espressione letta nella frase («nel XIII sec. a.C.», «dal 538 al 520»)."@it ,
+                 "The date as printed: at the start of the entry («Nov. 164», «Fra il 34 e il 45») or in the one range in parentheses («51–30»), or, for an entry without one, the first date its text gives (bj:datataDa «testo»: «verso il 690»); for a person of the dynasties chart, the dates beside the name («37–4 a.C.», «† 44»); for a bj:EventoDatato, the expression read in the sentence («nel XIII sec. a.C.», «dal 538 al 520»)."@en .
 
 bj:annoInizio a owl:DatatypeProperty , owl:FunctionalProperty ;
-    rdfs:domain bj:EventoCronologia ; rdfs:range xsd:integer ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:EventoCronologia bj:EventoDatato bj:PersonaStorica bj:Datazione bj:Carta ) ] ; rdfs:range xsd:integer ;
     rdfs:label "anno iniziale"@it , "start year"@en ;
-    rdfs:comment "Il primo anno della datazione, quando non è ambigua: negativo prima di Cristo, senza anno zero (-586 = 586 a.C.). Le sezioni I-VIII sono avanti Cristo; nella IX l'èra cambia alla prima riga datata «d.C.»; «a.C.» o «d.C.» stampati prevalgono."@it ,
-                 "The first year of the date, when unambiguous: negative before Christ, no year zero (-586 = 586 BC). Sections I-VIII are BC; in IX the era changes at the first row dated «d.C.»; a printed «a.C.» or «d.C.» wins."@en .
+    rdfs:comment "Il primo anno della data: negativo prima di Cristo, senza anno zero (-586 = 586 a.C.). Per la tavola cronologica, le sezioni I-VIII sono avanti Cristo; nella IX l'èra cambia alla prima riga datata «d.C.»; «a.C.» o «d.C.» stampati prevalgono. Ogni oggetto della linea del tempo (bj:posizioneLinea) ne ha uno: una voce della tavola la sua datazione (bj:datataDa «tavola»), la prima data del suo testo («testo») o, se non ne ha, gli anni della sua riga (bj:precisione «riga»); un secolo o un millennio il suo primo anno (il XIII sec. a.C. è -1300…-1201)."@it ,
+                 "The first year of the date: negative before Christ, no year zero (-586 = 586 BC). In the chronological table, sections I-VIII are BC; in IX the era changes at the first row dated «d.C.»; a printed «a.C.» or «d.C.» wins. Every object of the time line (bj:posizioneLinea) has one: a chronology entry its date (bj:datataDa «tavola»), the first date of its text («testo») or, when it has none, the years of its row (bj:precisione «riga»); a century or a millennium its first year (the 13th century BC is -1300…-1201)."@en .
 
 bj:annoFine a owl:DatatypeProperty , owl:FunctionalProperty ;
-    rdfs:domain bj:EventoCronologia ; rdfs:range xsd:integer ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:EventoCronologia bj:EventoDatato bj:PersonaStorica bj:Datazione bj:Carta ) ] ; rdfs:range xsd:integer ;
     rdfs:label "anno finale"@it , "end year"@en ;
     rdfs:comment "L'ultimo anno della datazione (uguale al primo per un anno solo), con la stessa convenzione di bj:annoInizio."@it ,
                  "The last year of the date (equal to the first for a single year), with the convention of bj:annoInizio."@en .
 
 bj:circa a owl:DatatypeProperty , owl:FunctionalProperty ;
-    rdfs:domain bj:EventoCronologia ; rdfs:range xsd:boolean ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:EventoCronologia bj:EventoDatato bj:PersonaStorica bj:Datazione bj:Carta ) ] ; rdfs:range xsd:boolean ;
     rdfs:label "circa"@it , "approximately"@en ;
     rdfs:comment "Vero se la data è approssimata («ca.», «verso»)."@it ,
                  "True if the date is approximate («ca.», «verso»)."@en .
@@ -1730,10 +1730,10 @@ bj:datazioneLibro a owl:ObjectProperty ;
                  "A book the entry dates."@en .
 
 bj:tipoDatazione a owl:DatatypeProperty , owl:FunctionalProperty ;
-    rdfs:domain bj:Datazione ; rdfs:range xsd:string ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:Datazione bj:PersonaStorica ) ] ; rdfs:range xsd:string ;
     rdfs:label "tipo di datazione"@it , "kind of dating"@en ;
-    rdfs:comment "composizione, ministero, evento, citato (la voce cita versetti del libro)."@it ,
-                 "composizione (composition), ministero (ministry), evento (narrated events), citato (the entry cites verses of the book)."@en .
+    rdfs:comment "composizione, ministero, evento, citato (la voce cita versetti del libro); per una persona delle dinastie con una data, morte («† 166») o regno («134–104»)."@it ,
+                 "composizione (composition), ministero (ministry), evento (narrated events), citato (the entry cites verses of the book); for a person of the dynasties with a date, morte (death, «† 166») or regno (reign, «134–104»)."@en .
 
 bj:riguardaLibro a owl:ObjectProperty ;
     rdfs:subPropertyOf dcterms:subject ;
@@ -2234,10 +2234,10 @@ bj:Discorso a owl:Class ;
                  "The text between « and » (tools/ontologia/virgolette.py: the rules of the italic of the Tufte edition): direct speech or quoted words, in the text of the books (also across verses), in a note (\\detto too), an introduction, the front matter or the appendices. An oa:SpecificResource whose oa:hasSource is the resource it is read in (the book, the note, the introduction, the front-matter text, the entry); bj:iniziaIn / bj:finisceIn and bj:inizioCarattere / bj:fineCarattere say where the « and (after) the » are. The speaker is not given."@en .
 
 bj:parte a owl:DatatypeProperty , owl:FunctionalProperty ;
-    rdfs:domain bj:Discorso ; rdfs:range xsd:string ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:Discorso bj:EventoDatato ) ] ; rdfs:range xsd:string ;
     rdfs:label "parte del volume"@it , "part of the volume"@en ;
-    rdfs:comment "Dove è il discorso: testo (dei libri), nota, introduzione, preliminari (le pagine iniziali), appendici."@it ,
-                 "Where the quotation is: testo (the text of the books), nota (a note), introduzione, preliminari (the front matter), appendici (the appendices)."@en .
+    rdfs:comment "Dove è il discorso: testo (dei libri), nota, introduzione, preliminari (le pagine iniziali), appendici. Dove è letta una data (bj:EventoDatato): nota, introduzione, preliminari, dizionario (un paragrafo del Dizionario di Teologia Biblica)."@it ,
+                 "Where the quotation is: testo (the text of the books), nota (a note), introduzione, preliminari (the front matter), appendici (the appendices). Where a date is read (bj:EventoDatato): nota, introduzione, preliminari, dizionario (a paragraph of the Dizionario di Teologia Biblica)."@en .
 
 bj:iniziaIn a owl:ObjectProperty , owl:FunctionalProperty ;
     rdfs:domain bj:Discorso ;
@@ -2280,3 +2280,94 @@ bj:sbilanciato a owl:DatatypeProperty , owl:FunctionalProperty ;
     rdfs:label "sbilanciato"@it , "unbalanced"@en ;
     rdfs:comment "Vero per una « senza la sua » o una » senza la sua «, lasciate come stampate (bj:motivo dice perché): Sir 16,22 (la » è nel terzo stico, in corsivo) e Am 7,17 (il volume chiude la risposta di Amos già a 7,14)."@it ,
                  "True for a « without its » or a » without its «, kept as printed (bj:motivo says why): Sir 16,22 (the » is in the third stich, in italics) and Am 7,17 (the volume closes Amos' answer already at 7,14)."@en .
+
+# ------------------------------------------------------------------ the time line: every dated event (stage 2f, eventi.py)
+#
+# One time line (build/eventi.json) holds every dated event of the material: the 585 chronology entries, the
+# persons of the dynasties with a date, the datings of the books, the maps with a period, and the dates read in
+# the notes, introductions, front-matter texts and paragraphs of the Dizionario. The first four are already
+# resources (bj:EventoCronologia, bj:PersonaStorica, bj:Datazione, bj:Carta) and take the terms below on
+# themselves; a date read in free text is a new bj:EventoDatato. Years are integers, as in the table
+# (bj:annoInizio, bj:annoFine, negative before Christ, no year zero): not xsd:gYear nor OWL-Time, whose
+# year before 1 XSD 1.0 and 1.1 read differently and whose instants the print does not give.
+
+bj:EventoDatato a owl:Class ;
+    rdfs:subClassOf schema:Event , oa:SpecificResource ;
+    rdfs:label "Evento datato nel testo"@it , "Event dated in the text"@en ;
+    rdfs:comment "Una data letta in una nota, in un paragrafo di un'introduzione o di un testo delle pagine iniziali, in un paragrafo del Dizionario di Teologia Biblica (tools/ontologia/eventi.py): l'evento che la sua frase data. È una oa:SpecificResource della risorsa in cui è letta (oa:hasSource, bj:parte), con la data come stampata (bj:datazione) e dove comincia (bj:posizioneTesto), gli anni (bj:annoInizio, bj:annoFine), la precisione, la regola dell'èra, la frase (bj:testo, bj:testoHtml), le citazioni della frase (bj:citazioneNellaFrase) e i loro versetti (bj:citaVersetto), per una nota il versetto da cui è richiamata (bj:versettoAncora)."@it ,
+                 "A date read in a note, in a paragraph of an introduction or of a front-matter text, in a paragraph of the Dizionario di Teologia Biblica (tools/ontologia/eventi.py): the event its sentence dates. An oa:SpecificResource of the resource it is read in (oa:hasSource, bj:parte), with the date as printed (bj:datazione) and where it starts (bj:posizioneTesto), the years (bj:annoInizio, bj:annoFine), the precision, the rule of the era, the sentence (bj:testo, bj:testoHtml), the citations of the sentence (bj:citazioneNellaFrase) and their verses (bj:citaVersetto), for a note the verse it is called from (bj:versettoAncora)."@en .
+
+bj:posizioneLinea a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:EventoCronologia bj:EventoDatato bj:PersonaStorica bj:Datazione bj:Carta ) ] ;
+    rdfs:range xsd:integer ;
+    rdfs:label "posizione sulla linea del tempo"@it , "position on the time line"@en ;
+    rdfs:comment "Il posto (da 1) sulla linea del tempo di build/eventi.json: per bj:annoInizio, poi bj:annoFine, poi la fonte (tavola, dinastie, datazioni, carte, note in ordine canonico, introduzioni, pagine iniziali, Dizionario) e la posizione in essa. Ne hanno una tutti e soli gli oggetti della linea."@it ,
+                 "The place (from 1) on the time line of build/eventi.json: by bj:annoInizio, then bj:annoFine, then the source (table, dynasties, datings, maps, notes in canonical order, introductions, front matter, Dizionario) and the position in it. All and only the objects of the line have one."@en .
+
+bj:precisione a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:EventoCronologia bj:EventoDatato bj:PersonaStorica bj:Datazione bj:Carta ) ] ;
+    rdfs:range xsd:string ;
+    rdfs:label "precisione"@it , "precision"@en ;
+    rdfs:comment "Quanto è precisa la data: anno, intervallo (due anni, «dal 538 al 520», «gli anni 80»), circa («verso il 605», «ca.»), secolo (anche una sua parte, «fine del II sec.»), millennio, riga (una voce della tavola datata dalla sua riga), periodo (da un periodo della tavola soltanto)."@it ,
+                 "How precise the date is: anno (a year), intervallo (two years, «dal 538 al 520», «gli anni 80»), circa («verso il 605», «ca.»), secolo (a century, or a part of one, «fine del II sec.»), millennio, riga (a chronology entry dated by its row), periodo (by a period of the table only)."@en .
+
+bj:regolaEra a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:EventoCronologia bj:EventoDatato bj:PersonaStorica bj:Datazione bj:Carta ) ] ;
+    rdfs:range xsd:string ;
+    rdfs:label "regola dell'èra"@it , "era rule"@en ;
+    rdfs:comment "La regola che ha deciso l'èra (avanti o dopo Cristo): suffisso («a.C.»), correzione (una riga di tools/ontologia/eventi-correzioni.tsv, con il suo motivo), ordine (un intervallo decrescente è a.C.), fonte AT o fonte NT (il testamento del testo), fonte moderna, sezione NT del Dizionario, tavola, dinastie."@it ,
+                 "The rule that decided the era (before or after Christ): suffisso (a printed «a.C.»), correzione (a row of tools/ontologia/eventi-correzioni.tsv, with its reason), ordine (a descending range is BC), fonte AT or fonte NT (the testament of the text), fonte moderna, the NT section of the Dizionario, tavola (the table), dinastie."@en .
+
+bj:datataDa a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:EventoCronologia bj:Datazione ) ] ;
+    rdfs:range xsd:string ;
+    rdfs:label "datata da"@it , "dated by"@en ;
+    rdfs:comment "Da dove una voce della tavola (o la datazione di un libro, dalla sua voce) prende gli anni: tavola (la sua datazione, bj:datazione), testo (la prima data del suo testo), riga: anno a margine, riga: date delle altre voci, riga: tra le voci della colonna (le voci datate prima e dopo nella sua colonna e riga), riga: tra le righe vicine, periodo, colonna: intestazione (l'intestazione di una colonna, «ISRAELE», all'anno della prima voce datata sotto)."@it ,
+                 "Where a chronology entry (or the dating of a book, from its entry) takes its years: tavola (its date, bj:datazione), testo (the first date of its text), riga: anno a margine (the margin year of its row), riga: date delle altre voci (the other entries of the row), riga: tra le voci della colonna (between the dated entries before and after it in its column and row), riga: tra le righe vicine (the rows around it), periodo, colonna: intestazione (the heading of a column, «ISRAELE», at the year of the first dated entry under it)."@en .
+
+bj:limite a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:EventoCronologia bj:EventoDatato bj:PersonaStorica bj:Datazione bj:Carta ) ] ;
+    rdfs:range xsd:string ;
+    rdfs:label "limite"@it , "bound"@en ;
+    rdfs:comment "La data è un limite: ante (prima del, entro, fino al, anteriore al) o post (dopo il, a partire dal, sin dal, posteriore al; una negazione lo rovescia)."@it ,
+                 "The date is a bound: ante (before, by, up to) or post (after, from … on, since; a negation turns it)."@en .
+
+bj:incerto a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:EventoCronologia bj:EventoDatato bj:PersonaStorica bj:Datazione bj:Carta ) ] ;
+    rdfs:range xsd:boolean ;
+    rdfs:label "incerto"@it , "uncertain"@en ;
+    rdfs:comment "Vero per una data stampata come incerta (con «?», o un'ipotesi: «(428: missione di Esdra, se …)»)."@it ,
+                 "True for a date printed as uncertain (with «?», or a hypothesis: «(428: missione di Esdra, se …)»)."@en .
+
+bj:annoAlternativo a owl:DatatypeProperty , owl:FunctionalProperty ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:EventoCronologia bj:EventoDatato bj:PersonaStorica bj:Datazione bj:Carta ) ] ;
+    rdfs:range xsd:integer ;
+    rdfs:label "anno alternativo"@it , "alternative year"@en ;
+    rdfs:comment "L'altro anno di una data stampata come alternativa («già nel 114 (o 78) a.C.»: -78; «64 o 67»: 67; «dal 52 al 59 o 60»: 59), con la convenzione di bj:annoInizio (negativo prima di Cristo). bj:annoInizio e bj:annoFine coprono i due anni per «N o M» e «N oppure M» («nel 59 o 60», «64 o 67»), non per l'anno tra parentesi («del 587 (o 586?) a.C.»: -587, l'anno stampato per primo)."@it ,
+                 "The other year of a date printed as an alternative («già nel 114 (o 78) a.C.»: -78; «64 o 67»: 67; «dal 52 al 59 o 60»: 59), with the convention of bj:annoInizio (negative before Christ). bj:annoInizio and bj:annoFine span both years for «N o M» and «N oppure M» («nel 59 o 60», «64 o 67»), not for the year in parentheses («del 587 (o 586?) a.C.»: -587, the year printed first)."@en .
+
+bj:nelPeriodo a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:EventoCronologia bj:EventoDatato bj:PersonaStorica bj:Datazione bj:Carta ) ] ;
+    rdfs:range bj:SezioneCronologia ;
+    rdfs:label "nel periodo"@it , "in period"@en ;
+    rdfs:comment "Il periodo della tavola cronologica (una sua sezione, I-IX) in cui cade l'anno iniziale; per una voce della tavola, la sua sezione. Manca dopo il 135 d.C., dove la tavola finisce."@it ,
+                 "The period of the chronological table (one of its sections, I-IX) the start year falls in; for a chronology entry, its section. Absent after 135 AD, where the table ends."@en .
+
+bj:stessoEvento a owl:ObjectProperty , owl:SymmetricProperty ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( bj:EventoCronologia bj:EventoDatato bj:PersonaStorica bj:Datazione bj:Carta ) ] ;
+    rdfs:range [ a owl:Class ; owl:unionOf ( bj:EventoCronologia bj:EventoDatato bj:PersonaStorica bj:Datazione bj:Carta ) ] ;
+    rdfs:label "stesso evento"@it , "same event"@en ;
+    rdfs:comment "Due oggetti della linea del tempo che sono lo stesso evento (memorizzata nei due versi): una data del testo con esattamente gli anni di una voce della tavola datata e un versetto citato o un nome in maiuscoletto in comune; una persona delle dinastie e la voce che la nomina, con gli stessi anni; la datazione di un libro e la sua voce."@it ,
+                 "Two objects of the time line that are the same event (stored both ways): a date of the text with exactly the years of a dated chronology entry and a cited verse or a name in small caps in common; a person of the dynasties and the entry naming them, with the same years; the dating of a book and its entry."@en .
+
+bj:versettoAncora a owl:ObjectProperty , owl:FunctionalProperty ;
+    rdfs:domain bj:EventoDatato ; rdfs:range bj:Versetto ;
+    rdfs:label "versetto della nota"@it , "anchor verse"@en ;
+    rdfs:comment "Per una data letta in una nota, il versetto da cui la nota è richiamata (bj:richiamataDa della nota): dove il lettore la trova."@it ,
+                 "For a date read in a note, the verse the note is called from (the note's bj:richiamataDa): where the reader finds it."@en .
+
+bj:citazioneNellaFrase a owl:ObjectProperty ;
+    rdfs:domain bj:EventoDatato ; rdfs:range bj:Citazione ;
+    rdfs:label "citazione nella frase"@it , "citation in the sentence"@en ;
+    rdfs:comment "Una citazione biblica (bj:Citazione della nota, del paragrafo o della voce) stampata nella frase della data; i versetti di quelle risolte o parziali sono i suoi bj:citaVersetto."@it ,
+                 "A Bible citation (bj:Citazione of the note, paragraph or entry) printed in the sentence of the date; the verses of the resolved or partial ones are its bj:citaVersetto."@en .

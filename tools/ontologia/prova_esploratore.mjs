@@ -14,12 +14,14 @@
 // #temi, #cronologia (sections, dynasties), #introduzione-generale (texts, canon, abbreviations,
 // woodcuts), the search and the overview tiles; the quotations in italic (session F4: Gen 1,3, Dt 5 across
 // verses, Dt 20,3 nested, Sir 16,22 and Am 7,17 unbalanced, Sal 2,3 poetry, notes, introductions, front matter,
-// appendices, the «Discorsi» switch and the search in the quoted words).
+// appendices, the «Discorsi» switch and the search in the quoted words); the time line (#tempo: every event of
+// eventi.json in order, the counts, the filters, the strip, the links from the verse panel, a book and the
+// chronology, both styles, light and dark, the phone).
 // With --foto, screenshots are written there. Exit status 1 if any check fails.
 import { createRequire } from 'node:module';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, readFileSync } from 'node:fs';
 
 const arg = k => { const i = process.argv.indexOf(k); return i > 0 ? process.argv[i + 1] : null; };
 const PW = arg('--pw') || process.env.PW_DIR;
@@ -682,7 +684,7 @@ try {
   // the overview: four tiles with the numbers of the payload
   await p.evaluate(() => { location.hash = '#panoramica'; });
   await p.waitForSelector('.tessere-par');
-  const tp = await p.evaluate(() => [[...document.querySelectorAll('.tessere-par .tessera b')].map(x => x.textContent), [A.meta.note.entries, A.meta.note.references, A.meta.temi.entries, A.meta.cron].map(num)]);
+  const tp = await p.evaluate(() => [[...document.querySelectorAll('.tessere-par .tessera b')].map(x => x.textContent), [A.meta.note.entries, A.meta.note.references, A.meta.temi.entries, A.meta.cron, T.ev.length].map(num)]);
   verifica('panoramica: tessere delle appendici', JSON.stringify(tp[0]) === JSON.stringify(tp[1]), tp[0].join(' · '));
   // keyboard: Tab from the filter reaches the first entry, Enter opens it
   await p.evaluate(() => { location.hash = '#temi'; });
@@ -995,6 +997,198 @@ try {
   lpl.vai = await hash(p);
   verifica('panoramica: libro per libro, 3 linee per libro, il capitolo al passaggio, il clic lo apre',
     lpl.righe === 74 && lpl.linee === 222 && /^Gen 1: \d+ note della BJ$/.test(lpl.tip) && lpl.vai === '#Gen.1', JSON.stringify(lpl));
+  // ---------------------------------------------- the time line (#tempo, stage 2f eventi.json)
+  // every event, in the order of the view (by period, then the order of the line), the counts of eventi.json
+  const EV = JSON.parse(readFileSync(join(C, 'ontologia', 'build', 'eventi.json'), 'utf-8'));
+  const attesi = EV.eventi.map((e, k) => [e.periodo || 10, k, e.id.slice(3)]).sort((a, b) => a[0] - b[0] || a[1] - b[1]).map(x => x[2]);
+  const perFonte = {};
+  EV.eventi.forEach(e => { perFonte[e.fonte] = (perFonte[e.fonte] || 0) + 1; });
+  const t5 = Date.now();
+  await vai_('#tempo', '#tm-lista .tm-ev');
+  metriche.tempo_ms = Date.now() - t5;
+  const tm = await p.evaluate(() => ({ ids: [...document.querySelectorAll('#tm-lista .tm-ev')].map(x => T.ev[+x.dataset.k][0]), resa: S.tm.ms,
+    fonti: Object.fromEntries([...document.querySelectorAll('[data-tf]')].map(b => [b.dataset.tf, +b.querySelector('.n').textContent.replace(/\D/g, '')])),
+    periodi: [...document.querySelectorAll('.tm-periodo h2')].map(h => h.textContent.split('.')[0]), gruppi: document.querySelectorAll('.tm-gruppo').length,
+    anni: [...document.querySelectorAll('.tm-periodo')].every(s => { const ys = [...s.querySelectorAll('.tm-ev')].map(x => T.ev[+x.dataset.k][3]); return ys.every((y, j) => !j || y >= ys[j - 1]); }),
+    link: document.querySelectorAll('#tm-lista a.ci[data-r], #tm-lista a.cd[data-r]').length,
+    morti: [...document.querySelectorAll('#tm-lista a.ci, #tm-lista a.cd')].filter(a => !a.dataset.r && !a.classList.contains('x')).length, esito: document.querySelector('#tm-esito').textContent,
+    tab: document.querySelector('.schede a.attiva')?.dataset.vista }));
+  metriche.tempo_resa_ms = tm.resa;
+  verifica('tempo: tutti gli eventi di eventi.json, nell’ordine (periodo, poi la linea), anni crescenti in ogni periodo',
+    tm.ids.length === EV.eventi.length && tm.ids.every((x, j) => x === attesi[j]) && tm.anni && tm.periodi.join(' ') === 'I II III IV V VI VII VIII IX Dopo la tavola: dal 135 d',
+    `${tm.ids.length} eventi, ${tm.gruppi} gruppi di anni, periodi ${tm.periodi.length}`);
+  verifica('tempo: i conteggi per fonte sono quelli di eventi.json', JSON.stringify(tm.fonti) === JSON.stringify(Object.fromEntries(EV.meta.fonti.map(f => [f, perFonte[f]]))) && tm.esito.startsWith(String(EV.eventi.length)), JSON.stringify(tm.fonti));
+  verifica('tempo: prima resa di tutti gli eventi sotto 300 ms', tm.resa < 300, `${tm.resa} ms (vista ${metriche.tempo_ms} ms)`);
+  verifica('tempo: i riferimenti sono collegamenti con l’anteprima, la scheda «Tempo» attiva', tm.link > 800 && !tm.morti && tm.tab === 'tempo', `${tm.link} riferimenti, ${tm.morti} senza destinazione`);
+  // the gutter: years as printed (a.C./d.C., c., ranges)
+  const gut = await p.evaluate(() => { const g = id => document.querySelector(`#tm-${T.idx.get(id)}`)?.closest('.tm-gruppo').querySelector('.tm-anni').textContent.replace(/\s+/g, ' ').trim(); return [g('cronologia.299'), g('dinastie.P15'), g('carta.esodo'), g('note:Isa.45.1@768')]; });
+  verifica('tempo: gli anni a sinistra (intervallo, era, secolo)', gut[0] === '171–138 a.C.' && gut[1] === '37–4 a.C.' && gut[2] === 'XIII sec. a.C.' && gut[3] === '538 a.C.', gut.join(' | '));
+  await foto(p, 'T1-tempo');
+  // hover over a reference: the preview of the verse
+  const ci = await p.$('#tm-lista .tm-ev a.ci[data-r]');
+  await ci.scrollIntoViewIfNeeded();
+  await ci.hover();
+  await p.waitForSelector('#anteprima:not([hidden]) .ap-v', { timeout: 3000 });
+  verifica('tempo: un riferimento mostra l’anteprima al passaggio', true);
+  await p.mouse.move(5, 5);
+  // a filter: the notes off (a new step of the history), the counts; Back gives them back
+  await p.evaluate(() => window.scrollTo(0, 0));
+  await p.click('[data-tf="nota"]');
+  await p.waitForFunction(() => location.hash.includes('f=') && S.tm.st.fonti.size === 7);
+  const f1 = await p.evaluate(() => ({ n: document.querySelectorAll('#tm-lista .tm-ev').length, h: decodeURIComponent(location.hash), note: [...document.querySelectorAll('#tm-lista .tm-ev')].some(x => T.ev[+x.dataset.k][1] === T.fonti.indexOf('nota')),
+    premuto: document.querySelector('[data-tf="nota"]').getAttribute('aria-pressed'), esito: document.querySelector('#tm-esito').textContent }));
+  await p.goBack();
+  await p.waitForFunction(() => document.querySelectorAll('#tm-lista .tm-ev').length === T.ev.length);
+  verifica('tempo: il filtro delle fonti (senza note: −557), nell’indirizzo; Indietro lo toglie',
+    f1.n === EV.eventi.length - perFonte.nota && !f1.note && f1.premuto === 'false' && /^#tempo\?f=cronologia,dinastie,datazione,carta,introduzione,testo,dizionario/.test(f1.h) && f1.esito.includes(`di ${EV.eventi.length}`), JSON.stringify(f1));
+  // the words and «only citing verses»: every row shown holds the word; the counts of the buttons follow
+  await p.fill('#tm-q', 'Ciro');
+  await p.waitForFunction(() => location.hash.includes('q=Ciro') && S.tm.st.q === 'Ciro');
+  await p.check('#tm-vv');
+  await p.waitForFunction(() => location.hash.includes('v=1') && S.tm.st.vv);
+  const f2 = await p.evaluate(() => ({ righe: [...document.querySelectorAll('#tm-lista .tm-ev')].map(x => [normalizza(x.textContent).includes('ciro'), T.ev[+x.dataset.k][10].length > 0]),
+    somma: [...document.querySelectorAll('[data-tf]')].reduce((s, b) => s + +b.querySelector('.n').textContent.replace(/\D/g, ''), 0), h: location.hash }));
+  verifica('tempo: filtro per parole e «solo con versetti citati», i conteggi dei pulsanti li seguono', f2.righe.length > 3 && f2.righe.every(([a, b]) => a && b) && f2.somma === f2.righe.length, `${f2.righe.length} eventi · ${f2.h}`);
+  await foto(p, 'T2-tempo-filtri');
+  await vai_('#tempo', '#tm-lista .tm-ev');
+  await p.waitForFunction(() => document.querySelectorAll('#tm-lista .tm-ev').length === T.ev.length && !document.querySelector('#tm-vv').checked && document.querySelector('#tm-q').value === '');
+  // the strip: a click on period VI jumps there, a drag to IX follows, the address keeps the year
+  const sb = await (await p.$('#tm-striscia svg')).boundingBox();
+  const xPer = n => sb.x + sb.width * (n - 0.5) / 9.5;
+  await p.mouse.move(xPer(6), sb.y + sb.height - 3);
+  await p.waitForFunction(() => !S.tipTempo.hidden);
+  const tip = await p.evaluate(() => S.tipTempo.textContent);
+  await p.mouse.click(xPer(6), sb.y + sb.height - 3);
+  await p.waitForTimeout(400);
+  const s1 = await p.evaluate(() => ({ per: T.ev[S.tm.vis[primoVisibile()]][8], h: decodeURIComponent(location.hash), banda: +document.querySelector('.tm-vista').getAttribute('x') }));
+  const sb2 = await (await p.$('#tm-striscia svg')).boundingBox();
+  await p.mouse.move(xPer(8), sb2.y + 10);
+  await p.mouse.down();
+  for (let k = 1; k <= 8; k++) await p.mouse.move(xPer(8) + (xPer(9) - xPer(8)) * k / 8, sb2.y + 10);
+  await p.mouse.up();
+  await p.waitForTimeout(400);
+  const s2 = await p.evaluate(() => ({ per: T.ev[S.tm.vis[primoVisibile()]][8], h: decodeURIComponent(location.hash), banda: +document.querySelector('.tm-vista').getAttribute('x'), w: S.tm.w }));
+  verifica('tempo: la striscia, il conteggio al passaggio, clic sul periodo VI, trascinata al IX; la banda segue, l’anno nell’indirizzo',
+    /^\d+ eventi? · .*a\.C\..*VI\./.test(tip) && s1.per === 6 && /a=-\d+/.test(s1.h) && s2.per === 9 && /a=-?\d+/.test(s2.h) && s2.banda > s1.banda && Math.abs(s2.banda - s2.w * 8 / 9.5) < s2.w / 9.5 + 4,
+    `${tip} · ${JSON.stringify([s1, s2])}`);
+  await foto(p, 'T3-tempo-striscia');
+  // the keys of the strip: PageDown to the next period, Home to the start; its value for screen readers
+  await p.focus('#tm-striscia');
+  await p.keyboard.press('PageDown');
+  await p.waitForTimeout(150);
+  const k1 = await p.evaluate(() => ({ per: T.ev[S.tm.vis[primoVisibile()]][8], testo: document.querySelector('#tm-striscia').getAttribute('aria-valuetext'), ruolo: document.querySelector('#tm-striscia').getAttribute('role') }));
+  await p.keyboard.press('Home');
+  await p.waitForTimeout(150);
+  const k2 = await p.evaluate(() => [window.scrollY < 2000, document.querySelector('#tm-striscia').getAttribute('aria-valuenow')]);
+  verifica('tempo: la striscia è un cursore da tastiera (PagGiù il periodo dopo, Inizio)', k1.ruolo === 'slider' && (k1.per === 10 || k1.per === 0) && /dopo il 135|periodo/.test(k1.testo) && k2[0] && k2[1] === '1', JSON.stringify([k1, k2]));
+  // go to a year
+  await p.fill('#tm-anno', '30 d.C.');
+  await p.press('#tm-anno', 'Enter');
+  await p.waitForFunction(() => location.hash.includes('a=30'));
+  await p.waitForTimeout(300);
+  const a30 = await p.evaluate(() => T.ev[S.tm.vis[primoVisibile()]][3]);
+  verifica('tempo: «Vai all’anno» 30 d.C.', a30 === 30, String(a30));
+  // links into the time line: the verse panel of 2Re 25,8 («Nel tempo»: the dates of its note and those citing it)
+  const ix258 = await p.evaluate(() => S.vix.get('2Kgs.25.8'));
+  const dentro = (r, i) => { for (let j = 0; j < r.length; j += 2) if (r[j] <= i && i <= r[j + 1]) return true; return false; };
+  const att258 = EV.eventi.filter(e => e.verso === '2Kgs.25.8' || dentro(e.versetti, ix258)).length;
+  await vai_('#2Kgs.25.8', '#pannello:not([hidden]) .sez.tm-sez');
+  const pz = await p.evaluate(() => ({ n: +document.querySelector('#pannello .tm-sez h3 .n').textContent, righe: document.querySelectorAll('#pannello .tm-sez li').length,
+    link: [...document.querySelectorAll('#pannello .tm-sez li > a')].map(a => a.getAttribute('href')) }));
+  verifica('tempo: il pannello di 2Re 25,8 ha «Nel tempo» con gli eventi di eventi.json', pz.n === att258 && pz.righe === att258 && pz.link.includes('#tempo?e=note:2Kgs.25.8@66'), JSON.stringify(pz));
+  await p.evaluate(() => document.querySelector('#pannello .tm-sez').scrollIntoView());
+  await foto(p, 'T4-pannello-nel-tempo');
+  await p.click('#pannello .tm-sez a[href="#tempo?e=note:2Kgs.25.8@66"]');
+  await p.waitForSelector('#tm-lista .tm-ev.sel');
+  await p.waitForTimeout(300);
+  const ev1 = await p.evaluate(() => { const x = document.querySelector('.tm-ev.sel'), r = x.getBoundingClientRect(); return { id: T.ev[+x.dataset.k][0], vista: r.top >= document.querySelector('.tm-testa').getBoundingClientRect().bottom && r.bottom <= innerHeight, fuoco: document.activeElement === x, mark: x.querySelector('mark.tm-data')?.textContent }; });
+  verifica('tempo: dal pannello si arriva all’evento, evidenziato, in vista, con il fuoco e la data segnata', ev1.id === 'note:2Kgs.25.8@66' && ev1.vista && ev1.fuoco && ev1.mark === 'nel 587', JSON.stringify(ev1));
+  await foto(p, 'T5-tempo-evento');
+  // the source of a row: the note opens in the reader, Back returns to the same row
+  await p.click('.tm-ev.sel .tm-fonte');
+  await p.waitForSelector('#pannello:not([hidden]) .nota.lampo[open]');
+  const fonte = await hash(p);
+  await p.goBack();
+  await p.waitForSelector('#tm-lista .tm-ev.sel');
+  await p.waitForTimeout(300);
+  const ev2 = await p.evaluate(() => { const x = document.querySelector('.tm-ev.sel'), r = x.getBoundingClientRect(); return [T.ev[+x.dataset.k][0], r.top >= document.querySelector('.tm-testa').getBoundingClientRect().bottom - 2 && r.top < innerHeight]; });
+  verifica('tempo: la fonte (la nota) si apre nel lettore; Indietro torna alla riga', fonte === '#2Kgs.25.8' && ev2[0] === 'note:2Kgs.25.8@66' && ev2[1], `${fonte} → ${JSON.stringify(ev2)}`);
+  // review of stage 12: a jump to a year lands its group with no sliver of the group before under the head;
+  // the siege of 70 reads in the order of the table (the undated entries between «Pasqua 70» and «29 agosto 70»)
+  await vai_('#tempo?a=70', '#tm-lista .tm-ev');
+  await p.waitForTimeout(300);
+  const a70 = await p.evaluate(() => { const b = document.querySelector('.tm-testa').getBoundingClientRect().bottom;
+    const gs = [...document.querySelectorAll('.tm-gruppo')], j = gs.findIndex(g => g.getBoundingClientRect().bottom > b + 1);
+    const sopra = gs[j - 1] && gs[j - 1].querySelector('.tm-anni').getBoundingClientRect().bottom;
+    return { anni: gs[j].querySelector('.tm-anni').textContent.replace(/\s+/g, ' ').trim(), sopra: sopra === undefined || sopra <= b + 0.5,
+      assedio: ['537', '538', '539', '540', '541', '542'].map(n => document.querySelector(`#tm-${T.idx.get('cronologia.' + n)}`).closest('.tm-gruppo').querySelector('.tm-anni').textContent.replace(/\s+/g, ' ').trim()),
+      israele: (x => [x.closest('.tm-gruppo').querySelector('.tm-anni').textContent.replace(/\s+/g, ' ').trim(), x.querySelector('.tm-pos').textContent])(document.querySelector(`#tm-${T.idx.get('cronologia.55')}`)) }; });
+  verifica('tempo: «Vai» a 70 d.C. senza lembi del gruppo prima; l’assedio del 70 nell’ordine della tavola; «ISRAELE», intestazione, al 931',
+    a70.anni === '70 d.C.' && a70.sopra && a70.assedio.every(x => x === '70 d.C.') && a70.israele.join() === '931 a.C.,intestazione', JSON.stringify(a70));
+  // Back to a highlighted event after following its «=» link: the row in view, no «hidden by the filters»;
+  // Back after scrolling inside one year: the same row, not the first of its year
+  await vai_('#tempo?e=cronologia.161', '#tm-lista .tm-ev.sel');
+  await p.waitForTimeout(500);
+  await p.click('.tm-ev.sel .tm-stesso');
+  await p.waitForFunction(() => location.hash.includes('2Kgs.24.1'));
+  await p.waitForTimeout(400);
+  await p.goBack();
+  await p.waitForFunction(() => location.hash.includes('cronologia.161'));
+  await p.waitForTimeout(500);
+  const b161 = await p.evaluate(() => { const x = document.querySelector('.tm-ev.sel'), r = x.getBoundingClientRect();
+    return { id: T.ev[+x.dataset.k][0], vista: r.top >= document.querySelector('.tm-testa').getBoundingClientRect().bottom - 2 && r.bottom <= innerHeight, avviso: !!document.querySelector('.tm-avviso') }; });
+  await vai_('#tempo?a=-587', '#tm-lista .tm-ev');
+  await p.waitForTimeout(300);
+  await p.evaluate(() => window.scrollBy(0, 900));
+  await p.waitForTimeout(600);
+  const r587 = await p.evaluate(() => [T.ev[S.tm.vis[primoVisibile()]][0], T.ev[S.tm.vis[primoVisibile()]][3]]);
+  await vai_('#cronologia', '.cron-indice, #vista');
+  await p.waitForTimeout(300);
+  await p.goBack();
+  await p.waitForSelector('#tm-lista .tm-ev');
+  await p.waitForTimeout(500);
+  const r587b = await p.evaluate(() => T.ev[S.tm.vis[primoVisibile()]][0]);
+  verifica('tempo: Indietro torna all’evento evidenziato, in vista e senza avviso; e alla stessa riga dentro un anno di molte righe',
+    b161.id === 'cronologia.161' && b161.vista && !b161.avviso && r587[1] === -587 && r587b === r587[0], JSON.stringify([b161, r587, r587b]));
+  // a book (its dating), a period of the chronology, the hub and the overview
+  await vai_('#Sir', '.tm-link');
+  await p.click('.tm-link');
+  await p.waitForSelector('#tm-lista .tm-ev.sel');
+  const dat = await p.evaluate(() => T.ev[+document.querySelector('.tm-ev.sel').dataset.k][0]);
+  await vai_('#cronologia/6', '.cron-tavola');
+  await p.click('.sopratitolo a[href="#tempo?p=6"]');
+  await p.waitForSelector('#tm-p6');
+  await p.waitForTimeout(200);
+  const p6 = await p.evaluate(() => Math.abs(document.querySelector('#tm-p6').getBoundingClientRect().top - document.querySelector('.tm-testa').getBoundingClientRect().bottom) < 8);
+  await vai_('#appendici', '#vista .apparato');
+  const hubT = await p.$$eval('#vista .apparato', xs => xs.some(a => a.getAttribute('href') === '#tempo'));
+  await vai_('#panoramica', '.tessere-par');
+  const panT = await p.$$eval('.tessere-par a', xs => xs.some(a => a.getAttribute('href') === '#tempo'));
+  verifica('tempo: i collegamenti dal libro (la datazione di Sir), dalla tavola (periodo VI), dall’hub e dalla panoramica', dat === 'datazione.285-21' && p6 && hubT && panT, JSON.stringify([dat, p6, hubT, panT]));
+  // the two styles: Tufte old-style figures in the ink, Giardino the red rubric; the strip drawn again
+  await vai_('#tempo?a=-587', '#tm-lista .tm-ev');
+  const stileT = () => p.evaluate(() => { const g = document.querySelector('.tm-anni'), cs = getComputedStyle(document.documentElement);
+    return { font: getComputedStyle(g).fontFamily.split(',')[0].replace(/"/g, ''), colore: getComputedStyle(g).color, inchiostro: cs.getPropertyValue('--inchiostro').trim(), rubrica: cs.getPropertyValue('--rubrica').trim(),
+      banda: getComputedStyle(document.querySelector('.tm-vista')).stroke, barre: document.querySelectorAll('.tm-barre rect').length, largo: document.documentElement.scrollWidth }; });
+  const rgb = h => { const n = parseInt(h.slice(1), 16); return `rgb(${n >> 16}, ${(n >> 8) & 255}, ${n & 255})`; };
+  const sT = await stileT();
+  await p.selectOption('#stile', 'giardino');
+  await p.waitForTimeout(300);
+  const sG = await stileT();
+  await foto(p, 'T6-tempo-giardino');
+  await p.evaluate(() => tema('dark'));
+  await p.waitForTimeout(100);
+  const sGd = await stileT();
+  await foto(p, 'T7-tempo-giardino-scuro');
+  await p.selectOption('#stile', 'tufte');
+  await p.waitForTimeout(200);
+  const sTd = await stileT();
+  await foto(p, 'T8-tempo-scuro');
+  await p.evaluate(() => tema('light'));
+  verifica('tempo: Tufte con le cifre antiche nell’inchiostro, Giardino con la rubrica rossa, chiaro e scuro, senza scorrimento orizzontale',
+    sT.font === 'et-book-roman-old-style' && sT.colore === rgb(sT.inchiostro) && sT.banda === rgb(sT.inchiostro) && sG.font === 'Literata' && sG.colore === rgb(sG.rubrica) && sG.banda === rgb(sG.rubrica) &&
+    sGd.colore === rgb(sGd.rubrica) && sGd.rubrica !== sG.rubrica && sTd.colore === rgb(sTd.inchiostro) && sTd.inchiostro !== sT.inchiostro && [sT, sG, sGd, sTd].every(x => x.barre > 50 && x.largo <= 1366),
+    JSON.stringify([sT, sG, sGd, sTd].map(x => [x.font, x.colore, x.banda])));
   verifica('nessun errore in console (desktop)', errori.length === 0, errori.slice(0, 5).join(' | '));
   await ctx.close();
 
@@ -1133,6 +1327,40 @@ try {
   await m.p.evaluate(() => tema('dark'));
   await foto(m.p, 'F4-12-telefono-gen-3-scuro');
   await m.p.evaluate(() => { tema('light'); discorsi_(false); });
+  // the time line on the phone: no horizontal scrolling, the filters wrap inside the screen, the tabs on one
+  // line (the view is in the Appendici hub), the sticky head small, a tap on the strip jumps
+  await m.p.evaluate(() => { location.hash = '#tempo?e=note:2Kgs.25.8@66'; });
+  await m.p.waitForSelector('#tm-lista .tm-ev.sel');
+  await m.p.waitForTimeout(300);
+  const t390 = await m.p.evaluate(() => ({ largo: document.documentElement.scrollWidth, filtri: Math.max(...[...document.querySelectorAll('.tm-filtri button, .tm-filtri select, .tm-filtri input, .tm-filtri label')].map(x => x.getBoundingClientRect().right)),
+    righe: (y => (Math.max(...y) - Math.min(...y) < 12 ? 1 : 2))([...document.querySelectorAll('.schede a, .comandi')].filter(x => x.offsetParent).map(x => x.getBoundingClientRect().top)),
+    attiva: [...document.querySelectorAll('.schede a.attiva')].filter(x => x.offsetParent).map(x => x.dataset.vista).join(), testa: document.querySelector('.tm-testa').getBoundingClientRect().height,
+    sel: (r => r.top >= document.querySelector('.tm-testa').getBoundingClientRect().bottom - 2 && r.bottom <= innerHeight)(document.querySelector('.tm-ev.sel').getBoundingClientRect()) }));
+  verifica('tempo 390 px: niente scorrimento orizzontale, filtri nello schermo, schede su una riga, testa piccola, l’evento in vista',
+    t390.largo <= 390 && t390.filtri <= 390 - 15 && t390.righe === 1 && t390.attiva === 'apparati' && t390.testa < 120 && t390.sel, JSON.stringify(t390));
+  await foto(m.p, 'T9-telefono-tempo');
+  const sb390 = await (await m.p.$('#tm-striscia svg')).boundingBox();
+  await m.p.touchscreen.tap(sb390.x + sb390.width * 8.5 / 9.5, sb390.y + 12);
+  await m.p.waitForTimeout(400);
+  const per390 = await m.p.evaluate(() => T.ev[S.tm.vis[primoVisibile()]][8]);
+  const dopo = () => m.p.evaluate(() => {
+    const [ix, x] = [...document.querySelectorAll('.tm-set')].slice(-2), r = document.createRange();
+    const testo = el => { r.selectNodeContents(el); return r.getBoundingClientRect(); };
+    return [x.textContent, x.scrollWidth <= x.clientWidth + 1 && testo(ix).right < testo(x).left, x.getBoundingClientRect().right <= innerWidth];
+  });
+  const dopoT = await dopo();
+  await m.p.selectOption('#stile', 'giardino');
+  await m.p.waitForTimeout(300);
+  const dopoG = await dopo();
+  await m.p.selectOption('#stile', 'tufte');
+  await m.p.waitForTimeout(200);
+  verifica('tempo 390 px: un tocco sulla striscia porta al periodo IX; «dopo» intero sotto la striscia (Tufte, Giardino)',
+    per390 === 9 && [dopoT, dopoG].every(d => d[0] === 'dopo' && d[1] && d[2]), `${per390} ${JSON.stringify([dopoT, dopoG])}`);
+  await foto(m.p, 'T10-telefono-tempo-ix');
+  await m.p.evaluate(() => { location.hash = '#tempo'; });
+  await m.p.waitForTimeout(200);
+  await m.p.evaluate(() => window.scrollTo(0, 0));
+  await foto(m.p, 'T11-telefono-tempo-filtri');
   verifica('nessun errore in console (390 px)', m.errori.length === 0, m.errori.slice(0, 5).join(' | '));
   await tel.close();
 } finally {

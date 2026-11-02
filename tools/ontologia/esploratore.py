@@ -3,7 +3,8 @@
 usage: esploratore.py [-o ontologia/esplora.html] [-q]
 
 Reads ontologia/build/bibbia.json (estrai.py), ontologia/build/collegamenti.json
-(riferimenti.py) and ontologia/build/dufour.json (dufour.py), packs what the page needs
+(riferimenti.py) and ontologia/build/dufour.json (dufour.py), with paratesto.json,
+integrazione.json and eventi.json (the time line, see tempo()), packs what the page needs
 into one compact JSON (verses, notes, margin entries, typed links, pericopes, divisions,
 introductions; the entries of the Dizionario di Teologia Biblica with their sections,
 paragraphs and citations), gzips it and embeds it as base64 in the page together with
@@ -37,6 +38,7 @@ printed chapters of each book are contiguous; the page is under 30 MB and holds 
 """
 import base64
 import gzip
+import html as H
 import json
 import os
 import re
@@ -514,9 +516,129 @@ def integrazione(I, data, dz, pt, vix, posto, errors):
                 sin=sinonimi(), nint=len(I['interventi']))
 
 
+# ---------------------------------------------------------------- the time line (eventi.py)
+
+DATA_DA = ['tavola', 'testo', 'riga: anno a margine', 'riga: date delle altre voci', 'riga: tra le voci della colonna',
+           'riga: tra le righe vicine', 'periodo', 'colonna: intestazione']
+TIPI_EVENTO_DAT = ['composizione', 'ministero', 'evento']
+
+
+def fine_html(h, j):
+    """The HTML offset just after a character at j, with the closing tags that follow it."""
+    j += 1
+    while h.startswith('</', j):
+        j = h.index('>', j) + 1
+    return j
+
+
+def piano(h):
+    return ' '.join(H.unescape(re.sub(r'<[^>]+>', '', h.replace('<br>', '\n'))).split())
+
+
+def tempo(E, P, data, pt, dz, ig, vix, errors):
+    """The time line of eventi.py in the payload (key 'tempo').
+
+    fonti: the sources in eventi.json's order; prec: the precisions; per: the 9 periods [n, roman, title as
+    printed, first year, last year]; regole: the rules that decided the era (eventi.json 'era_da'); ev: the
+    events in the order of eventi.json, each [id without 'ev:', source, where, first year, last year,
+    precision, flags (1 circa, 2 uncertain, 4 bound «ante», 8 bound «post»), date as printed, period (0
+    after 135 d.C.), HTML (the sentence for a date read in free text: the slice of the payload's own HTML of
+    its note, paragraph or entry, so its citations are the <a class="ci"> / <a class="cd"> of that HTML, the
+    date in <mark class="tm-data">; '' otherwise: the page takes the chronology entry, the person, the map),
+    runs of the verses cited, anchor verse (-1), same-event indices (both ways), column of the chronology
+    (-1), placement of a chronology entry or dating (DATA_DA, -1), the other year of «N o M» (signed, 0),
+    rule of the era]. Where: cronologia the entry (from 1); dinastie the person; datazione [entry, books,
+    kind]; carta its row of int.carte; nota the note; introduzione [introduction, paragraph n]; testo [text,
+    paragraph n]; dizionario [entry, paragraph n]."""
+    from eventi import taglia_html
+    from riferimenti import html_offsets
+    fonti = E['meta']['fonti']
+    prec = E['meta']['precisioni']
+    nix = {n['id']: k for k, n in enumerate(data['notes'])}
+    bix = {b['osis']: k for k, b in enumerate(data['books'])}
+    sorgenti = {}                          # 'intro-x.3' -> (where, plain text, payload HTML)
+    for k, n in enumerate(data['notes']):
+        sorgenti[n['id']] = (k, n['text'], P['note'][k][5])
+    for k, x in enumerate(data['intros']):
+        for p, q in zip(x['paragraphs'], P['intro'][k][5]):
+            sorgenti['%s.%d' % (x['id'], p['n'])] = ([k, p['n']], p['text'], q[2])
+    for k, x in enumerate(pt['testi']):
+        for p, q in zip(x['paragraphs'], P['par']['testi'][k][8]):
+            sorgenti['%s.%d' % (x['id'], p['n'])] = ([k, p['n']], p['text'], q[2])
+    for k, v in enumerate(dz['voci']):
+        for p, q in zip(v.get('paragraphs', []), P['diz']['voci'][k][9]):
+            sorgenti[p['id']] = ([k, p['n']], p['text'], q[3])
+    carte = {c['id']: k for k, c in enumerate(ig['carte'])}
+    pos = {e['id']: k for k, e in enumerate(E['eventi'])}
+    stesso = [set() for _ in E['eventi']]
+    for k, e in enumerate(E['eventi']):
+        for x in e.get('stesso_evento', []):
+            stesso[k].add(pos[x])
+            stesso[pos[x]].add(k)            # both ways already in eventi.json; kept as a guard
+    regole = sorted({e['era_da'] for e in E['eventi']})
+    ev, segnate = [], 0
+    for k, e in enumerate(E['eventi']):
+        f = e['fonte']
+        h = ''
+        if f == 'cronologia':
+            dove = e['cronologia']['voce']
+        elif f == 'dinastie':
+            dove = e['persona']
+        elif f == 'datazione':
+            dove = [e['voce'], [bix[b] for b in e['libri']], TIPI_EVENTO_DAT.index(e['tipo'])]
+        elif f == 'carta':
+            dove = carte[e['sorgente']]
+        else:
+            dove, testo, html = sorgenti[e['sorgente']]
+            o, frase = e['offset'], e['frase']
+            a0 = text_find(testo, frase, o)
+            hm = html_offsets(testo, html)
+            if a0 < 0 or hm is None:
+                errors.append('%s: the sentence is not in its source' % e['id'])
+            else:
+                # the date marked in the HTML when it holds no tag, then the sentence cut with its tags
+                ha, hb = hm[o], fine_html(html, hm[o + len(e['data']) - 1])
+                if '<' not in html[ha:hb]:
+                    html = '%s<mark class="tm-data">%s</mark>%s' % (html[:ha], html[ha:hb], html[hb:])
+                    hm = html_offsets(testo, html)
+                    segnate += 1
+                h = taglia_html(html, hm[a0], fine_html(html, hm[a0 + len(frase) - 1]))
+                if re.match(r'— (?=\S)', h):                     # the dash of a note's lemma opening it
+                    h, frase = h[2:], frase[2:]
+                if piano(h) != ' '.join(frase.split()):
+                    errors.append('%s: the HTML of the sentence is not its text: %r' % (e['id'], piano(h)[:80]))
+                citate = len(re.findall(r'<a class="ci"', h)) + sum(len(x.split()) for x in re.findall(r'data-d="([^"]+)"', h))
+                if citate != len(e['riferimenti']):
+                    errors.append('%s: %d citations wrapped, %d in eventi.json' % (e['id'], citate, len(e['riferimenti'])))
+        flags = (1 if e['circa'] else 0) | (2 if e['incerto'] else 0) | {None: 0, 'ante': 4, 'post': 8}[e['limite']]
+        cr = e.get('cronologia')
+        voce = cr['voce'] if cr else e.get('voce')
+        col = P['par']['cron']['voci'][voce - 1][4] if voce else -1
+        alt = e.get('alternativa') or 0
+        ev.append([e['id'][3:], fonti.index(f), dove, e['inizio'], e['fine'], prec.index(e['precisione']), flags,
+                   e['data'] or '', e['periodo'] or 0, h, e['versetti'],
+                   vix[e['verso']] if e['verso'] else -1, sorted(stesso[k]), col,
+                   DATA_DA.index(e['data_da']) if e.get('data_da') else -1,
+                   alt, regole.index(e['era_da'])])
+    if len(ev) != E['meta']['summary']['eventi'] or segnate < 0.9 * sum(1 for e in ev if e[9]):
+        errors.append('time line: %d events (%d expected), %d dates marked' % (len(ev), E['meta']['summary']['eventi'], segnate))
+    per = [[p['n'], p['romano'], p['titolo'], p['inizio'], p['fine']] for p in E['periodi']]
+    return dict(fonti=fonti, prec=prec, per=per, regole=regole, ev=ev, segnate=segnate)
+
+
+def text_find(testo, frase, o):
+    """The start of the sentence frase in testo that holds the offset o, or -1."""
+    i = testo.find(frase, max(0, o - len(frase)))
+    while 0 <= i <= o:
+        if o < i + len(frase):
+            return i
+        i = testo.find(frase, i + 1)
+    return -1
+
+
 # ---------------------------------------------------------------- the front matter and the appendices
 
-NOTA_KIND = ['nota', 'copre', 'capitolo', 'rimandi', 'nessuna']
+NOTA_KIND =['nota', 'copre', 'capitolo', 'rimandi', 'nessuna']
 ITEM_KIND = ['rif', 'libro', 'vedi', 'pagina']
 EBRAICO = {n: ch for n, ch in zip('Alef Bet Ghimel Dalet He Vau Zain Het Tet Iod Caf Lamed Mem Nun Samec Ain Pe Sade '
                                   'Kof Res Sin Tau'.split(), 'אבגדהוזחטיכלמנסעפצקרשת')}
@@ -834,6 +956,8 @@ def main(a):
     P['diz'] = dizionario(dz, vix, errors)
     P['par'] = paratesto(pt, data, vix, errors)
     P['int'] = integrazione(ig, data, dz, pt, vix, posto, errors)
+    ev = json.load(open(os.path.join(BUILD, 'eventi.json'), encoding='utf-8'))
+    P['tempo'] = tempo(ev, P, data, pt, dz, ig, vix, errors)
     controlla_discorsi(P, errors)
     page, nraw, ngz, js = pagina(P)
     if '</script' in js.lower():
@@ -856,6 +980,9 @@ def main(a):
               'chronology %d entries, %d citations' % (len(Q['testi']), len(Q['pc']), len(Q['indici']['note']),
                                                        len(Q['indici']['temi']), len(Q['cron']['voci']),
                                                        len(Q['cron']['cit'])))
+        T = P['tempo']
+        print('time line: %d events, %d sentences with their HTML, %d dates marked'
+              % (len(T['ev']), sum(1 for e in T['ev'] if e[9]), T['segnate']))
         print('data: JSON %.1f MB, gzip %.1f MB; page %s %.1f MB'
               % (nraw / 1e6, ngz / 1e6, os.path.relpath(out, C), len(page.encode('utf-8')) / 1e6))
     for e in errors[:20]:
