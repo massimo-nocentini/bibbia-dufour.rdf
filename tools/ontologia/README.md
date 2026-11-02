@@ -694,23 +694,30 @@ Resolved `*words` become `<a class="vl" href="#voce/<slug>">`.
 
 **The page** (Italian, `app.js`, plain JavaScript, no library):
 
-Fonts: Literata 3.103 for the text and the interface alike, under the SIL Open Font License
-(`esploratore/font/OFL-Literata.txt`): six woff2 files (Latin, Latin Extended, Greek; upright
-and italic) cut by `caratteri.py` from the upstream variable fonts (googlefonts/literata,
-`fonts/variable/`), keeping both axes (weight, optical size) and the small capitals and
-old-style figures that the `@fontsource` subsets lack (about 680 KB in all). `caratteri.py`
-needs fontTools and brotli and is run by hand only when the fonts change; `esploratore.py`
-embeds the files through `esploratore/font.css` as `data:` URLs, so the page still makes no
-network request.
+Fonts: ET Book (MIT License, `esploratore/font/LICENSE-ET-Book.txt`), the four faces of Tufte CSS
+(roman with lining figures, italic with old-style figures, bold, roman with old-style figures for
+the verse numbers), converted from its woff files to woff2 by `caratteri.py et-book <tufte-css>/et-book`
+(about 145 KB). ET Book covers Latin-1 only, so Literata 3.103 (SIL Open Font License,
+`esploratore/font/OFL-Literata.txt`) follows it in the stack for transliterations, Greek and the
+other signs (about 60 characters, 9,264 occurrences in the payload); ET Book draws ‹ › as the ffi and
+ffl ligatures, so its faces leave U+2039–203A to Literata. The six Literata woff2 files (Latin,
+Latin Extended, Greek; upright and italic) are cut by `caratteri.py` from the upstream variable
+fonts (googlefonts/literata, `fonts/variable/`), keeping both axes and the small capitals and
+old-style figures. `caratteri.py` needs fontTools and brotli and is run by hand only when the fonts
+change; `esploratore.py` embeds the files through `esploratore/font.css` as `data:` URLs, so the
+page still makes no network request.
 
-Style (`stile.css`), in the manner of the CSS Zen Garden: the markup of `modello.html` and
-`app.js` stays as it is and the stylesheet alone sets the page. One typeface; black ink and
-one red (`--rubrica`) for verse numbers, rubrics and the current view; hairlines (`--linea`)
-instead of boxes, cards and pills; labels in true small capitals, lightly spaced (`--spazio`);
-old-style figures in the reading text, lining ones in verse numbers and counts;
-headings at regular weight, secondary text in italic; shadows only on what floats (preview,
-help, tooltips); a warm, low-glare dark theme. The relation colours of the chips, the graph and the overview are kept,
-since they carry data. Light and dark themes share the tokens at the top of the file.
+Style (`stile.css`): the style of Tufte CSS (https://github.com/edwardtufte/tufte-css, MIT License,
+`esploratore/LICENSE-tufte-css.txt`) adapted to an application, with the markup of `modello.html` and
+`app.js` unchanged: ET Book on `#fffff8` paper in `#111` ink (`#ddd` on `#151515` in the dark theme),
+titles at 3.2rem in regular weight, headings and labels in italic (ET Book has no small capitals; the
+headings printed in capitals are set in synthesised small capitals, as the `newthought` of Tufte CSS),
+the reading text at 1.4rem/2rem, side texts (notes, panel) near 1.1rem, links in the ink with a thin
+underline, hairlines (`#ccc`) instead of boxes, cards and pills, no accent colour (`--errore` marks
+only what is wrong) and shadows only on what floats (preview, help, tooltips). The relation colours
+of the chips, the graph and the overview are kept, since they carry data. Light and dark themes
+share the tokens at the top of the file. The page does not use the article layout of Tufte CSS
+(a 55% column and side notes floated into the right margin): the verse panel plays that part.
 
 
 | View | Route | What |

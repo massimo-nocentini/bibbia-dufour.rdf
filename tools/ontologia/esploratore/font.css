@@ -1,6 +1,30 @@
 /* Embedded fonts (SIL Open Font License, see font/OFL-*.txt): esploratore.py replaces
    each FONT placeholder in url() with that woff2 file as a data: URL, so the page stays offline.
-   Literata, for the text and the interface alike. */
+   ET Book (MIT License, font/LICENSE-ET-Book.txt) as in Tufte CSS: the roman with lining figures,
+   the italic with old-style ones, the bold, and the roman with old-style figures as a family of its
+   own; it covers Latin-1 only, so Literata (SIL OFL) follows it in the stack for the rest
+   (transliterations, Greek). ET Book draws ‹ and › (U+2039, U+203A) as the ffi and ffl ligatures:
+   its faces leave those two to Literata. */
+@font-face {
+  font-family: "et-book"; font-style: normal; font-weight: 400; font-display: swap;
+  src: url(@@FONT:et-book-roman-line-figures.woff2@@) format("woff2");
+  unicode-range: U+0000-2038, U+203B-FFFF;
+}
+@font-face {
+  font-family: "et-book"; font-style: italic; font-weight: 400; font-display: swap;
+  src: url(@@FONT:et-book-display-italic-old-style-figures.woff2@@) format("woff2");
+  unicode-range: U+0000-2038, U+203B-FFFF;
+}
+@font-face {
+  font-family: "et-book"; font-style: normal; font-weight: 700; font-display: swap;
+  src: url(@@FONT:et-book-bold-line-figures.woff2@@) format("woff2");
+  unicode-range: U+0000-2038, U+203B-FFFF;
+}
+@font-face {
+  font-family: "et-book-roman-old-style"; font-style: normal; font-weight: 400; font-display: swap;
+  src: url(@@FONT:et-book-roman-old-style-figures.woff2@@) format("woff2");
+  unicode-range: U+0000-2038, U+203B-FFFF;
+}
 @font-face {
   font-family: "Literata"; font-style: normal; font-weight: 200 900; font-display: swap;
   src: url(@@FONT:literata-latin-wght-normal.woff2@@) format("woff2");
