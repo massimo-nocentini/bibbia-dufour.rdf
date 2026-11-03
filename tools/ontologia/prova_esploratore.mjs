@@ -1447,6 +1447,34 @@ try {
   await m.p.waitForTimeout(600);
   verifica('390 px: grafo senza scorrimento orizzontale', await m.p.evaluate(() => document.documentElement.scrollWidth) <= 390);
   await foto(m.p, '17-telefono-grafo');
+  // two fingers pinch the tree: apart it grows, together it shrinks, the point between them stays put
+  {
+    const cdp = await m.p.context().newCDPSession(m.p);
+    const t = await m.p.$eval('#tela', x => { const r = x.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
+    const tocca = (type, d) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] :
+      [{ x: t.x - d, y: t.y, id: 1 }, { x: t.x + d, y: t.y, id: 2 }] });
+    const pizzica = async (da, a) => {
+      await tocca('touchStart', da);
+      for (let i = 1; i <= 8; i++) await tocca('touchMove', da + (a - da) * i / 8);
+      await tocca('touchEnd');
+    };
+    // the point of the tree under the centre of the canvas, before and after
+    const vista = () => m.p.evaluate(c => { const r = document.querySelector('#tela').getBoundingClientRect();
+      return { z: S.av.z, wx: (c.x - r.left - S.av.x) / S.av.z, wy: (c.y - r.top - S.av.y) / S.av.z, hash: location.hash }; }, t);
+    const prima = await vista();
+    await pizzica(40, 80);
+    const dopo = await vista();
+    await pizzica(80, 40);
+    const torna = await vista();
+    const vicino = (a, b) => Math.abs(a.wx - b.wx) < 2 && Math.abs(a.wy - b.wy) < 2;
+    verifica('390 px: due dita allargate ingrandiscono l’albero', Math.abs(dopo.z / prima.z - 2) < 0.05 || dopo.z === 2.2, JSON.stringify({ prima, dopo }));
+    verifica('390 px: il punto fra le dita resta fermo nel pizzico', vicino(prima, dopo) && vicino(dopo, torna), JSON.stringify({ prima, dopo, torna }));
+    verifica('390 px: due dita avvicinate rimpiccioliscono l’albero', Math.abs(torna.z - prima.z) < 0.02 && torna.hash === prima.hash, JSON.stringify({ prima, torna }));
+    const scala = await m.p.evaluate(() => visualViewport.scale);
+    verifica('390 px: il pizzico non ingrandisce la pagina', scala === 1, `visualViewport.scale ${scala}`);
+    await foto(m.p, '17b-telefono-grafo-pizzico');
+    await cdp.detach();
+  }
   await m.p.evaluate(() => { location.hash = '#cerca?q=melchisedek'; });
   await m.p.waitForSelector('#esito b');
   await foto(m.p, '18-telefono-cerca');

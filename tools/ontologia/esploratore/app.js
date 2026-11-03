@@ -3087,7 +3087,7 @@ function mostraGrafo(id, par) {
       <div class="leg"><svg width="26" height="16"><rect x="3" y="2" width="20" height="12" fill="var(--biglietto-diz)" stroke="var(--tratto)"/></svg>voce del Dizionario</div>
       <h3>Albero</h3><div class="grafo-info" id="ginfo"></div>
       <details class="grafo-nodi"><summary>Elenco delle schede</summary><ul id="gnodi"></ul></details>
-      <p class="grafo-info nota-grafo">▸ su una scheda apre i suoi collegamenti, raggruppati per relazione; il riferimento la mette al centro (il nome di una voce del Dizionario la apre); − la riduce al titolo, + la mostra intera. Trascina per spostarti, rotella per scorrere, Ctrl + rotella o +/− per lo zoom.</p>
+      <p class="grafo-info nota-grafo">▸ su una scheda apre i suoi collegamenti, raggruppati per relazione; il riferimento la mette al centro (il nome di una voce del Dizionario la apre); − la riduce al titolo, + la mostra intera. Trascina per spostarti, rotella per scorrere, Ctrl + rotella, due dita (pizzico) o +/− per lo zoom.</p>
     </div></div>`);
   document.title = `Grafo ${rif(i)} · Esploratore dei versetti`;
   S.ridisegna = null;
@@ -3221,20 +3221,66 @@ function adatta(tutto = false) {
 function interazioni() {
   const tela = $('#tela');
   S.av = { x: 0, y: 0, z: 1 };
-  let giu = null;
+  // one pointer drags the tree; two fingers pinch it: the point of the tree under the middle of the two
+  // fingers stays under it, the zoom follows their distance
+  let giu = null, pizzico = null, finePizzico = 0;
+  const dita = new Map();   // the fingers (touch or pen) on the canvas, wherever they landed: id → {x, y}
+  const trascina = (e, mosso) => ({ id: e.pointerId, x: e.clientX, y: e.clientY, vx: S.av.x, vy: S.av.y, mosso });
+  const coppia = () => {
+    const [a, b] = [...dita.values()], r = tela.getBoundingClientRect();
+    return { d: Math.hypot(a.x - b.x, a.y - b.y) || 1, mx: (a.x + b.x) / 2 - r.left, my: (a.y + b.y) / 2 - r.top };
+  };
+  const inizioPizzico = () => {
+    pizzico = { ...coppia(), av: { ...S.av } };
+    giu = null;
+    for (const id of dita.keys()) try { tela.setPointerCapture(id); } catch (_) { /* already gone */ }
+    tela.classList.add('trascina');
+  };
   tela.addEventListener('pointerdown', e => {
+    if (e.pointerType !== 'mouse') {
+      dita.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (dita.size === 2) { inizioPizzico(); return; }
+      if (dita.size > 2) return;
+    }
     if (e.button !== 0 || e.target.closest('a, button, .foglietto')) return;
-    giu = { x: e.clientX, y: e.clientY, vx: S.av.x, vy: S.av.y, mosso: false };
+    giu = trascina(e, false);
     tela.setPointerCapture(e.pointerId);
   });
   tela.addEventListener('pointermove', e => {
-    if (!giu) return;
+    if (dita.has(e.pointerId)) dita.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pizzico) {
+      if (dita.size < 2) return;
+      const c = coppia(), p = pizzico, z = Math.max(0.3, Math.min(2.2, p.av.z * c.d / p.d));
+      S.av = { z, x: c.mx - (p.mx - p.av.x) * z / p.av.z, y: c.my - (p.my - p.av.y) * z / p.av.z };
+      applica();
+      return;
+    }
+    if (!giu || e.pointerId !== giu.id) return;
     if (Math.hypot(e.clientX - giu.x, e.clientY - giu.y) > 4) { giu.mosso = true; tela.classList.add('trascina'); }
     if (giu.mosso) { S.av.x = giu.vx + e.clientX - giu.x; S.av.y = giu.vy + e.clientY - giu.y; applica(); }
   });
-  const su = () => { giu = null; tela.classList.remove('trascina'); };
+  const su = e => {
+    if (dita.delete(e.pointerId) && pizzico) {
+      finePizzico = performance.now();
+      if (dita.size >= 2) inizioPizzico();
+      else {
+        // one finger left: it goes on dragging
+        pizzico = null;
+        const [id, d] = [...dita.entries()][0] || [];
+        giu = id === undefined ? null : trascina({ pointerId: id, clientX: d.x, clientY: d.y }, true);
+      }
+    }
+    if (giu && giu.id === e.pointerId) giu = null;
+    if (!giu && !pizzico) tela.classList.remove('trascina');
+  };
   tela.addEventListener('pointerup', su);
   tela.addEventListener('pointercancel', su);
+  // a finger that pinched does not follow the link or press the button it landed on
+  tela.addEventListener('click', e => {
+    if (performance.now() - finePizzico < 500) { e.preventDefault(); e.stopPropagation(); }
+  }, true);
+  // Safari's own pinch gesture would zoom the whole page
+  tela.addEventListener('gesturestart', e => e.preventDefault());
   tela.addEventListener('wheel', e => {
     e.preventDefault();
     if (e.ctrlKey || e.metaKey) {
