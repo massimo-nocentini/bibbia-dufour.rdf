@@ -219,7 +219,7 @@ try {
       fondo: getComputedStyle(c.querySelector('svg.contorno .fondo')).fill, tinta: getComputedStyle(document.documentElement).getPropertyValue('--biglietto-diz').trim(),
       filtro: !!document.querySelector('.grafo-lato input[data-rel="diz"]'),
       curve: [...document.querySelectorAll('svg.contorno .tratto')].every(t => { const d = t.getAttribute('d'); return /C/.test(d) && /Q/.test(d) && !/[LHV]/.test(d); }),
-      rami: [...document.querySelectorAll('#rami path.ramo:not(.eco)')].every(x => (x.getAttribute('d').match(/C/g) || []).length === 2) };
+      rami: [...document.querySelectorAll('#rami path.ramo:not(.eco)')].every(x => (x.getAttribute('d').match(/C/g) || []).length >= 8 && !/NaN/.test(x.getAttribute('d'))) };
   });
   verifica('albero: gruppo «◊ Nel Dizionario» con schede di voce', gd.gruppo === '◊ Nel Dizionario' && gd.carte === 8 && /^#voce\/[^/]+\/\d+\?v=/.test(gd.href) && gd.mark && gd.filtro && gd.curve && gd.rami, JSON.stringify(gd));
   const prima2 = await p.$$eval('.carta', xs => xs.length);
