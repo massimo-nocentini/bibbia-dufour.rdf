@@ -35,6 +35,14 @@ make ontologia     # about 18 minutes; every check must pass
 The browser test of the explorer needs playwright-core (see `tools/ontologia/README.md`, stage 4):
 `make prova PW=<folder where it is installed>`.
 
+## The explorer on GitHub Pages
+
+`.github/workflows/pages.yml` publishes the committed `ontologia/esplora.html` as the site's `index.html`
+whenever it changes on `main` (or by hand from the Actions tab). It does not rebuild the page, since the sources
+are not in this repository: run `make ontologia`, commit the page, then push. Do this once beforehand: Settings → Pages →
+Source: *GitHub Actions*. The page is self-contained (fonts and data embedded, hash routing), so it runs
+the same from `file://` and from Pages.
+
 ## Licence
 
 The text of the BJ (EDB) and of the dictionary (Marietti) is copyrighted: the data and the page hold it, so

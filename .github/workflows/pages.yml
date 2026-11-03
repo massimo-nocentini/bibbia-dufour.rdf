@@ -1,0 +1,53 @@
+# Publish the explorer, ontologia/esplora.html, on GitHub Pages as the site's index.html.
+#
+# The page is built locally (`make ontologia`, which needs the LaTeX transcription and the Dizionario, not
+# available here) and committed; this workflow only publishes the committed file. It runs when the page
+# changes on main, or by hand (Actions -> pages -> Run workflow).
+#
+# Once: Settings -> Pages -> Build and deployment -> Source: GitHub Actions.
+
+name: pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ontologia/esplora.html
+      - .github/workflows/pages.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Assemble the site
+        run: |
+          mkdir -p sito
+          cp ontologia/esplora.html sito/index.html
+          # a static page, not a Jekyll site
+          touch sito/.nojekyll
+          # keep the page out of search engines
+          printf 'User-agent: *\nDisallow: /\n' > sito/robots.txt
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: sito
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
