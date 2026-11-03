@@ -5401,39 +5401,21 @@ function semeNodo(n) {
   return s;
 }
 function ramo(p, n) {
-  // a branch drawn by hand: the smooth S between the two nodes, sampled and pushed off its course by
-  // two slow waves of random phase (the drift of a hand) and a slight tremor, all fading to nothing
-  // at the ends so it still meets the nodes, then passed through a Catmull-Rom spline; a solid
-  // relation is gone over a second time, fainter, by a stroke that starts late and stops short
+  // a branch drawn by hand: the S between the two nodes split at a midpoint moved off the smooth
+  // path, its control points a little crooked; a solid relation gets a fainter second stroke
+  // beside it, as a pencil goes over a line twice
   const x1 = p.x + p.w, y1 = p.y + Math.min(p.h / 2, p.tipo === 'carta' ? 60 : p.h / 2), x2 = n.x, y2 = n.y + Math.min(n.h / 2, n.tipo === 'carta' ? 28 : n.h / 2);
-  const g = n.tipo === 'gruppo' ? n : p, R = REL[g.rel], dm = (x2 - x1) / 2;
-  const r = rng(semeNodo(n)), q = j => (r() - 0.5) * 2 * j, f = v => v.toFixed(1), TAU = 2 * Math.PI;
-  const B = t => {
-    const u = 1 - t, a = u * u * u, b = 3 * u * u * t, c = 3 * u * t * t, d = t * t * t;
-    return [a * x1 + b * (x1 + dm) + c * (x2 - dm) + d * x2, (a + b) * y1 + (c + d) * y2];
-  };
-  let L = 0;
-  for (let k = 1, a = B(0); k <= 24; k++) { const b = B(k / 24); L += Math.hypot(b[0] - a[0], b[1] - a[1]); a = b; }
-  const N = Math.max(8, Math.min(260, Math.round(L / 10))), A = Math.min(4.5, 1.2 + L / 160);
-  const tratto = (A, t0, t1, scossa) => {
-    // waves of about 110-200 px and 45-75 px along the branch; the second a third of the first or so
-    const c1 = L / (110 + r() * 90), c2 = L / (45 + r() * 30), f1 = r() * TAU, f2 = r() * TAU, a2 = 0.25 + r() * 0.2;
-    const P = [];
-    for (let k = 0; k <= N; k++) {
-      const t = t0 + (t1 - t0) * k / N, [x, y] = B(t), [xa, ya] = B(Math.max(0, t - 0.005)), [xb, yb] = B(Math.min(1, t + 0.005));
-      const l = Math.hypot(xb - xa, yb - ya) || 1, o = Math.pow(Math.sin(Math.PI * t), 0.7) * (A * (Math.sin(TAU * c1 * t + f1) + a2 * Math.sin(TAU * c2 * t + f2)) + q(scossa));
-      P.push([x - (yb - ya) / l * o, y + (xb - xa) / l * o]);
-    }
-    let d = `M${f(P[0][0])} ${f(P[0][1])}`;
-    for (let k = 0; k < N; k++) {
-      const p0 = P[Math.max(0, k - 1)], p1 = P[k], p2 = P[k + 1], p3 = P[Math.min(N, k + 2)];
-      d += `C${f(p1[0] + (p2[0] - p0[0]) / 6)} ${f(p1[1] + (p2[1] - p0[1]) / 6)} ${f(p2[0] - (p3[0] - p1[0]) / 6)} ${f(p2[1] - (p3[1] - p1[1]) / 6)} ${f(p2[0])} ${f(p2[1])}`;
-    }
-    return d;
+  const g = n.tipo === 'gruppo' ? n : p, R = REL[g.rel], dm = (x2 - x1) / 2, dy = y2 - y1;
+  const r = rng(semeNodo(n)), q = j => (r() - 0.5) * 2 * j, f = v => v.toFixed(1);
+  const tratto = (j, e) => {
+    const xm = x1 + dm + q(Math.min(4, dm / 6)), ym = y1 + dy / 2 + q(Math.min(9, 2.5 + Math.abs(dy) / 14)), t = 0.8 + r() * 0.45;
+    const a = [x1 + q(e), y1 + q(e)], b = [x2 + q(e), y2 + q(e)];
+    return `M${f(a[0])} ${f(a[1])}C${f(x1 + dm * (0.42 + r() * 0.2))} ${f(y1 + q(j))} ${f(xm - dm / 4 * t)} ${f(ym - dy / 4 * t)} ${f(xm)} ${f(ym)}` +
+      `C${f(xm + dm / 4 * t)} ${f(ym + dy / 4 * t)} ${f(x2 - dm * (0.42 + r() * 0.2))} ${f(y2 + q(j))} ${f(b[0])} ${f(b[1])}`;
   };
   const dash = R.dash.length ? ` stroke-dasharray="${R.dash.map(x => x * 1.5).join(' ')}"` : '';
-  return `<path class="ramo" style="stroke:var(${R.col})"${dash} d="${tratto(A, 0, 1, 0.35)}"/>` +
-    (R.dash.length ? '' : `<path class="ramo eco" style="stroke:var(${R.col});stroke-width:.8;opacity:.4" d="${tratto(A * (0.8 + r() * 0.5), 0.02 + r() * 0.08, 0.86 + r() * 0.12, 0.5)}"/>`);
+  return `<path class="ramo" style="stroke:var(${R.col})"${dash} d="${tratto(3, 0)}"/>` +
+    (R.dash.length ? '' : `<path class="ramo eco" style="stroke:var(${R.col});stroke-width:.8;opacity:.35" d="${tratto(4, 1.2)}"/>`);
 }
 
 // ---- the view
