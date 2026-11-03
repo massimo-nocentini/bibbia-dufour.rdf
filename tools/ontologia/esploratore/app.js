@@ -2813,21 +2813,33 @@ const ALB = { CARTA: 300, RADICE: 400, SPAZIO: 46, SPAZIO_G: 22, PASSO: 16, RADI
 
 function rng(seed) { return () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; }; }
 function schizzo(w, h, seme) {
-  // a rectangle drawn twice by hand: wobbly sides that overshoot the corners a little,
-  // over a slightly crooked sheet
+  // a rectangle drawn twice by hand: each side a gentle curve (bowed or a soft S, as a pen
+  // drifts) that overshoots the corners a little, over a slightly crooked sheet whose edges
+  // barely bend (so it stays about within the lines)
   const r = rng(seme + 1), q = j => (r() - 0.5) * 2 * j;
+  const xy = (x, y) => `${x.toFixed(1)} ${y.toFixed(1)}`;
+  const curva = (x1, y1, x2, y2, A) => {
+    // the two control points of a side, off the straight line by up to A (same side: a bow;
+    // opposite sides: a soft S)
+    const dx = x2 - x1, dy = y2 - y1, L = Math.hypot(dx, dy) || 1, nx = -dy / L, ny = dx / L;
+    const t1 = 0.22 + r() * 0.18, t2 = 0.6 + r() * 0.18, b1 = q(A), b2 = r() < 0.6 ? b1 * (0.5 + r() * 0.7) : q(A);
+    return `C${xy(x1 + dx * t1 + nx * b1, y1 + dy * t1 + ny * b1)} ${xy(x1 + dx * t2 + nx * b2, y1 + dy * t2 + ny * b2)}`;
+  };
   const lato = (x1, y1, x2, y2) => {
     const dx = x2 - x1, dy = y2 - y1, L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L;
-    const s1 = 1 + r() * 5, s2 = 1 + r() * 5, m = 0.3 + r() * 0.4, b = q(Math.min(4.5, L / 35));
+    const s1 = 1 + r() * 5, s2 = 1 + r() * 5, A = Math.min(6.5, 1.5 + L / 30);
     const ax = x1 - ux * s1 + q(1.6), ay = y1 - uy * s1 + q(1.6), bx = x2 + ux * s2 + q(1.6), by = y2 + uy * s2 + q(1.6);
-    const cx = x1 + dx * m - uy * b, cy = y1 + dy * m + ux * b;
-    return `M${ax.toFixed(1)} ${ay.toFixed(1)}Q${cx.toFixed(1)} ${cy.toFixed(1)} ${bx.toFixed(1)} ${by.toFixed(1)}`;
+    return `M${xy(ax, ay)}${curva(ax, ay, bx, by, A)} ${xy(bx, by)}`;
   };
   let d = '';
   for (let p = 0; p < 2; p++) d += lato(0, 0, w, 0) + lato(w, 0, w, h) + lato(w, h, 0, h) + lato(0, h, 0, 0);
-  const f = () => q(1.6).toFixed(1);
-  const fondo = `M${f()} ${f()}L${(w + +f()).toFixed(1)} ${f()}L${(w + +f()).toFixed(1)} ${(h + +f()).toFixed(1)}L${f()} ${(h + +f()).toFixed(1)}Z`;
-  return { d, fondo };
+  const v = [[q(1.6), q(1.6)], [w + q(1.6), q(1.6)], [w + q(1.6), h + q(1.6)], [q(1.6), h + q(1.6)]];
+  let fondo = `M${xy(...v[0])}`;
+  for (let j = 0; j < 4; j++) {
+    const [x1, y1] = v[j], [x2, y2] = v[(j + 1) % 4];
+    fondo += `${curva(x1, y1, x2, y2, Math.min(1.5, 0.5 + Math.hypot(x2 - x1, y2 - y1) / 150))} ${xy(x2, y2)}`;
+  }
+  return { d, fondo: fondo + 'Z' };
 }
 function contorno(el, seme) {
   const w = el.offsetWidth, h = el.offsetHeight, { d, fondo } = schizzo(w, h, seme);

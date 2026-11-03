@@ -635,8 +635,6 @@ a.cd.x:focus-visible { outline: 2px solid var(--sel-bordo); outline-offset: 2px;
 .lettere button:disabled { opacity: .35; cursor: default; }
 a.vl { color: inherit; border-bottom: 1px solid color-mix(in srgb, var(--r-diz) 45%, transparent); }
 a.vl:hover { color: var(--r-diz); text-decoration: none; }
-a.vl::before { content: "*"; color: var(--r-diz); font: 400 .8em var(--ui); margin-right: .05em; }
-.rinvii a.vl::before, .entranti a.vl::before { content: none; }
 .vl-x { color: var(--tenue); }
 .rinvio-nota { font: 1.05rem/1.6 var(--serif); color: var(--secondo); }
 .rinvii { list-style: none; padding: 0; margin: 0 0 1.4rem; display: flex; flex-wrap: wrap; gap: .3rem 1.4rem; }

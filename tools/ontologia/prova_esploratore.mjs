@@ -151,12 +151,12 @@ try {
     const sel = document.querySelector('.dpar.sel'), r = sel.getBoundingClientRect();
     return { h1: document.querySelector('.voce-pagina h1').textContent, sel: sel.id, inVista: r.top >= 0 && r.top < innerHeight,
       cd: document.querySelectorAll('.voce-testo a.cd[href]').length, cdSel: [...document.querySelectorAll('a.cd.sel')].map(a => a.textContent),
-      vl: document.querySelectorAll('.voce-testo a.vl').length, firma: document.querySelector('.firma')?.textContent,
+      vl: document.querySelectorAll('.voce-testo a.vl').length, vlNudo: [...document.querySelectorAll('.voce-testo a.vl')].every(a => getComputedStyle(a, '::before').content === 'none' && !a.textContent.startsWith('*')), firma: document.querySelector('.firma')?.textContent,
       rinvii: document.querySelectorAll('.rinvii li').length, tab: document.querySelector('.schede a.attiva')?.dataset.vista };
   });
   metriche.voce_abele = voce;
   verifica('#voce/abele/1: paragrafo evidenziato e in vista, citazione segnata', voce.h1 === 'Abele' && voce.sel === 'p1' && voce.inVista && voce.cdSel.includes('Gen 4, 4 s') && voce.tab === 'dizionario', JSON.stringify(voce));
-  verifica('voce: citazioni come link, *parole, firma, vedi anche', voce.cd >= 10 && voce.vl >= 3 && voce.firma === 'P. GRELOT' && voce.rinvii === 6, JSON.stringify(voce));
+  verifica('voce: citazioni come link, parole del Dizionario senza asterisco, firma, vedi anche', voce.cd >= 10 && voce.vl >= 3 && voce.vlNudo && voce.firma === 'P. GRELOT' && voce.rinvii === 6, JSON.stringify(voce));
   await p.hover('.voce-testo a.cd[href]');
   await p.waitForSelector('#anteprima:not([hidden])');
   verifica('voce: anteprima di una citazione al passaggio', /\S/.test(await p.$eval('#anteprima', x => x.textContent)), await p.$eval('#anteprima .ap-rif', x => x.textContent));
@@ -217,9 +217,10 @@ try {
     return { gruppo: [...document.querySelectorAll('.ramo-gruppo span')].map(x => x.textContent).find(t => /Nel Dizionario/.test(t)),
       carte: document.querySelectorAll('.carta.voce').length, href: c.querySelector('.carta-rif').getAttribute('href'), mark: !!c.querySelector('.carta-testo mark'),
       fondo: getComputedStyle(c.querySelector('svg.contorno .fondo')).fill, tinta: getComputedStyle(document.documentElement).getPropertyValue('--biglietto-diz').trim(),
-      filtro: !!document.querySelector('.grafo-lato input[data-rel="diz"]') };
+      filtro: !!document.querySelector('.grafo-lato input[data-rel="diz"]'),
+      curve: [...document.querySelectorAll('svg.contorno .tratto')].every(t => /^M[^QL]*C/.test(t.getAttribute('d')) && !/[QL]/.test(t.getAttribute('d'))) };
   });
-  verifica('albero: gruppo «◊ Nel Dizionario» con schede di voce', gd.gruppo === '◊ Nel Dizionario' && gd.carte === 8 && /^#voce\/[^/]+\/\d+\?v=/.test(gd.href) && gd.mark && gd.filtro, JSON.stringify(gd));
+  verifica('albero: gruppo «◊ Nel Dizionario» con schede di voce', gd.gruppo === '◊ Nel Dizionario' && gd.carte === 8 && /^#voce\/[^/]+\/\d+\?v=/.test(gd.href) && gd.mark && gd.filtro && gd.curve, JSON.stringify(gd));
   const prima2 = await p.$$eval('.carta', xs => xs.length);
   await p.evaluate(() => document.querySelector('.carta.voce .cresci').click());
   const dopo2 = await p.evaluate(() => ({ carte: document.querySelectorAll('.carta').length, gruppo: [...document.querySelectorAll('.ramo-gruppo span')].some(x => x.textContent === '◊ La voce cita') }));
