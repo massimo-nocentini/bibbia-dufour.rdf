@@ -21,7 +21,7 @@
 import { createRequire } from 'node:module';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { mkdirSync, readFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 
 const arg = k => { const i = process.argv.indexOf(k); return i > 0 ? process.argv[i + 1] : null; };
 const PW = arg('--pw') || process.env.PW_DIR;
@@ -218,9 +218,10 @@ try {
       carte: document.querySelectorAll('.carta.voce').length, href: c.querySelector('.carta-rif').getAttribute('href'), mark: !!c.querySelector('.carta-testo mark'),
       fondo: getComputedStyle(c.querySelector('svg.contorno .fondo')).fill, tinta: getComputedStyle(document.documentElement).getPropertyValue('--biglietto-diz').trim(),
       filtro: !!document.querySelector('.grafo-lato input[data-rel="diz"]'),
-      curve: [...document.querySelectorAll('svg.contorno .tratto')].every(t => /^M[^QL]*C/.test(t.getAttribute('d')) && !/[QL]/.test(t.getAttribute('d'))) };
+      curve: [...document.querySelectorAll('svg.contorno .tratto')].every(t => { const d = t.getAttribute('d'); return /C/.test(d) && /Q/.test(d) && !/[LHV]/.test(d); }),
+      rami: [...document.querySelectorAll('#rami path.ramo:not(.eco)')].every(x => (x.getAttribute('d').match(/C/g) || []).length === 2) };
   });
-  verifica('albero: gruppo «◊ Nel Dizionario» con schede di voce', gd.gruppo === '◊ Nel Dizionario' && gd.carte === 8 && /^#voce\/[^/]+\/\d+\?v=/.test(gd.href) && gd.mark && gd.filtro && gd.curve, JSON.stringify(gd));
+  verifica('albero: gruppo «◊ Nel Dizionario» con schede di voce', gd.gruppo === '◊ Nel Dizionario' && gd.carte === 8 && /^#voce\/[^/]+\/\d+\?v=/.test(gd.href) && gd.mark && gd.filtro && gd.curve && gd.rami, JSON.stringify(gd));
   const prima2 = await p.$$eval('.carta', xs => xs.length);
   await p.evaluate(() => document.querySelector('.carta.voce .cresci').click());
   const dopo2 = await p.evaluate(() => ({ carte: document.querySelectorAll('.carta').length, gruppo: [...document.querySelectorAll('.ramo-gruppo span')].some(x => x.textContent === '◊ La voce cita') }));
@@ -455,6 +456,30 @@ try {
   verifica('albero con schede e gruppi', /^\d+ schede/.test(g1) && primo > 3 && (await p.$$('.ramo-gruppo')).length > 0 && (await p.$$('#rami path')).length >= primo, g1);
   metriche.grafo_p1 = g1;
   await foto(p, '07-grafo');
+  // − reduces a card to its heading, its branches stay; + shows it whole again
+  const mini = await p.evaluate(() => {
+    const c = document.querySelector('.carta:not(.radice)'), i = c.dataset.i, h0 = c.offsetHeight, rami0 = document.querySelectorAll('#rami path').length;
+    c.querySelector('.minimizza').click();
+    const r = document.querySelector(`.carta[data-i="${i}"]`);
+    const out = { h0, h1: r.offsetHeight, ridotta: r.classList.contains('ridotta'), testo: !!r.querySelector('.carta-testo'), rami: document.querySelectorAll('#rami path').length === rami0,
+      contorno: !!r.querySelector('svg.contorno'), fuoco: document.activeElement === r.querySelector('.minimizza') };
+    r.querySelector('.minimizza').click();
+    const t = document.querySelector(`.carta[data-i="${i}"]`);
+    out.h2 = t.offsetHeight; out.intera = !t.classList.contains('ridotta') && !!t.querySelector('.carta-testo');
+    return out;
+  });
+  verifica('albero: − riduce una scheda al titolo, + la riapre', mini.ridotta && !mini.testo && mini.h1 < mini.h0 / 2 && mini.rami && mini.contorno && mini.fuoco && mini.intera && mini.h2 === mini.h0, JSON.stringify(mini));
+  // Esporta in PDF: the whole tree on one page of its size (the print dialog stubbed out)
+  await p.evaluate(() => { window.__print = window.print; window.print = () => { window.__stampa = true; }; });
+  await p.click('[data-pdf]');
+  const dimPdf = await p.evaluate(() => ({ stampa: window.__stampa === true, stile: /@page \{ size: \d+px \d+px/.test(document.querySelector('#stampa-grafo')?.textContent || ''), w: S.albDim.w, h: S.albDim.h }));
+  const pdf = await p.pdf({ preferCSSPageSize: true, printBackground: true });
+  if (FOTO) writeFileSync(join(FOTO, 'grafo.pdf'), pdf);
+  const testoPdf = pdf.toString('latin1'), pagine = (testoPdf.match(/\/Type\s*\/Page(?![s\w])/g) || []).length;
+  const boxPdf = testoPdf.match(/\/MediaBox\s*\[\s*0\s+0\s+([\d.]+)\s+([\d.]+)\s*\]/);
+  await p.evaluate(() => { window.dispatchEvent(new Event('afterprint')); window.print = window.__print; });
+  const via = await p.evaluate(() => !document.querySelector('#stampa-grafo'));
+  verifica('albero: Esporta in PDF, l’albero intero su una pagina sola', dimPdf.stampa && dimPdf.stile && pagine === 1 && boxPdf && +boxPdf[1] >= dimPdf.w * 0.75 && +boxPdf[2] >= dimPdf.h * 0.75 && via, JSON.stringify({ ...dimPdf, pagine, box: boxPdf && boxPdf.slice(1), via }));
   // ▸ grows a card in place
   const prima1 = (await p.$$('.carta')).length;
   await p.evaluate(() => document.querySelector('.carta:not(.radice) .cresci:not([disabled])').click());

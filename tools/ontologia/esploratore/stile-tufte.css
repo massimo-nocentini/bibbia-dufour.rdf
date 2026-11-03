@@ -610,6 +610,13 @@ svg.contorno { position: absolute; left: -8px; top: -8px; z-index: -1; pointer-e
 .carta-rif { font: 400 1.2rem/1.2 var(--ui); color: var(--inchiostro); white-space: nowrap; }
 .carta.radice .carta-rif { font-size: 1.5rem; }
 .carta-libro { font: italic .9rem var(--ui); color: var(--tenue); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.minimizza {
+  margin-left: auto; flex-shrink: 0; align-self: center; width: 1.5rem; height: 1.5rem; padding: 0; border: 0; border-radius: 0;
+  background: none; font: 400 1.05rem/1 var(--ui); color: var(--tenue); cursor: pointer;
+}
+.minimizza:hover { color: var(--rubrica); }
+.carta.ridotta { padding-bottom: .7rem; }
+.carta.ridotta .carta-testa { margin-bottom: 0; }
 .pallino { width: .55rem; height: .55rem; border-radius: 50%; flex-shrink: 0; align-self: center; }
 .pallino.at { background: var(--s-at); }
 .pallino.nt { background: var(--s-nt); }

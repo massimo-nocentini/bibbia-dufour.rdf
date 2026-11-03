@@ -681,6 +681,13 @@ svg.contorno { position: absolute; left: -8px; top: -8px; z-index: -1; pointer-e
 .carta-rif { font: 400 1.2rem/1.2 var(--ui); color: var(--inchiostro); white-space: nowrap; }
 .carta.radice .carta-rif { font-size: 1.5rem; }
 .carta-libro { font: italic .9rem var(--ui); color: var(--tenue); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.minimizza {
+  margin-left: auto; flex-shrink: 0; align-self: center; width: 1.5rem; height: 1.5rem; padding: 0; border: 0; border-radius: 0;
+  background: none; font: 400 1.05rem/1 var(--ui); color: var(--tenue); cursor: pointer;
+}
+.minimizza:hover { color: var(--rubrica); }
+.carta.ridotta { padding-bottom: .7rem; }
+.carta.ridotta .carta-testa { margin-bottom: 0; }
 .pallino { width: .55rem; height: .55rem; border-radius: 50%; flex-shrink: 0; align-self: center; }
 .pallino.at { background: var(--s-at); }
 .pallino.nt { background: var(--s-nt); }
@@ -1776,6 +1783,13 @@ svg.contorno { position: absolute; left: -8px; top: -8px; z-index: -1; pointer-e
 .carta-rif { font: 500 1.02rem/1.2 var(--ui); color: var(--inchiostro); white-space: nowrap; }
 .carta.radice .carta-rif { font-size: 1.3rem; }
 .carta-libro { font: italic .76rem var(--ui); color: var(--tenue); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.minimizza {
+  margin-left: auto; flex-shrink: 0; align-self: center; width: 1.5rem; height: 1.5rem; padding: 0; border: 0; border-radius: 0;
+  background: none; font: 400 1.05rem/1 var(--ui); color: var(--tenue); cursor: pointer;
+}
+.minimizza:hover { color: var(--rubrica); }
+.carta.ridotta { padding-bottom: .7rem; }
+.carta.ridotta .carta-testa { margin-bottom: 0; }
 .pallino { width: .55rem; height: .55rem; border-radius: 50%; flex-shrink: 0; align-self: center; }
 .pallino.at { background: var(--s-at); }
 .pallino.nt { background: var(--s-nt); }
@@ -5180,9 +5194,10 @@ const ALB = { CARTA: 300, RADICE: 400, SPAZIO: 46, SPAZIO_G: 22, PASSO: 16, RADI
 
 function rng(seed) { return () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; }; }
 function schizzo(w, h, seme) {
-  // a rectangle drawn twice by hand: each side a gentle curve (bowed or a soft S, as a pen
-  // drifts) that overshoots the corners a little, over a slightly crooked sheet whose edges
-  // barely bend (so it stays about within the lines)
+  // a rounded rectangle drawn twice by hand, each time in one stroke from a different corner: the
+  // sides gentle curves (bowed or a soft S, as a pen drifts), the corners soft arcs of uneven
+  // radius, the stroke running on a little past where it began; under it a sheet with rounded
+  // corners whose edges barely bend (so it stays about within the lines)
   const r = rng(seme + 1), q = j => (r() - 0.5) * 2 * j;
   const xy = (x, y) => `${x.toFixed(1)} ${y.toFixed(1)}`;
   const curva = (x1, y1, x2, y2, A) => {
@@ -5192,21 +5207,32 @@ function schizzo(w, h, seme) {
     const t1 = 0.22 + r() * 0.18, t2 = 0.6 + r() * 0.18, b1 = q(A), b2 = r() < 0.6 ? b1 * (0.5 + r() * 0.7) : q(A);
     return `C${xy(x1 + dx * t1 + nx * b1, y1 + dy * t1 + ny * b1)} ${xy(x1 + dx * t2 + nx * b2, y1 + dy * t2 + ny * b2)}`;
   };
-  const lato = (x1, y1, x2, y2) => {
-    const dx = x2 - x1, dy = y2 - y1, L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L;
-    const s1 = 1 + r() * 5, s2 = 1 + r() * 5, A = Math.min(6.5, 1.5 + L / 30);
-    const ax = x1 - ux * s1 + q(1.6), ay = y1 - uy * s1 + q(1.6), bx = x2 + ux * s2 + q(1.6), by = y2 + uy * s2 + q(1.6);
-    return `M${xy(ax, ay)}${curva(ax, ay, bx, by, A)} ${xy(bx, by)}`;
+  const R = Math.max(4, Math.min(18, Math.min(w, h) * 0.18));
+  const giro = (j, A, tratto) => {
+    // the corners P moved by up to j; at each corner the side stops R (uneven) before it, a quadratic
+    // through the corner rounds it, the next side starts R after it
+    const P = [[0, 0], [w, 0], [w, h], [0, h]].map(([x, y]) => [x + q(j), y + q(j)]);
+    const a = [], b = [];
+    for (let c = 0; c < 4; c++) {
+      const u = P[(c + 3) % 4], p = P[c], v = P[(c + 1) % 4];
+      const Li = Math.hypot(p[0] - u[0], p[1] - u[1]) || 1, Lo = Math.hypot(v[0] - p[0], v[1] - p[1]) || 1;
+      const k = Math.max(0, Math.min(R * (0.7 + r() * 0.6), Li / 2 - 1, Lo / 2 - 1));
+      a[c] = [p[0] - (p[0] - u[0]) / Li * k, p[1] - (p[1] - u[1]) / Li * k];
+      b[c] = [p[0] + (v[0] - p[0]) / Lo * k, p[1] + (v[1] - p[1]) / Lo * k];
+    }
+    const s = tratto ? Math.floor(r() * 4) : 0;
+    let d = `M${xy(b[s][0] + q(j), b[s][1] + q(j))}`;
+    for (let t = 0; t < 4; t++) {
+      const c = (s + t) % 4, n = (c + 1) % 4;
+      d += `${curva(b[c][0], b[c][1], a[n][0], a[n][1], A(Math.hypot(a[n][0] - b[c][0], a[n][1] - b[c][1])))} ${xy(...a[n])}Q${xy(...P[n])} ${xy(...b[n])}`;
+    }
+    if (!tratto) return d + 'Z';
+    // the pen runs on along the first side, a little off the line it began
+    const n = (s + 1) % 4, f = 0.05 + r() * 0.12, x = b[s][0] + (a[n][0] - b[s][0]) * f, y = b[s][1] + (a[n][1] - b[s][1]) * f;
+    return d + `Q${xy((b[s][0] + x) / 2 + q(1.5), (b[s][1] + y) / 2 + q(1.5))} ${xy(x + q(2), y + q(2))}`;
   };
-  let d = '';
-  for (let p = 0; p < 2; p++) d += lato(0, 0, w, 0) + lato(w, 0, w, h) + lato(w, h, 0, h) + lato(0, h, 0, 0);
-  const v = [[q(1.6), q(1.6)], [w + q(1.6), q(1.6)], [w + q(1.6), h + q(1.6)], [q(1.6), h + q(1.6)]];
-  let fondo = `M${xy(...v[0])}`;
-  for (let j = 0; j < 4; j++) {
-    const [x1, y1] = v[j], [x2, y2] = v[(j + 1) % 4];
-    fondo += `${curva(x1, y1, x2, y2, Math.min(1.5, 0.5 + Math.hypot(x2 - x1, y2 - y1) / 150))} ${xy(x2, y2)}`;
-  }
-  return { d, fondo: fondo + 'Z' };
+  const lati = L => Math.min(6.5, 1.5 + L / 30);
+  return { d: giro(1.6, lati, true) + giro(1.6, lati, true), fondo: giro(1.2, L => Math.min(1.5, 0.5 + L / 150), false) };
 }
 function contorno(el, seme) {
   const w = el.offsetWidth, h = el.offsetHeight, { d, fondo } = schizzo(w, h, seme);
@@ -5314,6 +5340,11 @@ function foglietti(c, radice) {
   }).join('');
   return html + (ks.length > max ? `<div class="foglietti-altre">${ks.length - max === 1 ? 'e un’altra nota' : `e altre ${ks.length - max} note`}: <a href="${hashVerso(c.a)}">nel lettore</a></div>` : '');
 }
+function bottoneRiduci(c) {
+  // − reduces a card to its heading (its branches stay), + shows it whole again
+  const t = c.ridotta ? 'Mostra la scheda intera' : 'Riduci la scheda al titolo';
+  return `<button type="button" class="minimizza" data-i="${c.i}" aria-expanded="${!c.ridotta}" title="${t}" aria-label="${t}">${c.ridotta ? '+' : '−'}</button>`;
+}
 function htmlVoceCarta(c) {
   // an entry: its name (opens the entry at the paragraph), the section, the sentence around the
   // citation; ▸ grows the passages it cites
@@ -5321,8 +5352,10 @@ function htmlVoceCarta(c) {
   const n = c.nvoci, k = c.voce, cz = Z.cit[c.cit], s = sezioneDi(k, cz[2]);
   const pn = cz[1] >= 0 ? Z.voci[k][9][cz[1]][0] : primoParDi(k, cz[2]);
   const dove = hashVoce(k, pn, c.padre?.padre?.a);
+  const testa = `<div class="carta-testa"><span class="pallino diz" title="Dizionario di Teologia Biblica"></span><a class="carta-rif" href="${dove}" title="Apri la voce">${esc(nomeVoce(k))}</a><span class="carta-libro">Dizionario</span>${bottoneRiduci(c)}</div>`;
+  if (c.ridotta) return `<div class="carta voce ridotta" data-i="${c.i}" style="width:${S.albW.carta}px">${testa}</div>`;
   return `<div class="carta voce" data-i="${c.i}" style="width:${S.albW.carta}px">
-    <div class="carta-testa"><span class="pallino diz" title="Dizionario di Teologia Biblica"></span><a class="carta-rif" href="${dove}" title="Apri la voce">${esc(nomeVoce(k))}</a><span class="carta-libro">Dizionario</span></div>
+    ${testa}
     ${s ? `<div class="carta-sez"><span class="percorso">${esc(s[0])}</span>${esc(testoPiano(s[2]))}</div>` : ''}
     <div class="carta-testo">${fraseCit(c.cit, 230)}</div>
     <div class="carta-piede"><button type="button" class="cresci" data-i="${c.i}" aria-expanded="${c.aperta}"${n ? '' : ' disabled'}>${n ? `${c.aperta ? '▾' : '▸'} ${n} ${n === 1 ? 'passo citato' : 'passi citati'}` : 'nessun altro passo'}</button><a class="leggi" href="${dove}">leggi ›</a></div></div>`;
@@ -5334,8 +5367,11 @@ function htmlCarta(c) {
   const n = c.nvoci;
   const cresci = radice ? `<span class="conta">${n ? `${n} collegament${n === 1 ? 'o' : 'i'}` : 'nessun collegamento'}</span>`
     : `<button type="button" class="cresci" data-i="${c.i}" aria-expanded="${c.aperta}"${n ? '' : ' disabled'}>${n ? `${c.aperta ? '▾' : '▸'} ${n} collegament${n === 1 ? 'o' : 'i'}` : 'nessun altro collegamento'}</button>`;
-  return `<div class="carta${radice ? ' radice' : ''}" data-i="${c.i}" style="width:${radice ? S.albW.radice : S.albW.carta}px">
-    <div class="carta-testa"><span class="pallino ${AT ? 'at' : 'nt'}" title="${AT ? 'Antico' : 'Nuovo'} Testamento"></span><a class="carta-rif" href="#grafo/${id}${S.albProf > 1 ? '?p=2' : ''}" title="Metti al centro">${esc(rif(c.a, c.b))}</a><span class="carta-libro">${esc(D.libri[S.vb[c.a]].t)}</span></div>
+  const testa = `<div class="carta-testa"><span class="pallino ${AT ? 'at' : 'nt'}" title="${AT ? 'Antico' : 'Nuovo'} Testamento"></span><a class="carta-rif" href="#grafo/${id}${S.albProf > 1 ? '?p=2' : ''}" title="Metti al centro">${esc(rif(c.a, c.b))}</a><span class="carta-libro">${esc(D.libri[S.vb[c.a]].t)}</span>${bottoneRiduci(c)}</div>`;
+  const inizio = `<div class="carta${radice ? ' radice' : ''}${c.ridotta ? ' ridotta' : ''}" data-i="${c.i}" style="width:${radice ? S.albW.radice : S.albW.carta}px">`;
+  if (c.ridotta) return `${inizio}${testa}</div>`;
+  return `${inizio}
+    ${testa}
     <div class="carta-testo">${testoCarta(c.a, c.b, radice ? 900 : 260)}</div>
     ${foglietti(c, radice)}
     <div class="carta-piede">${cresci}<a class="leggi" href="${hashVerso(c.a, c.b)}">leggi ›</a></div></div>`;
@@ -5358,11 +5394,28 @@ function disponi(n, x, top) {
   n.y = Math.max(top, (p.y + p.h / 2 + u.y + u.h / 2) / 2 - n.h / 2);
   return Math.max(y, n.y + n.h);
 }
+function semeNodo(n) {
+  // a seed that stays the same while the tree grows and shrinks: the keys on the path from the root
+  let s = 2166136261;
+  for (let x = n; x; x = x.padre) for (const ch of x.tipo === 'carta' ? x.k : x.rel + x.dir) s = Math.imul(s ^ ch.charCodeAt(0), 16777619) >>> 0;
+  return s;
+}
 function ramo(p, n) {
+  // a branch drawn by hand: the S between the two nodes split at a midpoint moved off the smooth
+  // path, its control points a little crooked; a solid relation gets a fainter second stroke
+  // beside it, as a pencil goes over a line twice
   const x1 = p.x + p.w, y1 = p.y + Math.min(p.h / 2, p.tipo === 'carta' ? 60 : p.h / 2), x2 = n.x, y2 = n.y + Math.min(n.h / 2, n.tipo === 'carta' ? 28 : n.h / 2);
-  const g = n.tipo === 'gruppo' ? n : p, dm = (x2 - x1) / 2;
-  const dash = REL[g.rel].dash.length ? ` stroke-dasharray="${REL[g.rel].dash.map(x => x * 1.5).join(' ')}"` : '';
-  return `<path class="ramo" style="stroke:var(${REL[g.rel].col})"${dash} d="M${x1} ${y1}C${x1 + dm} ${y1} ${x2 - dm} ${y2} ${x2} ${y2}"/>`;
+  const g = n.tipo === 'gruppo' ? n : p, R = REL[g.rel], dm = (x2 - x1) / 2, dy = y2 - y1;
+  const r = rng(semeNodo(n)), q = j => (r() - 0.5) * 2 * j, f = v => v.toFixed(1);
+  const tratto = (j, e) => {
+    const xm = x1 + dm + q(Math.min(4, dm / 6)), ym = y1 + dy / 2 + q(Math.min(9, 2.5 + Math.abs(dy) / 14)), t = 0.8 + r() * 0.45;
+    const a = [x1 + q(e), y1 + q(e)], b = [x2 + q(e), y2 + q(e)];
+    return `M${f(a[0])} ${f(a[1])}C${f(x1 + dm * (0.42 + r() * 0.2))} ${f(y1 + q(j))} ${f(xm - dm / 4 * t)} ${f(ym - dy / 4 * t)} ${f(xm)} ${f(ym)}` +
+      `C${f(xm + dm / 4 * t)} ${f(ym + dy / 4 * t)} ${f(x2 - dm * (0.42 + r() * 0.2))} ${f(y2 + q(j))} ${f(b[0])} ${f(b[1])}`;
+  };
+  const dash = R.dash.length ? ` stroke-dasharray="${R.dash.map(x => x * 1.5).join(' ')}"` : '';
+  return `<path class="ramo" style="stroke:var(${R.col})"${dash} d="${tratto(3, 0)}"/>` +
+    (R.dash.length ? '' : `<path class="ramo eco" style="stroke:var(${R.col});stroke-width:.8;opacity:.35" d="${tratto(4, 1.2)}"/>`);
 }
 
 // ---- the view
@@ -5401,6 +5454,8 @@ function mostraGrafo(id, par) {
       <h3>Versetto</h3><div class="grafo-info"><a class="bottone primario" href="#${V.id[i]}">Apri nel lettore</a></div>
       <h3>Esplora</h3>
       <div class="segmenti" role="group"><button type="button" data-esplora="piu">Apri un livello</button><button type="button" data-esplora="chiudi">Chiudi tutto</button></div>
+      <h3>Esporta</h3>
+      <div class="grafo-info"><button type="button" class="bottone" data-pdf title="L’albero intero com’è ora, su una pagina sola: nella finestra di stampa scegli «Salva come PDF»">Esporta in PDF</button></div>
       <h3>Relazioni (rami)</h3>
       ${ORDINE_REL.map(r => `<label class="leg"><input type="checkbox" data-rel="${r}"${S.filtro.has(r) ? ' checked' : ''}>${linea(r)}<span>${REL[r].seg} ${REL[r].nome}</span><span class="n">${conta[r] || 0}</span></label>`).join('')}
       <h3>Schede</h3>
@@ -5410,7 +5465,7 @@ function mostraGrafo(id, par) {
       <div class="leg"><svg width="26" height="16"><rect x="3" y="2" width="20" height="12" fill="var(--biglietto-diz)" stroke="var(--tratto)"/></svg>voce del Dizionario</div>
       <h3>Albero</h3><div class="grafo-info" id="ginfo"></div>
       <details class="grafo-nodi"><summary>Elenco delle schede</summary><ul id="gnodi"></ul></details>
-      <p class="grafo-info nota-grafo">▸ su una scheda apre i suoi collegamenti, raggruppati per relazione; il riferimento la mette al centro (il nome di una voce del Dizionario la apre). Trascina per spostarti, rotella per scorrere, Ctrl + rotella o +/− per lo zoom.</p>
+      <p class="grafo-info nota-grafo">▸ su una scheda apre i suoi collegamenti, raggruppati per relazione; il riferimento la mette al centro (il nome di una voce del Dizionario la apre); − la riduce al titolo, + la mostra intera. Trascina per spostarti, rotella per scorrere, Ctrl + rotella o +/− per lo zoom.</p>
     </div></div>`);
   document.title = `Grafo ${rif(i)} · Esploratore dei versetti`;
   S.ridisegna = null;
@@ -5437,6 +5492,7 @@ function mostraGrafo(id, par) {
     disegnaAlbero(null, true);
   });
   interazioni();
+  $('[data-pdf]').addEventListener('click', stampaAlbero);
   $('[data-lato]')?.addEventListener('click', e => {
     // on the phone the controls are a sheet under the canvas, closed at first (R3 E9)
     const l = $('.grafo-lato'), ap = !l.classList.contains('aperto');
@@ -5545,6 +5601,10 @@ function interazioni() {
     if (b.classList.contains('cresci')) {
       if (n.aperta) n.aperta = false; else apri(n);
       disegnaAlbero(n);
+    } else if (b.classList.contains('minimizza')) {
+      n.ridotta = !n.ridotta;
+      disegnaAlbero(n);
+      n.el.querySelector('.minimizza')?.focus();
     } else if (b.classList.contains('altri')) {
       altri(n, ALB.PIU);
       disegnaAlbero(n);
@@ -5563,6 +5623,32 @@ function zoomAlbero(f, cx, cy) {
   S.av.y = cy - (cy - S.av.y) * (z / S.av.z);
   S.av.z = z;
   applica();
+}
+
+function stampaAlbero() {
+  // the tree as it is now (its open, reduced and filtered cards, in the current style and theme),
+  // whole, on one page of its own size; the print dialog's «Salva come PDF» makes it a PDF with
+  // real text, named after the page title. A PDF page is at most 200 inches: a larger tree is scaled
+  const d = S.albDim, M = 40, alto = M * 0.6 + $('#tela .grafo-titolo').offsetHeight + 24, MAX = 18000;
+  const z = Math.min(1, (MAX - 2 * M) / (d.w + 16), (MAX - alto - M) / (d.h + 16));
+  const pw = Math.ceil((d.w + 16) * z + 2 * M), ph = Math.ceil(alto + (d.h + 16) * z + M);
+  const ch = ph - 2;                                       // the content a hair shorter: no blank second page
+  $('#stampa-grafo')?.remove();
+  document.head.insertAdjacentHTML('beforeend', `<style id="stampa-grafo">
+@page { size: ${pw}px ${ph}px; margin: 0; }
+@media print {
+  html, body { width: ${pw}px !important; height: ${ch}px !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important; }
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  .barra, .pannello, .grafo-lato, .grafo-zoom, #anteprima, #guida, .minimizza { visibility: hidden !important; }
+  .barra, .pannello, .grafo-lato, .grafo-zoom, #anteprima, #guida { display: none !important; }
+  .corpo, main, .grafo-vista { display: block !important; width: ${pw}px !important; height: ${ch}px !important; min-height: 0 !important; }
+  .grafo-tela { width: ${pw}px !important; height: ${ch}px !important; }
+  #mondo { transform: translate(${(M + 8 * z).toFixed(1)}px, ${(alto + 8 * z).toFixed(1)}px) scale(${z.toFixed(4)}) !important; }
+  .grafo-titolo { left: ${M}px !important; top: ${M * 0.6}px !important; max-width: none !important; background: none !important; }
+}</style>`);
+  const via = () => { $('#stampa-grafo')?.remove(); window.removeEventListener('afterprint', via); };
+  window.addEventListener('afterprint', via);
+  window.print();
 }
 
 // ---------------------------------------------------------------- overview
