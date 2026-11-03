@@ -23,7 +23,8 @@ bj-contesto.jsonld:
             the quotations (bj:Discorso): counts by part equal to virgolette.py's, nesting acyclic, spans
             inside existing verses, offsets inside the text at their guillemets
             the time line (eventi.json): one position per event, counts by source, a start and an end,
-            start <= end, in order, the years and periods of the JSON, the dates read in free text
+            start <= end, in order, the sums of the years and the number of periods of the JSON (each field
+            of each event against eventi.json: rdf.py, checks_eventi), the dates read in free text
             (bj:EventoDatato) at their offset in the text of their source, the sentence there, the anchor
             verse the note's, every cited verse a verse backed by a citation of the sentence, same-event
             links symmetric and between equal years
@@ -296,7 +297,7 @@ def integrita_eventi():
         ('time line: each object with its precision and era rule',
          'SELECT (COUNT(?x) AS ?n) WHERE { ?x bj:posizioneLinea ?p FILTER NOT EXISTS { ?x bj:precisione ?r ;'
          ' bj:regolaEra ?e } }', 0),
-        ('time line: in a period of the table (bj:nelPeriodo)',
+        ('time line: in a period of the table (bj:nelPeriodo), as many as in eventi.json',
          'SELECT (COUNT(*) AS ?n) WHERE { ?x bj:nelPeriodo ?s . ?s a bj:SezioneCronologia }',
          sum(1 for e in E if e['periodo'])),
         ('time line: the period of a chronology entry is its section',
@@ -304,7 +305,7 @@ def integrita_eventi():
          ' dcterms:isPartOf ?s } }', 0),
         ('time line: bj:stessoEvento symmetric', 'SELECT (COUNT(*) AS ?n) WHERE { ?a bj:stessoEvento ?b'
          ' FILTER NOT EXISTS { ?b bj:stessoEvento ?a } }', 0),
-        ('time line: bj:stessoEvento, the links of eventi.json both ways',
+        ('time line: bj:stessoEvento, as many triples as the links of eventi.json both ways',
          'SELECT (COUNT(*) AS ?n) WHERE { ?a bj:stessoEvento ?b }', len(coppie)),
         ('time line: the same event, the same years',
          'SELECT (COUNT(*) AS ?n) WHERE { ?a bj:stessoEvento ?b . ?a bj:annoInizio ?x ; bj:annoFine ?y .'
@@ -479,7 +480,7 @@ def integrita_paratesto(P, data):
         ('chronology: entries', conta('bj:EventoCronologia'), len(P['cronologia']['voci'])),
         ('chronology: entries with a year range (their own or their row\'s: all)',
          conta('bj:EventoCronologia', '; bj:annoInizio ?a ; bj:annoFine ?z '), len(P['cronologia']['voci'])),
-        ('chronology: the dates of stage 2c kept (bj:datataDa "tavola", with bj:datazione)',
+        ('chronology: the dates of stage 2c kept (as many bj:datataDa "tavola" with bj:datazione as stage 2c dates)',
          conta('bj:EventoCronologia', '; bj:datataDa "tavola" ; bj:datazione ?d '),
          sum(1 for v in P['cronologia']['voci'] if v['start'] is not None)),
         ('chronology: year ranges out of order',

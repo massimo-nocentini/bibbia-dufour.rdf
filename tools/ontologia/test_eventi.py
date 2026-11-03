@@ -93,7 +93,7 @@ SI = [
     ('Senzio Saturnino legato in Siria (9–6).', 'aC', [('9–6', -9, -6, 'intervallo')]),
     ('Volusio Saturnino, legato in Siria (4–5).', 'dC', [('4–5', 4, 5, 'intervallo')]),
     ('sotto il dominio egiziano; ma nel 605, a Carchemis', 'AT', [('nel 605', -605, -605, 'anno')]),
-    ('Dicembre 589 – gennaio 588.', 'AT', [('589', -589, -589, 'anno'), ('588', -588, -588, 'anno')]),
+    ('Dicembre 589 – gennaio 588.', 'AT', [('Dicembre 589 – gennaio 588', -589, -588, 'intervallo')]),
     # the classes found by the adversarial review (stage 2f, round 1): spans "N/M–K" of the table,
     ('SELEUCO I NICATORE (305/4–281). Nel 300, fonda', 'aC',
      [('305/4–281', -305, -281, 'intervallo'), ('Nel 300', -300, -300, 'anno')]),
@@ -142,6 +142,33 @@ SI = [
      [('verso l’inizio della nostra èra', 1, 25, 'secolo')]),
     ('un rigurgito dell’antica corrente: alla vigilia della nostra èra, l’attesa', 'AT',
      [('alla vigilia della nostra èra', -25, -1, 'secolo')]),
+    # the review of the feature: spans with months or parts of a year at their ends are one event (D4), «N o nel M»
+    # one event with the other year, the turn of the era said with «èra cristiana» (D9), the part of a decade (D10)
+    ('e del nono anno: fra dicembre del 589 e gennaio del 588, termine', 'AT',
+     [('fra dicembre del 589 e gennaio del 588', -589, -588, 'intervallo')]),
+    ('Dicembre del 586 – gennaio del 585, ma questa data', 'AT', [('Dicembre del 586 – gennaio del 585', -586, -585, 'intervallo')]),
+    ('cioè tra la fine del 486 e l’inizio del 485.', 'AT', [('tra la fine del 486 e l’inizio del 485', -486, -485, 'intervallo')]),
+    ('centosettantadue: tra l’ottobre del 141 e il settembre del 140.', 'AT',
+     [('tra l’ottobre del 141 e il settembre del 140', -141, -140, 'intervallo')]),
+    ('va quindi dal 19 agosto del 28 al 18 agosto del 29, oppure', 'NT',
+     [('dal 19 agosto del 28 al 18 agosto del 29', 28, 29, 'intervallo')]),
+    ('in Siria, dal settembre-ottobre del 27 al settembre-ottobre del 28.', 'NT',
+     [('dal settembre-ottobre del 27 al settembre-ottobre del 28', 27, 28, 'intervallo')]),
+    ('secondo viaggio tra l’autunno 48 e l’estate 49 (At 16,12–40).', 'NT', [('tra l’autunno 48 e l’estate 49', 48, 49, 'intervallo')]),
+    ('(At 18,1–18), dalla primavera del 50 alla fine dell’estate del 51.', 'NT',
+     [('dalla primavera del 50 alla fine dell’estate del 51', 50, 51, 'intervallo')]),
+    ('al periodo che va dal 626 circa al luglio del 587.', 'AT', [('dal 626 circa al luglio del 587', -626, -587, 'circa')]),
+    ('quella di Tiglat-Pilèser III nel 735 o nel 732, quella', 'AT', [('nel 735 o nel 732', -735, -732, 'intervallo')]),
+    ('martire a Roma sotto Nerone, nel 64 o nel 67.', 'NT', [('nel 64 o nel 67', 64, 67, 'intervallo')]),
+    ('fissato dagli ebrei di Palestina sull’inizio dell’èra cristiana, è', 'moderno',
+     [('sull’inizio dell’èra cristiana', 1, 25, 'secolo')]),
+    ('in molte opere apocrife scritte intorno all’èra cristiana. Il NT', 'NT', [('intorno all’èra cristiana', -25, 25, 'circa')]),
+    ("Nel giudaismo vicino all'era cristiana, il legato", None, [("vicino all'era cristiana", -25, 25, 'circa')]),
+    ('la divisione in cinque libri è attestata prima della nostra èra dalla', 'AT',
+     [('prima della nostra èra', -25, -1, 'secolo')]),
+    ('nel 63 prima della nostra èra', 'AT', [('nel 63 prima della nostra èra', -63, -63, 'anno')]),
+    ('va fatto risalire pressappoco al 605 la', 'AT', [('al 605', -605, -605, 'circa')]),
+    ('all’inizio degli anni 40 scrive', 'NT', [('degli anni 40', 40, 42, 'intervallo')]),
 ]
 # never a year: no expression at all
 NIENTE = [
@@ -184,6 +211,7 @@ NO = [
     ('Dalla fine del secolo XIX in poi', 'AT', 'secolo ≥ XV'),
     ('morì nel 4, a Gerico', 'NT', 'una cifra'),
     ('dall’8 al 14 del settimo mese', 'AT', 'una cifra'),
+    ('L’«èra cristiana» (fissata da Dionigi) fa cominciare all’anno 782 di Roma il', 'NT', 'anno di un’altra era'),
     ('il giudaismo rabbinico, dopo il 70, conosce', None, 'era incerta'),
     ('salto del copista dal 1° «Israele» al 3°', 'AT', 'ordinale'),
     ('all’inizio del terzo millennio, le stampe', 'moderno', 'millennio in un testo moderno'),
@@ -267,6 +295,15 @@ LIMITI = [
     ('possiamo risalire circa fino all’VIII secolo e non', None),
     ('tetrarca dal 4 a.C. al 39 d.C.', None),
     ('nel 587, la città', None),
+    # the review of the feature (D9, D10)
+    ('morì nel 43, in ogni caso prima della fine del febbraio 44. Letterariamente', 'ante'),
+    ('Infine a partire dal regno di Erode (37), i sommi sacerdoti', 'post'),
+    ('a partire dal sinodo romano del 382, il', 'post'),
+    ('computato a partire dalla primavera (del 311).', None),
+    ('elaborata a partire dalle due precedenti edizioni (1955 e 1973), che', None),
+    ('la tradizione giudaica posteriore all’èra cristiana ha seguito', 'post'),
+    ('è attestata prima della nostra èra dalla versione', 'ante'),
+    ('al periodo che va dal 626 circa al luglio del 587.', None),
 ]
 
 
@@ -276,8 +313,8 @@ def test_limiti():
     bad = []
     for testo, atteso in LIMITI:
         x = EV.espressioni(testo)
-        if not x or x[0]['limite'] != atteso:
-            bad.append((testo, x and x[0]['limite']))
+        if not x or x[-1]['limite'] != atteso:
+            bad.append((testo, x and x[-1]['limite']))
     assert not bad, bad
 
 
@@ -323,9 +360,9 @@ REALI = {
     'ev:note:Josh.3.16@41': ('nel 1267', 1267, 1267, 'anno', 'correzione'),          # «un cronista arabo»
     'ev:note:Luke.3.1@969': ('dal 26 al 36 d.C.', 26, 36, 'intervallo', 'suffisso'), # Ponzio Pilato
     'ev:note:Luke.3.1@1083': ('dal 4 a.C. al 39 d.C.', -4, 39, 'intervallo', 'suffisso'),  # Erode Antipa
-    'ev:esilio.1@428': ('nel 597', -597, -597, 'anno', 'fonte AT'),                 # Dizionario, ESILIO
-    'ev:esilio.1@437': ('587', -587, -587, 'anno', 'fonte AT'),
-    'ev:esilio.1@442': ('582', -582, -582, 'anno', 'fonte AT'),
+    'ev:esilio.1@428': ('nel 597', -597, -597, 'anno', 'riferimenti AT'),           # Dizionario, ESILIO (no section VT)
+    'ev:esilio.1@437': ('587', -587, -587, 'anno', 'riferimenti AT'),
+    'ev:esilio.1@442': ('582', -582, -582, 'anno', 'riferimenti AT'),
     'ev:prefazione-filippi.4@0': ('Nel 1956', 1956, 1956, 'anno', 'fonte moderna'),
     'ev:note:Amos.1.1@195': ('783–743', -783, -743, 'intervallo', 'ordine'),
     'ev:cronologia.85': ('841', -841, -841, 'anno', 'tavola'),                      # «841 Salmanassar III vince…»
@@ -362,6 +399,19 @@ REALI = {
     'ev:note:Acts.23.24@131': ('dal 52 al 59 o 60', 52, 60, 'intervallo', 'fonte NT'),
     'ev:intro-paolo.2@74': ('verso l’inizio della nostra èra', 1, 25, 'secolo', 'suffisso'),
     'ev:giorno-del-signore.2@249': ('dal sec. VIII al sec. IV', -800, -301, 'secolo', 'ordine'),
+    # the review of the feature: spans with months (D4: the ids moved to the start of the span), the datings by their
+    # own words (D5), the turn of the era (D9), the testament of the references said so (D13)
+    'ev:note:Jer.39.1_2@31': ('fra dicembre del 589 e gennaio del 588', -589, -588, 'intervallo', 'ordine'),
+    'ev:note:Luke.3.1@251': ('dal 19 agosto del 28 al 18 agosto del 29', 28, 29, 'intervallo', 'ordine'),
+    'ev:note:Jer.1.2@45': ('dal 626 circa al luglio del 587', -626, -587, 'circa', 'ordine'),
+    'ev:cronologia.431': ('dal 19 agosto del 28 al 18 agosto del 29', 28, 29, 'intervallo', 'ordine'),
+    'ev:note:Isa.5.26@120': ('nel 735 o nel 732', -735, -732, 'intervallo', 'fonte AT'),
+    'ev:datazione.96-1': ('750 ca.', -750, -750, 'circa', 'la voce della tavola'),     # not GEROBOAMO II (783–743)
+    'ev:datazione.492-30': ('Dal 53', 53, 53, 'anno', 'la voce della tavola'),
+    'ev:datazione.238-18': ('336–323', -336, -323, 'intervallo', 'la voce della tavola'),   # «Del tempo di Alessandro»
+    'ev:divisione-ebraica.1@65': ('sull’inizio dell’èra cristiana', 1, 25, 'secolo', 'suffisso'),
+    'ev:intro-apocalisse.2@303': ('intorno all’èra cristiana', -25, 25, 'circa', 'suffisso'),
+    'ev:eresia.5@796': ('del 49', 49, 49, 'anno', 'riferimenti NT, ≤ 135'),
 }
 
 
@@ -386,7 +436,7 @@ def test_reali():
         bad.append(('esodo', x['versetti']))
     # rows and periods of the table: undated entries by their row
     for k, (s, e, da) in {'ev:cronologia.400': (-6, -4, 'riga: date delle altre voci'),         # Nascita di GESÙ
-                          'ev:cronologia.551': (72, 81, 'riga: tra le righe vicine'),
+                          'ev:cronologia.551': (74, 81, 'riga: tra le righe vicine'),     # after «Masada (Pasqua 74)»
                           'ev:cronologia.247': (-323, -300, 'riga: tra le righe vicine'),        # In Egitto: i LAGIDI
                           'ev:cronologia.19': (-1700, -1700, 'riga: anno a margine'),
                           # between the dated entries of its column (review of stage 5)
@@ -404,6 +454,12 @@ def test_reali():
     pos = {x['id']: k for k, x in enumerate(E['eventi'])}
     if [pos['ev:cronologia.%d' % n] for n in range(537, 543)] != sorted(pos['ev:cronologia.%d' % n] for n in range(537, 543)):
         bad.append('order of the entries 537-542')
+    # an entry placed by its row comes after the entry printed above it in its column, in its row or in the
+    # rows above (fix D2 of the review of the feature), and a heading before the entry under it (D12)
+    for su, giu in [(239, 240), (272, 273), (461, 462), (578, 579), (298, 300), (121, 126), (382, 384), (479, 482),
+                    (81, 82), (218, 219), (549, 551), (550, 552), (119, 120), (55, 60), (56, 63)]:
+        if pos['ev:cronologia.%d' % su] > pos['ev:cronologia.%d' % giu]:
+            bad.append('entry %d shown before %d, printed above it' % (giu, su))
     if (ev['ev:cronologia.408']['inizio'], ev['ev:cronologia.408']['era']) != (-4, 'a.C.–d.C.'):
         bad.append(('era 408', ev['ev:cronologia.408']['era']))
     # a hypothesis of the table is uncertain; «dall’anno 200» is a lower bound
@@ -428,6 +484,27 @@ def test_reali():
         bad.append('alternativa not signed')
     if ev['ev:carta.esodo']['apri'] != '#carte?c=esodo':
         bad.append(('carta apri', ev['ev:carta.esodo']['apri']))
+    # review of the feature: a death of the dynasties only to the entry of the death (D3), no link from a bound, a
+    # note to the entry citing its verse in a passage, not in a whole chapter (1Mac 7)
+    if ev['ev:dinastie.P29'].get('stesso_evento') != ['ev:cronologia.465'] or \
+            ev['ev:intro-profeti.49@371'].get('stesso_evento') or ev['ev:note:1Macc.7.1@266'].get('stesso_evento'):
+        bad.append(('stesso evento P29 / bound / chapter', ev['ev:dinastie.P29'].get('stesso_evento')))
+    for x, y in [('ev:note:Isa.6.1_2@48', 'ev:cronologia.104'), ('ev:note:Jer.46.2@170', 'ev:cronologia.163'),
+                 ('ev:note:Dan.11.19@171', 'ev:cronologia.284')]:
+        if y not in ev[x].get('stesso_evento', ()):
+            bad.append(('stesso evento by the note\'s verse', x, y))
+    # «prima del 70? o verso l’80?»: 80 with the other hypothesis, in the entry and its dating (D5); bounds and circa
+    # said by the words before (D10); no sentence opens with the dash of a lemma (D14)
+    if ev['ev:datazione.96-1'].get('stesso_evento') or 'ev:datazione.96-1' in ev['ev:cronologia.96'].get('stesso_evento', ()):
+        bad.append('a dating with years of its own is not the same event as its entry')
+    if (ev['ev:cronologia.519'].get('alternativa'), ev['ev:datazione.519-36'].get('alternativa')) != (70, 70):
+        bad.append('alternativa 519')
+    if (ev['ev:note:Acts.12.1@249']['limite'], ev['ev:sacerdozio.9@790']['limite'], ev['ev:intro-tobia.5@414']['limite'],
+            ev['ev:note:Jer.49.7@44']['circa'], ev['ev:intro-paolo.2@1223']['fine']) != ('ante', 'post', 'post', True, 42):
+        bad.append('limite / circa / decade')
+    trattino = [x['id'] for x in E['eventi'] if (x['frase'] or '').startswith('—') or x['etichetta'].startswith('—')]
+    if trattino:
+        bad.append(('sentence opening with a dash', trattino[:5]))
     assert not bad, bad
 
 
@@ -455,7 +532,7 @@ def test_cronologia():
 def test_conteggi():
     E = dati()
     c = Counter(e['fonte'] for e in E['eventi'])
-    atteso = dict(cronologia=585, dinastie=6, datazione=40, carta=8, nota=557, introduzione=268, testo=25, dizionario=66)
+    atteso = dict(cronologia=585, dinastie=6, datazione=40, carta=8, nota=546, introduzione=267, testo=26, dizionario=68)
     assert dict(c) == atteso, dict(c)
     s = E['meta']['summary']
     assert s['fonti'] == dict(c) and s['eventi'] == len(E['eventi']) and s['non_datati'] == len(E['non_datati'])
@@ -486,6 +563,24 @@ def test_ordine():
         if a['sorgente'] == b['sorgente'] and (a['inizio'], a['fine']) == (b['inizio'], b['fine']) and \
                 a['offset'] is not None and b['offset'] is not None:
             assert a['offset'] < b['offset'], (a['id'], b['id'])
+
+
+def test_periodi():
+    """The periods by their numbers, not by the code that makes them (review of the feature, C7): the start of each
+    period is in it, the year before is in the one before; the HTML cut keeps its tags open and closed."""
+    per = dati()['periodi']
+    assert [(p['inizio'], p['fine']) for p in per] == [
+        (-2000000, -3001), (-3000, -1501), (-1500, -1201), (-1200, -932), (-931, -722), (-721, -539), (-538, -334),
+        (-333, -64), (-63, 135)], per
+    casi = [(-538, 7), (-539, 6), (-721, 6), (-722, 5), (-63, 9), (-64, 8), (135, 9), (136, None), (-2000000, 1),
+            (-2000001, None), (1, 9)]
+    got = [(y, EV.periodo_di(y, per)) for y, _ in casi]
+    assert got == casi, got
+    h = '<p>Nel <em>tempo di <b>Erode</b> il</em> grande</p>'
+    assert EV.taglia_html(h, h.index('tempo'), h.index(' il</em>')) == '<p><em>tempo di <b>Erode</b></em></p>'
+    assert EV.taglia_html(h, h.index('Erode'), h.index('grande')) == '<p><em><b>Erode</b> il</em> </p>'
+    assert EV.bilanciato('<em>a <b>b</b></em>') and not EV.bilanciato('<em>a</b>') and not EV.bilanciato('<em>a') \
+        and EV.bilanciato('a<br>b')
 
 
 def test_non_datati():
@@ -519,7 +614,7 @@ def test_html():
 
 
 TESTS = [test_regole, test_frasi, test_limiti, test_riferimenti_mai_anni, test_reali, test_cronologia, test_conteggi, test_ordine,
-         test_non_datati, test_correzioni, test_html]
+         test_periodi, test_non_datati, test_correzioni, test_html]
 
 
 def main(a):

@@ -1189,6 +1189,172 @@ try {
     sT.font === 'et-book-roman-old-style' && sT.colore === rgb(sT.inchiostro) && sT.banda === rgb(sT.inchiostro) && sG.font === 'Literata' && sG.colore === rgb(sG.rubrica) && sG.banda === rgb(sG.rubrica) &&
     sGd.colore === rgb(sGd.rubrica) && sGd.rubrica !== sG.rubrica && sTd.colore === rgb(sTd.inchiostro) && sTd.inchiostro !== sT.inchiostro && [sT, sG, sGd, sTd].every(x => x.barre > 50 && x.largo <= 1366),
     JSON.stringify([sT, sG, sGd, sTd].map(x => [x.font, x.colore, x.banda])));
+  // review of the feature (37 findings): the part of a millennium, the era of an ascending span, the bounds, the
+  // column filter, «Vai all’anno» with its era, words with «&», PageUp, the strip's years, the filters and Back
+  // (the waits give up after 5 s: a check that does not hold fails, it does not stop the test)
+  const aspetta = f => p.waitForFunction(f, null, { timeout: 5000 }).catch(() => {});
+  // a time line address, and the view drawn for it (the rows of the view before are still there meanwhile)
+  const vaiT = async h => { await p.evaluate(h => { location.hash = h; }, h);
+    await aspetta(() => S.vista === 'tempo' && S.tm && S.tm.chiave === hashTempo(statoTempo(parametri(viaAttuale().query)))); await p.waitForTimeout(150); };
+  await vaiT('#tempo');
+  const r1 = await p.evaluate(() => { const g = id => T.ev[T.idx.get(id)], gr = id => document.querySelector(`#tm-${T.idx.get(id)}`).closest('.tm-gruppo').querySelector('.tm-anni').textContent.replace(/\s+/g, ' ').trim();
+    const pos = id => [...document.querySelectorAll(`#tm-${T.idx.get(id)} .tm-pos`)].map(x => x.textContent).join();
+    return { mill: gr('note:Gen.11.31@444'), sec: testoAnni(g('cronologia.562')), sale: document.querySelector(`#tm-${T.idx.get('note:Acts.11.28@36')} mark.tm-data`).title,
+      scende: regolaT(g('note:Josh.15.45@92')), rif: regolaT(g('esilio.1@428')), ante: pos('note:Acts.12.1@249'), post: pos('sacerdozio.9@790') }; });
+  verifica('tempo: parte di un millennio, era di un intervallo crescente e dei passi citati, «non dopo» e «non prima» (C1, C2, D13, C8)',
+    r1.mill === 'inizio II mill. a.C.' && r1.sec === 'fine I sec. d.C.' && r1.sale.endsWith('intervallo crescente: d.C.') && r1.scende.endsWith('intervallo decrescente: a.C.') &&
+    r1.rif.endsWith('passi citati dell’Antico Testamento: a.C.') && r1.ante === 'non dopo' && r1.post === 'non prima', JSON.stringify(r1));
+  const colonna = 'egitto', voceCol = Object.fromEntries(EV.eventi.filter(e => e.fonte === 'cronologia').map(e => [e.cronologia.voce, e.cronologia.colonna]));
+  const nCol = EV.eventi.filter(e => (e.fonte === 'cronologia' ? e.cronologia.colonna : e.fonte === 'datazione' ? voceCol[e.voce] : null) === colonna).length;
+  await vaiT(`#tempo?c=${colonna}`);
+  await aspetta(() => S.tm.st.col >= 0);
+  const r2 = await p.evaluate(() => ({ n: document.querySelectorAll('#tm-lista .tm-ev').length, sel: document.querySelector('#tm-col').value,
+    tutte: [...document.querySelectorAll('#tm-lista .tm-ev')].every(x => colonnaT(T.ev[+x.dataset.k]) === A.cron.col[S.tm.st.col][1]) }));
+  verifica('tempo: il filtro di una colonna della tavola (c=egitto) mostra le sue voci e datazioni (C8)', r2.n === nCol && r2.sel === colonna && r2.tutte, `${JSON.stringify(r2)} attesi ${nCol}`);
+  await vaiT('#tempo');
+  const vaiAnno = async (t, era) => { await p.fill('#tm-anno', t); await p.selectOption('#tm-era', era); await p.press('#tm-anno', 'Enter'); await p.waitForTimeout(400);
+    return p.evaluate(() => [parametri(viaAttuale().query).a, T.ev[S.tm.vis[primoVisibile()]][3], document.activeElement?.classList.contains('tm-ev')]); };
+  const ya = await vaiAnno('587', 'a'), yd = await vaiAnno('587', 'd');
+  verifica('tempo: «Vai all’anno» 587 con a.C. e con d.C.; il fuoco passa alla riga (C8, I5)', ya[0] === '-587' && ya[1] === -587 && ya[2] && yd[0] === String(yd[1]) && yd[1] >= 587 && yd[2], JSON.stringify([ya, yd]));
+  await p.fill('#tm-q', 'Gerusalemme & Babilonia');
+  await aspetta(() => S.tm.st.q === 'Gerusalemme & Babilonia');
+  const r3 = await p.evaluate(() => [location.hash.includes('q=Gerusalemme%20%26%20Babilonia'), parametri(viaAttuale().query).q]);
+  // Back while the words are in the field: the field follows the address (I4)
+  await vaiT('#tempo');
+  await aspetta(() => S.tm.st.q === '');
+  await p.click('[data-tf="nota"]');
+  await aspetta(() => location.hash.includes('f='));
+  await p.fill('#tm-q', 'Ciro');
+  await aspetta(() => location.hash.includes('q=Ciro'));
+  await p.goBack();
+  await aspetta(() => !location.hash.includes('q=Ciro'));
+  await p.waitForTimeout(200);
+  const r4 = await p.evaluate(() => [document.querySelector('#tm-q').value, S.tm.st.q, document.querySelectorAll('#tm-lista .tm-ev').length]);
+  verifica('tempo: parole con «&» nell’indirizzo; Indietro svuota anche il campo delle parole (C8, I4)', r3[0] && r3[1] === 'Gerusalemme & Babilonia' && r4[0] === '' && r4[1] === '' && r4[2] > 0, JSON.stringify([r3, r4]));
+  // the last source turned off: no source, not every source (I3)
+  await vaiT('#tempo?f=cronologia');
+  await p.click('[data-tf="cronologia"]');
+  await aspetta(() => location.hash === '#tempo?f=');
+  const r5 = await p.evaluate(() => [document.querySelectorAll('#tm-lista .tm-ev').length, !!document.querySelector('#tm-lista .vuoto'), document.querySelectorAll('[data-tf][aria-pressed="true"]').length,
+    document.querySelector('#tm-striscia').getAttribute('aria-valuenow'), document.querySelector('#tm-striscia').getAttribute('aria-valuetext')]);
+  verifica('tempo: spenta l’ultima fonte non resta nessun evento; il cursore dice «nessun evento» (I3, I12)', r5[0] === 0 && r5[1] && r5[2] === 0 && r5[3] === '0' && r5[4] === 'nessun evento', JSON.stringify(r5));
+  // the words typed and the view left at once: the timer of the field does nothing (C4); an address with a year that is
+  // not a number goes to the top (I9); the notice of a hidden event goes when a filter shows it (C6)
+  await vaiT('#tempo');
+  await p.fill('#tm-q', 'Erode');
+  await p.evaluate(() => { location.hash = '#cronologia'; });
+  await p.waitForTimeout(500);
+  const r6 = await hash(p);
+  await vaiT('#tempo?a=abc');
+  await p.waitForTimeout(400);
+  const r7 = await p.evaluate(() => [window.scrollY, location.hash]);
+  await vai_('#tempo?f=cronologia&e=note:2Kgs.25.8@66', '.tm-avviso');
+  await p.evaluate(() => window.scrollBy(0, 120));
+  await p.waitForTimeout(400);
+  await p.evaluate(() => document.querySelector('[data-tf="nota"]').click());       // (no scroll to the button)
+  await aspetta(() => S.tm.st.fonti.has('nota'));
+  await p.waitForTimeout(200);
+  const r8 = await p.evaluate(() => [!!document.querySelector('.tm-avviso'), location.hash, window.scrollY > 0]);
+  verifica('tempo: lasciata la vista mentre si scrive, l’indirizzo resta; a=abc in cima; l’avviso «nascosto» se ne va col filtro (C4, I9, C6)',
+    r6 === '#cronologia' && r7[0] === 0 && r7[1] === '#tempo?a=abc' && !r8[0] && r8[2], JSON.stringify([r6, r7, r8]));
+  // a highlighted event left for a year of the same view: no highlight (I8); PageUp to the start of the period (C8);
+  // Tab from the strip to the rows on screen, not to the first period (I5)
+  await vai_('#tempo?e=cronologia.161', '#tm-lista .tm-ev.sel');
+  await vaiT('#tempo?a=-622');
+  await p.waitForTimeout(300);
+  const r9 = await p.evaluate(() => document.querySelectorAll('#tm-lista .tm-ev.sel').length);
+  await vaiT('#tempo');
+  await p.focus('#tm-striscia');
+  for (let k = 0; k < 5; k++) await p.keyboard.press('PageDown');
+  await p.waitForTimeout(200);
+  const pd = await p.evaluate(() => [T.ev[S.tm.vis[primoVisibile()]][8], primoVisibile()]);
+  await p.keyboard.press('PageUp');
+  await p.waitForTimeout(200);
+  const pu = await p.evaluate(() => [T.ev[S.tm.vis[primoVisibile()]][8], T.ev[S.tm.vis[primoVisibile() - 1]][8]]);
+  const y0 = await p.evaluate(() => window.scrollY);
+  await p.keyboard.press('Tab');
+  await p.waitForTimeout(200);
+  const r10 = await p.evaluate(() => { const a = document.activeElement, r = a.getBoundingClientRect(); return [a.classList.contains('tm-ev'), T.ev[+a.dataset.k]?.[8], r.top < innerHeight && r.bottom > 0, window.scrollY]; });
+  await p.keyboard.press('Tab');
+  const r11 = await p.evaluate(() => !!document.activeElement.closest('.tm-ev'));
+  verifica('tempo: niente evidenza lasciata da un altro evento; PagSu all’inizio del periodo; Tab dalla striscia alle righe sullo schermo (I8, C8, I5)',
+    r9 === 0 && pu[0] === pd[0] - 1 && pu[1] !== pu[0] && r10[0] && r10[1] === pu[0] && r10[2] && Math.abs(r10[3] - y0) < 2 && r11, JSON.stringify([r9, pd, pu, r10, r11]));
+  // Back to a highlighted event whose place this history entry keeps (memoTempo): the place and the focus on its row
+  // (I8; the list is not redrawn, so the focus would stay on the row of the event left)
+  await vai_('#tempo?e=cronologia.161', '#tm-lista .tm-ev.sel');
+  await p.waitForTimeout(400);
+  await vaiT('#tempo?e=cronologia.300');
+  await aspetta(() => document.activeElement?.classList.contains('tm-ev') && T.ev[+document.activeElement.dataset.k][0] === 'cronologia.300');
+  await p.goBack();
+  await aspetta(() => document.querySelector('#tm-lista .tm-ev.sel') && T.ev[+document.querySelector('#tm-lista .tm-ev.sel').dataset.k][0] === 'cronologia.161');
+  await p.waitForTimeout(200);
+  const r11b = await p.evaluate(() => { const a = document.activeElement, r = a.getBoundingClientRect();
+    return [decodeURIComponent(location.hash), a.classList.contains('sel') && T.ev[+a.dataset.k]?.[0], r.top >= altoTempo() - 2 && r.bottom < innerHeight]; });
+  verifica('tempo: Indietro su un evento evidenziato: la riga al suo posto e col fuoco (I8)',
+    /^#tempo\?e=cronologia\.161&a=-?\d+&r=/.test(r11b[0]) && r11b[1] === 'cronologia.161' && r11b[2], JSON.stringify(r11b));
+  // the strip: every bar names the years it holds, with no year off by one, and the years of the events counted there (I6)
+  const r12 = await p.evaluate(() => { try {
+    const anno = t => { const m = t.match(/^(\d[\d.]*) (a\.C\.|d\.C\.)$/); return m ? (m[2] === 'a.C.' ? -1 : 1) * +m[1].replace(/\./g, '') : null; };
+    const leggi_ = t => { let m = t.match(/^(.+) – (.+)$/); if (m) return [anno(m[1]), anno(m[2])];
+      m = t.match(/^([\d.]+)–([\d.]+) (a\.C\.|d\.C\.)$/); const k = m[3] === 'a.C.' ? -1 : 1; return [k * +m[1].replace(/\./g, ''), k * +m[2].replace(/\./g, '')]; };
+    const male = [];
+    S.tm.nb.forEach((nb, s) => { for (let b = 0; b < nb; b++) {
+      const [lo, hi] = leggi_(anniSegmento(s, b)), barra = y => Math.floor(xEvento({ 3: y, 8: s === 9 ? 0 : s + 1 })[1] * nb), ev = S.tm.anni[s][b];
+      if (s > 0 && s < 9 && !ev && (barra(lo) !== b || barra(hi) !== b || lo === 0 || hi === 0)) male.push([s, b, lo, hi]);
+      if (ev && (ev[0] < lo || ev[1] > hi)) male.push([s, b, lo, hi, ev]);
+    } });
+    return [male.length, male.slice(0, 3), anniSegmento(5, S.tm.anni[5].findIndex(x => x && x[0] === -650 && x[1] === -650))]; } catch (e) { return [-1, String(e)]; } });
+  verifica('tempo: gli anni di ogni barra della striscia sono i suoi (nessuno spostato di uno) e comprendono i suoi eventi (I6)', r12[0] === 0 && /^6\d0–650 a\.C\.$/.test(r12[2]), JSON.stringify(r12));
+  // the marks of a date placed by its row outside the view: the panel of Gen 1,1 and Isaiah's page (I7)
+  await vai_('#Gen.1.1', '#pannello:not([hidden]) .sez.tm-sez');
+  const r13 = await p.evaluate(() => [...document.querySelectorAll('#pannello .tm-sez li')].find(li => li.querySelector('a').getAttribute('href') === '#tempo?e=cronologia.2')?.textContent || '');
+  await vai_('#Isa', '.tm-link');
+  const r14 = await p.evaluate(() => [...document.querySelectorAll('.tm-link')].map(a => a.parentNode.textContent).find(t => /Ministero/.test(t) || /721|716/.test(t)) || '');
+  verifica('tempo: «≈ dalla riga» anche nel pannello (Gen 1,1) e nella pagina del libro (Isaia) (I7)', r13.includes('≈ dalla riga') && r14.includes('≈ dalla riga'), JSON.stringify([r13.slice(0, 90), r14.slice(0, 120)]));
+  // one tab active after a resize across 1280 px (I12)
+  await vaiT('#tempo');
+  await p.setViewportSize({ width: 1024, height: 900 });
+  await p.waitForTimeout(400);
+  const t1024 = await p.evaluate(() => [...document.querySelectorAll('.schede a.attiva')].filter(a => a.offsetParent).map(a => a.dataset.vista).join());
+  await p.setViewportSize({ width: 1366, height: 900 });
+  await p.waitForTimeout(400);
+  const t1366 = await p.evaluate(() => [...document.querySelectorAll('.schede a.attiva')].filter(a => a.offsetParent).map(a => a.dataset.vista).join());
+  verifica('tempo: una sola scheda attiva dopo un ridimensionamento (I12)', t1024 === 'apparati' && t1366 === 'tempo', JSON.stringify([t1024, t1366]));
+  // a copied address, opened with no history: the event of e= in view (not the year a=), the row of r=, a year in its
+  // period (I1, I2); a map id that is not a selector (C5)
+  const fresco = async h => {
+    const c = await browser.newContext({ viewport: { width: 1366, height: 900 } }), q = await c.newPage(), errori = [];
+    q.on('pageerror', e => errori.push('pageerror: ' + e.message));
+    q.on('console', m => { if (m.type() === 'error') errori.push('error: ' + m.text()); });
+    await q.goto(URL + h);
+    await q.waitForFunction(() => window.__esploratore, null, { timeout: 8000 }).catch(() => errori.push('la pagina non finisce di partire'));
+    await q.waitForTimeout(700);
+    return [c, { p: q, errori }];
+  };
+  const [cf1, x1] = await fresco('#tempo?e=cronologia.64&a=-931&r=cronologia.53');
+  const r15 = await x1.p.evaluate(() => { const x = document.querySelector('.tm-ev.sel'), r = x?.getBoundingClientRect(); return [x && T.ev[+x.dataset.k][0], !!r && r.top >= document.querySelector('.tm-testa').getBoundingClientRect().bottom - 2 && r.bottom <= innerHeight, document.activeElement === x]; });
+  await x1.p.evaluate(() => { location.hash = '#tempo?a=-721'; });
+  await x1.p.waitForTimeout(500);
+  const r16 = await x1.p.evaluate(() => T.ev[S.tm.vis[primoVisibile()]][8]);
+  await x1.p.evaluate(() => window.scrollBy(0, 2500));
+  await x1.p.waitForTimeout(700);
+  const copia = await x1.p.evaluate(() => [location.hash, T.ev[S.tm.vis[primoVisibile()]][0]]);
+  const err1 = x1.errori.slice();
+  await cf1.close();
+  const [cf2, x2] = await fresco(copia[0]);
+  const r17 = await x2.p.evaluate(() => T.ev[S.tm.vis[primoVisibile()]][0]);
+  await x2.p.evaluate(() => { location.hash = '#carte?c=x['; });
+  await x2.p.waitForTimeout(300);
+  const r18 = await x2.p.evaluate(() => [S.vista, document.title]);
+  const err2 = x2.errori.slice();
+  await cf2.close();
+  const [cf3, x3] = await fresco('#carte?c=x[');
+  const r19 = await x3.p.evaluate(() => [S.vista, !!window.__esploratore]);
+  const err3 = x3.errori.slice();
+  await cf3.close();
+  verifica('tempo: un indirizzo copiato apre l’evento in vista col fuoco, a=-721 nel periodo VI, r= sulla stessa riga; #carte?c=x[ senza errori (I1, I2, C5)',
+    r15[0] === 'cronologia.64' && r15[1] && r15[2] && r16 === 6 && /[?&]r=/.test(copia[0]) && r17 === copia[1] && r18[0] === 'apparati' && r19.join() === 'apparati,true' && !err1.length && !err2.length && !err3.length,
+    JSON.stringify([r15, r16, copia, r17, r18, r19, err1, err2, err3]));
   verifica('nessun errore in console (desktop)', errori.length === 0, errori.slice(0, 5).join(' | '));
   await ctx.close();
 
@@ -1363,6 +1529,19 @@ try {
   await foto(m.p, 'T11-telefono-tempo-filtri');
   verifica('nessun errore in console (390 px)', m.errori.length === 0, m.errori.slice(0, 5).join(' | '));
   await tel.close();
+  // 320 px (review of the feature, I11): «dopo» clear of the IX in both styles, no horizontal scrolling
+  const c320 = await browser.newContext({ viewport: { width: 320, height: 700 }, hasTouch: true, isMobile: true });
+  const m320 = await apri(c320, '#tempo');
+  await m320.p.waitForSelector('.tm-set');
+  const d320 = async () => { await m320.p.waitForTimeout(300); return m320.p.evaluate(() => {
+    const [ix, x] = [...document.querySelectorAll('.tm-set')].slice(-2), r = document.createRange();
+    const testo = el => { r.selectNodeContents(el); return r.getBoundingClientRect(); };
+    return [x.textContent, +(testo(x).left - testo(ix).right).toFixed(1), testo(x).right <= innerWidth, document.documentElement.scrollWidth <= 320]; }); };
+  const d320T = await d320();
+  await m320.p.selectOption('#stile', 'giardino');
+  const d320G = await d320();
+  verifica('tempo 320 px: «dopo» staccato dal IX (Tufte, Giardino), niente scorrimento orizzontale', [d320T, d320G].every(d => d[0] === 'dopo' && d[1] >= 3 && d[2] && d[3]), JSON.stringify([d320T, d320G]));
+  await c320.close();
 } finally {
   await browser.close();
 }

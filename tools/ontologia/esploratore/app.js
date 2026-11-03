@@ -725,6 +725,7 @@ function viaAttuale() {
   return { via: dec(q < 0 ? raw : raw.slice(0, q)), query: q < 0 ? '' : raw.slice(q + 1) };
 }
 function instrada() {
+  clearTimeout(tqTempo);                             // the words typed in the time line, not yet in the address
   nascondiAnteprima();
   if (S.tipTempo) S.tipTempo.hidden = true;
   if (S.tipSpark) S.tipSpark.hidden = true;          // the tooltip of the overview, left over by a click
@@ -751,12 +752,16 @@ function instrada() {
     else mostraIndiceAnalitico(v0 === 'temi' ? 'temi' : 'note', arg, parametri(query));
   }
   else vista = mostraRif(via, parametri(query));
-  $$('.schede a').forEach(a => a.classList.toggle('attiva', a.dataset.vista === vista ||
-    (vista === 'lettore' && a.dataset.vista === 'indice') || (vista === 'panoramica' && a.dataset.vista === 'apparati' && window.innerWidth <= 720) ||
-    (vista === 'tempo' && a.dataset.vista === 'apparati' && !$('.schede a[data-vista="tempo"]').offsetParent)));
+  segnaScheda(vista);
   S.vista = vista;
   if (vista !== 'lettore') chiudiPannello(false);
   annuncia(document.title);
+}
+function segnaScheda(vista) {
+  // the tab of the view; a view whose tab is hidden at this width marks the tab that holds it (also on a resize)
+  $$('.schede a').forEach(a => a.classList.toggle('attiva', a.dataset.vista === vista ||
+    (vista === 'lettore' && a.dataset.vista === 'indice') || (vista === 'panoramica' && a.dataset.vista === 'apparati' && window.innerWidth <= 720) ||
+    (vista === 'tempo' && a.dataset.vista === 'apparati' && !$('.schede a[data-vista="tempo"]').offsetParent)));
 }
 function annuncia(t) { const a = $('#annuncio'); if (a) a.textContent = t; }
 function mostraRif(via, par = {}) {
@@ -890,7 +895,7 @@ function cronLibro(b) {
   if (!xs.length) return '';
   const riga = ([n, t]) => {
     const v = A.cron.voci[n - 1], k = t < 3 ? T.dat.get(n + ':' + b) : undefined;
-    const tm = k !== undefined ? ` <a class="tm-link" href="#tempo?e=${esc(T.ev[k][0])}" title="la datazione nella linea del tempo">${esc(testoAnni(T.ev[k]))} nella linea del tempo</a>` : '';
+    const tm = k !== undefined ? ` <a class="tm-link" href="#tempo?e=${esc(T.ev[k][0])}" title="la datazione nella linea del tempo">${esc(testoAnni(T.ev[k]))} nella linea del tempo</a>${qualificaT(T.ev[k], 'tm-pos tm-qual').join('')}` : '';
     return `<li><a href="${hashCron(n)}">${v[7] ? esc(v[7]) : esc(A.cron.sez[v[0] - 1][1].split('.')[0])}</a> <small>${DATAZIONE[t]}</small>${tm}<span class="frase">${esc(v[11].length > 150 ? v[11].slice(0, 149) + '…' : v[11])}</span></li>`;
   };
   return `<div class="h2">Nella tavola cronologica <span class="n">${xs.length}</span></div>${elencoBreve(xs.map(riga), 4)}`;
@@ -1753,14 +1758,14 @@ function mostraMisure(par = {}) {
     <h1>Tavola delle misure e delle monete</h1><p class="sotto">Cifre approssimative, come stampate; il rapporto è quello della tavola (per le monete alla dramma attica o al denaro). Nel grafo ogni valore ha la sua unità QUDT.</p>
     ${TIPI.map(([t, tit]) => `<div class="h2">${tit}</div><table class="abbr misure-t"><tbody>${G.mis.filter(x => x[1] === t).map(riga).join('')}</tbody></table>`).join('')}</div>`);
   document.title = 'Misure e monete · Appendici';
-  if (par.u) { const x = $('#mis-' + par.u); if (x) window.scrollTo(0, x.getBoundingClientRect().top + window.scrollY - 110); }
+  if (par.u) { const x = document.getElementById('mis-' + par.u); if (x) window.scrollTo(0, x.getBoundingClientRect().top + window.scrollY - 110); }
 }
 function mostraCarte(par = {}) {
   const carta = c => `<div class="carta-voce${c[0] === par.c ? ' sel' : ''}" id="carta-${esc(c[0])}"><h3>${esc(c[1])}${c[2] ? ` <small>${esc(c[2])}</small>` : ''}</h3><p class="sotto">${c[3] === 'appendici' ? `appendici, PDF p. ${c[4]}` : `risguardo, PDF p. ${c[4]}`}${c[6] ? ' · ' + (T.idx.has('carta.' + c[0]) ? `<a href="#tempo?e=carta.${esc(c[0])}" title="nella linea del tempo">${esc(c[6])}</a>` : esc(c[6])) : ''} · <a href="../${esc(c[5])}" target="_blank" rel="noopener">immagine</a></p><div class="chips">${c[7].map(b => `<a class="chip" href="#${D.libri[b].o}">${esc(D.libri[b].s)}</a>`).join('')}${rigaRif(c[8])}</div></div>`;
   pagina(`<div class="pagina carte"><div class="sopratitolo"><a href="#appendici">Appendici</a> · pp. 59–67 e risguardi</div>
     <h1>Carte</h1><p class="sotto">Le dieci carte del volume, con i libri di cui mostrano la storia e i passi che disegnano (le immagini sono nel progetto, accanto a questa pagina).</p>${G.carte.map(carta).join('')}</div>`);
   document.title = 'Carte · Appendici';
-  if (par.c) { const x = $('#carta-' + par.c); if (x) window.scrollTo(0, x.getBoundingClientRect().top + window.scrollY - 110); }
+  if (par.c) { const x = document.getElementById('carta-' + par.c); if (x) window.scrollTo(0, x.getBoundingClientRect().top + window.scrollY - 110); }
 }
 function mostraAppendici() {
   // the hub of the front matter and the appendices (R3 E5)
@@ -2023,18 +2028,14 @@ const annoT = a => { const n = Math.abs(a); return n >= 10000 ? num(n) : String(
 function secoloT(a) { return a < 0 ? Math.ceil(-a / 100) : Math.ceil(a / 100); }
 function anniT(e) {
   // the span of an event as the gutter prints it: «587 a.C.», «171–138 a.C.», «4 a.C. – 39 d.C.», «VI sec. a.C.»,
-  // «fine II sec. a.C.», «II mill. a.C.»; [text, era]
+  // «fine II sec. a.C.», «inizio II mill. a.C.»; [text, era]
   const [s, f, p] = [e[3], e[4], T.prec[e[5]]];
   const era = f < 0 ? 'a.C.' : s > 0 ? 'd.C.' : '';
   if ((p === 'secolo' || p === 'millennio') && era) {
     const m = p === 'millennio', u = m ? 1000 : 100;
     const c1 = m ? Math.ceil(Math.abs(s) / u) : secoloT(s), c2 = m ? Math.ceil(Math.abs(f) / u) : secoloT(f);
-    const tutto = era === 'a.C.' ? -s === c1 * u && -f === (c2 - 1) * u + 1 : s === (c1 - 1) * u + 1 && f === c2 * u;
-    let parte = '';
-    if (!tutto && c1 === c2) {
-      const lo = era === 'a.C.' ? c1 * u + s : s - (c1 - 1) * u - 1, hi = era === 'a.C.' ? c1 * u + f : f - (c1 - 1) * u - 1;
-      parte = lo === 0 && hi < 30 ? 'inizio ' : lo === 0 && hi < 60 ? 'prima metà ' : lo >= 70 ? 'fine ' : lo >= 45 ? 'seconda metà ' : lo > 0 && hi < 80 ? 'metà ' : '';
-    }
+    // the part as eventi.py read it («all’inizio del II millennio»), of one century or millennium only
+    const parte = c1 === c2 && e[17] ? e[17] + ' ' : '';
     const r = c1 === c2 ? ROMANI[c1] || c1 : `${ROMANI[c1] || c1}–${ROMANI[c2] || c2}`;
     return [`${parte}${r} ${m ? 'mill.' : 'sec.'}`, era];
   }
@@ -2072,12 +2073,15 @@ function htmlEvento(e) {
 }
 function regolaT(e) {
   // why B.C. or A.D.: the rule of eventi.py, in words
-  const r = T.regole[e[16]];
+  // (the rules of the source and of the order say the era of the event: «ordine» is a.C. for a descending span, d.C.
+  // for an ascending one, «fonte NT (millennio)» a.C.)
+  const r = T.regole[e[16]], era = e[4] < 0 ? 'a.C.' : e[3] > 0 ? 'd.C.' : 'a.C.–d.C.';
   const x = [['suffisso', 'era stampata'], ['tavola (stage 2c)', 'data della tavola'], ['tavola', 'era della tavola'],
-    ['fonte AT', 'testo dell’Antico Testamento: a.C.'], ['fonte NT', 'testo del Nuovo Testamento: d.C.'],
-    ['fonte moderna', 'testo moderno: d.C.'], ['ordine', 'intervallo decrescente: a.C.'], ['sezione NT', 'sezione NT della voce: d.C.'],
+    ['fonte AT', 'testo dell’Antico Testamento', 1], ['fonte NT', 'testo del Nuovo Testamento', 1], ['fonte moderna', 'testo moderno', 1],
+    ['ordine', e[4] < 0 ? 'intervallo decrescente' : 'intervallo crescente', 1], ['sezione NT', 'sezione NT della voce', 1],
+    ['riferimenti AT', 'passi citati dell’Antico Testamento', 1], ['riferimenti NT', 'passi citati del Nuovo Testamento', 1],
     ['la voce della tavola', 'dalla voce della tavola'], ['correzione: ', 'letta a mano: '], ['dinastie: ', 'dinastie: ']].find(([k]) => r.startsWith(k));
-  return `${e[7] ? `«${e[7]}» · ` : ''}era: ${x ? x[1] + r.slice(x[0].length) : r}`;
+  return `${e[7] ? `«${e[7]}» · ` : ''}era: ${x ? x[1] + (x[2] ? ': ' + era : '') + r.slice(x[0].length) : r}`;
 }
 function testoPianoEvento(k) {
   // plain text of a row, for the text filter: the sentence, the source, the date as printed
@@ -2090,10 +2094,11 @@ function testoPianoEvento(k) {
   return T.pt[k];
 }
 
-// the state of the view in the address: f the sources shown (all when absent), c a column of the table, v=1 only
-// the events citing verses, q words; a a year to scroll to, e an event to scroll to and highlight, p a period
+// the state of the view in the address: f the sources shown (all when absent, none when empty), c a column of the
+// table, v=1 only the events citing verses, q words; a a year to scroll to and r the row at the top of the screen
+// (memoTempo), e an event to scroll to and highlight, p a period
 function statoTempo(par) {
-  const fonti = par.f ? new Set(par.f.split(',').filter(x => T.fonti.includes(x))) : new Set(T.fonti);
+  const fonti = 'f' in par ? new Set(par.f.split(',').filter(x => T.fonti.includes(x))) : new Set(T.fonti);
   const col = A.cron.col.findIndex(c => c[0] === par.c);
   return { fonti, col, vv: par.v === '1', q: par.q || '' };
 }
@@ -2106,7 +2111,6 @@ function hashTempo(st, extra = '') {
   if (extra) p.push(extra);
   return '#tempo' + (p.length ? '?' + p.join('&') : '');
 }
-const chiaveTempo = st => hashTempo(st);
 function passaTempo(st, ts, k, salta = null) {
   // whether event k passes the filters (salta: one filter left out, for the counts of its buttons)
   const e = T.ev[k];
@@ -2139,12 +2143,12 @@ function mostraTempo(par) {
     document.title = 'Linea del tempo · Esploratore dei versetti';
     agganciaTempo();
   }
-  // the inputs follow the address (Back), except the one being typed in
+  // the inputs follow the address (Back), except the words while they are being typed
   $$('[data-tf]').forEach(b => b.setAttribute('aria-pressed', String(st.fonti.has(b.dataset.tf))));
   $('#tm-col').value = st.col >= 0 ? A.cron.col[st.col][0] : '';
   $('#tm-vv').checked = st.vv;
-  if (document.activeElement !== $('#tm-q')) $('#tm-q').value = st.q;
-  const chiave = chiaveTempo(st);
+  if (!digitaTempo) $('#tm-q').value = st.q;
+  const chiave = hashTempo(st);
   if (!qui || S.tm.chiave !== chiave) {
     // a filter changed: the rows stay where they were (the first one on screen, or the next one shown)
     const prima = qui && S.tm.vis.length ? T.pos[S.tm.vis[primoVisibile()]] : -1;
@@ -2158,6 +2162,7 @@ function mostraTempo(par) {
 }
 function disegnaTempo(st, chiave) {
   const t0 = performance.now();
+  $('#vista .tm-avviso')?.remove();
   const ts = termini(st.q);
   const vis = T.ord.filter(k => passaTempo(st, ts, k));
   // the counts of each filter with the others applied
@@ -2171,7 +2176,7 @@ function disegnaTempo(st, chiave) {
   const filtrato = st.fonti.size !== T.fonti.length || st.col >= 0 || st.vv || ts.length;
   $('#tm-esito').innerHTML = `${conta(vis.length, 'evento', 'eventi')}${filtrato ? ` di ${num(T.ev.length)} · <a href="#tempo">mostra tutti</a>` : ''}`;
   // periods, then the groups of one span of years
-  let h = '', per = null, gruppo = null, nG = 0;
+  let h = '', per = null, gruppo = null;
   const chiudiGruppo = () => { if (gruppo) h += '</ul></div>'; gruppo = null; };
   const gruppi = [];
   vis.forEach((k, j) => {
@@ -2200,7 +2205,7 @@ function disegnaTempo(st, chiave) {
       }
       const [an, era] = anniT(tipo || e);
       gruppi.push(j);
-      h += `<div class="tm-gruppo" data-j="${j}"><h3 class="tm-anni" id="tm-g${nG++}">${tutti ? '<span class="tm-c">c.</span> ' : ''}${an} <small>${era}</small></h3><ul class="tm-eventi">`;
+      h += `<div class="tm-gruppo"><h3 class="tm-anni">${tutti ? '<span class="tm-c">c.</span> ' : ''}${an} <small>${era}</small></h3><ul class="tm-eventi">`;
     }
     h += rigaTempo(k, st, ts);
   });
@@ -2220,16 +2225,24 @@ function rigaTempo(k, st, ts) {
   const [href, nome, attr] = fonteEvento(e);
   const meta = [`<a class="tm-fonte" href="${href}"${attr}>${esc(nome)}</a>`];
   if (colonnaT(e)) meta.push(`<span class="tm-col">${esc(colonnaT(e))}</span>`);
-  if (e[14] >= 2) meta.push(`<span class="tm-pos" title="${esc(DATA_DA_T[e[14]] + ' (' + testoAnni(e) + ')')}">${e[14] === 7 ? 'intestazione' : '≈ dalla riga'}</span>`);
-  if (e[6] & 2) meta.push('<span class="tm-pos" title="una data proposta come ipotesi">ipotesi</span>');
-  if (e[6] & 12) meta.push(`<span class="tm-pos" title="un limite: l’evento è ${e[6] & 4 ? 'anteriore' : 'posteriore'} a questa data">${e[6] & 4 ? 'non dopo' : 'non prima'}</span>`);
+  meta.push(...qualificaT(e));
   if (e[15]) meta.push(`<span class="tm-pos">o ${annoTesto(e[15])}</span>`);
   for (const x of e[12]) {
     const o = T.ev[x], [, n2] = fonteEvento(o, true);
     const dentro = passaTempo(st, ts, x);
     meta.push(`<a class="tm-stesso" href="${dentro ? hashTempo(st, 'e=' + o[0]) : '#tempo?e=' + o[0]}" title="lo stesso evento nella linea del tempo: ${esc(testoAnni(o))}">= ${esc(n2)}</a>`);
   }
-  return `<li class="tm-ev${e[14] >= 2 ? ' tm-riga' : ''}" id="tm-${k}" data-k="${k}" tabindex="-1"><div class="tm-testo">${htmlEvento(e)}</div><div class="tm-meta">${meta.join('')}</div></li>`;
+  return `<li class="tm-ev" id="tm-${k}" data-k="${k}" tabindex="-1"><div class="tm-testo">${htmlEvento(e)}</div><div class="tm-meta">${meta.join('')}</div></li>`;
+}
+
+function qualificaT(e, cls = 'tm-pos') {
+  // the marks of a date that is not plainly its years, wherever its years are printed: placed by its row (or a
+  // heading), a hypothesis, a bound
+  const q = [];
+  if (e[14] >= 2) q.push(`<span class="${cls}" title="${esc(DATA_DA_T[e[14]] + ' (' + testoAnni(e) + ')')}">${e[14] === 7 ? 'intestazione' : '≈ dalla riga'}</span>`);
+  if (e[6] & 2) q.push(`<span class="${cls}" title="una data proposta come ipotesi">ipotesi</span>`);
+  if (e[6] & 12) q.push(`<span class="${cls}" title="un limite: l’evento è ${e[6] & 4 ? 'anteriore' : 'posteriore'} a questa data">${e[6] & 4 ? 'non dopo' : 'non prima'}</span>`);
+  return q;
 }
 
 // the strip: the whole span, one segment per period (the same width each; the years in proportion inside, the
@@ -2248,15 +2261,19 @@ function segmentiT(w) {
   const tot = 9 + PESO_DOPO, u = w / tot;
   return Array.from({ length: 10 }, (_, j) => [j * u, j === 9 ? u * PESO_DOPO : u]);
 }
-function anniSegmento(p, a, b) {
-  // the years at fractions a and b of segment p, for the tooltip
-  const y = fr => {
-    if (p === 1) return -Math.round(Math.exp(Math.log(-T.per[0][3]) - fr * (Math.log(-T.per[0][3]) - Math.log(-T.per[0][4]))));
-    if (p === 10) return Math.round(135 + fr * (T.max - 135));
-    const [, , , s, f] = T.per[p - 1];
-    return Math.round(s + fr * (f - s + 1));
-  };
-  let lo = y(a), hi = y(b) - 1;
+function anniSegmento(s, b) {
+  // the years of bar b of segment s, for the tooltip: the first and the last year that xEvento puts in it (there
+  // is no year 0), widened to the years of the events counted there (an entry outside the span of its period sits
+  // in an edge bar)
+  const p = s + 1, nb = S.tm.nb[s];
+  const [y0, y1] = p === 10 ? [136, Math.max(136, T.max)] : [T.per[p - 1][3], T.per[p - 1][4]];
+  const barra = y => Math.floor(xEvento({ 3: y, 8: p === 10 ? 0 : p })[1] * nb);
+  const primo = c => { let a = y0, z = y1 + 1; while (a < z) { const m = Math.floor((a + z) / 2); if (c(m)) z = m; else a = m + 1; } return a; };
+  let lo = primo(y => barra(y) >= b), hi = primo(y => barra(y) > b) - 1;
+  if (lo === 0) lo = 1;
+  if (hi === 0) hi = -1;
+  const ev = S.tm.anni[s][b];
+  if (ev) { lo = Math.min(lo, ev[0]); hi = Math.max(hi, ev[1]); }
   if (hi < lo) hi = lo;
   const fmt = v => (v < 0 ? `${annoT(v)} a.C.` : `${annoT(v)} d.C.`);
   return lo < 0 && hi > 0 ? `${fmt(lo)} – ${fmt(hi)}` : `${annoT(lo)}–${annoT(hi)} ${hi < 0 ? 'a.C.' : 'd.C.'}`;
@@ -2269,10 +2286,12 @@ function disegnaStriscia() {
   // bins of about 7 px inside each segment
   const nb = seg.map(([, sw]) => Math.max(2, Math.round(sw / 7)));
   const conti = nb.map(n => new Int32Array(n));
+  const anni = nb.map(() => []);                  // the first and last year of the events of each bar
   S.tm.x = new Float32Array(vis.length);
   vis.forEach((k, j) => {
-    const [p, fr] = xEvento(T.ev[k]);
-    conti[p - 1][Math.floor(fr * nb[p - 1])]++;
+    const [p, fr] = xEvento(T.ev[k]), b = Math.floor(fr * nb[p - 1]), y = T.ev[k][3], a = anni[p - 1];
+    conti[p - 1][b]++;
+    a[b] = a[b] ? [Math.min(a[b][0], y), Math.max(a[b][1], y)] : [y, y];
     S.tm.x[j] = seg[p - 1][0] + fr * seg[p - 1][1];
   });
   const mx = Math.max(1, ...conti.map(c => Math.max(...c)));
@@ -2292,7 +2311,9 @@ function disegnaStriscia() {
   S.tm.seg = seg;
   S.tm.nb = nb;
   S.tm.conti = conti;
+  S.tm.anni = anni;
   S.tm.w = w;
+  box.setAttribute('aria-valuemin', vis.length ? '1' : '0');
   box.setAttribute('aria-valuemax', String(Math.max(1, vis.length)));
   // the height of the sticky head, under which the years of the gutter stick
   $('#vista .tempo').style.setProperty('--tm-testa', $('.tm-testa').offsetHeight + 'px');
@@ -2321,7 +2342,14 @@ function ultimoVisibile() {
 }
 function vistaStriscia() {
   // the band over the part of the line on screen, the value of the slider
-  if (!S.tm || !S.tm.x || !S.tm.vis.length) return;
+  if (!S.tm || !S.tm.x) return;
+  if (!S.tm.vis.length) {
+    const box = $('#tm-striscia');
+    box?.setAttribute('aria-valuenow', '0');
+    box?.setAttribute('aria-valuetext', 'nessun evento');
+    S.tm.primo = undefined;
+    return;
+  }
   const a = primoVisibile(), b = Math.max(a, ultimoVisibile());
   const x0 = S.tm.x[a], x1 = S.tm.x[b];
   const r = $('#tm-striscia .tm-vista');
@@ -2335,7 +2363,7 @@ function vistaStriscia() {
 }
 // the bottom of the sticky head once it sticks (above the list it is lower, in the flow of the page)
 const altoTempo = () => $('.barra').getBoundingClientRect().bottom + $('.tm-testa').offsetHeight;
-function vaiAPosizione(j, evidenzia = false, liscio = false) {
+function vaiAPosizione(j, evidenzia = false, liscio = false, fuoco = false) {
   // scroll so that the j-th row shown sits under the sticky head (its year group heading in view)
   const righe = $('#tm-lista').getElementsByClassName('tm-ev');
   const el = righe[Math.max(0, Math.min(righe.length - 1, j))];
@@ -2349,6 +2377,7 @@ function vaiAPosizione(j, evidenzia = false, liscio = false) {
   const y = sopra.getBoundingClientRect().top + window.scrollY - alto - (evidenzia ? Math.max(16, (innerHeight - alto) * 0.25) : sopra === g ? -1 : 8);
   window.scrollTo({ top: Math.max(0, y), behavior: liscio ? 'smooth' : 'instant' });
   if (evidenzia) evidenziaRiga(j, true);
+  else if (fuoco) el.focus({ preventScroll: true });       // the next Tab reaches the links of this row
   vistaStriscia();
 }
 function evidenziaRiga(j, fuoco = false) {
@@ -2368,39 +2397,51 @@ function posizionaTempo(par) {
   }
 }
 function posiziona_(par) {
-  // e: an event (highlighted), p: a period, a: a year; else the top
+  // e: an event (highlighted), p: a period, r and a: the row and the year at the top of the screen; else the top
   $('#vista .tm-avviso')?.remove();
-  const vis = S.tm.vis;
+  const vis = S.tm.vis, fuoco = fuocoTempo;
+  fuocoTempo = false;
+  if (!par.e) $$('#tm-lista .tm-ev.sel').forEach(x => x.classList.remove('sel'));
   if (par.e) {
-    // the event highlighted; scrolled to, unless the address also keeps the year the reader had scrolled to
+    // the event highlighted: Back or Forward return to the place kept in this history entry (memoTempo); a copied
+    // or bookmarked address has none, and goes to the event (its a= and r= were only where another reader was)
     const k = T.idx.get(par.e);
     const j = k === undefined ? -1 : vis.indexOf(k);
-    if (j >= 0 && !par.a) return vaiAPosizione(j, true);
-    if (j >= 0) evidenziaRiga(j);
-    else {
-      const msg = k === undefined ? `L’evento «${esc(par.e)}» non è nella linea del tempo.` : `L’evento è nascosto dai filtri: <a href="#tempo?e=${esc(par.e)}">mostralo con tutti gli altri</a>.`;
-      $('#tm-esito').insertAdjacentHTML('afterend', `<p class="avviso tm-avviso" role="status">${msg}</p>`);
+    if (j >= 0) {
+      if ((par.a || par.r) && ripristinaTempo(par)) { evidenziaRiga(j, true); return vistaStriscia(); }
+      return vaiAPosizione(j, true);
     }
+    const msg = k === undefined ? `L’evento «${esc(par.e)}» non è nella linea del tempo.` : `L’evento è nascosto dai filtri: <a href="#tempo?e=${esc(par.e)}">mostralo con tutti gli altri</a>.`;
+    $('#tm-esito').insertAdjacentHTML('afterend', `<p class="avviso tm-avviso" role="status">${msg}</p>`);
   }
   if (par.p) {
     const s = $('#tm-p' + (+par.p || 0));
     if (s) { window.scrollTo({ top: s.getBoundingClientRect().top + window.scrollY - altoTempo() + 2, behavior: 'instant' }); return vistaStriscia(); }
   }
-  if (par.a !== undefined && par.a !== '') {
+  if (par.a || par.r) {
     if (ripristinaTempo(par)) return vistaStriscia();
+    // a copied address: the row it names, else the first row of the year in the period that holds the year (the
+    // periods of the table overlap in years); a year that is not a number is not a place
+    const kr = par.r ? T.idx.get(par.r) : undefined;
+    let j = kr === undefined ? -1 : vis.indexOf(kr);
     const a = +par.a;
-    let j = vis.findIndex(k => T.ev[k][3] >= a);
-    if (j < 0) j = vis.length - 1;
-    return vaiAPosizione(j);
+    if (j < 0 && !Number.isFinite(a)) { window.scrollTo(0, 0); return vistaStriscia(); }
+    if (j < 0) {
+      const p = a > 135 ? 10 : (T.per.find(x => x[3] <= a && a <= x[4]) || [0])[0];
+      j = vis.findIndex(k => (T.ev[k][8] || 10) === p && T.ev[k][3] >= a);
+      if (j < 0) j = vis.findIndex(k => T.ev[k][3] >= a);
+      if (j < 0) j = vis.length - 1;
+    }
+    return vaiAPosizione(j, false, false, fuoco);
   }
   if (!par.e) { window.scrollTo(0, 0); vistaStriscia(); }
 }
 function ripristinaTempo(par) {
   // Back or Forward to a place of the line: the row memoTempo kept in this history entry, at the same offset
-  // under the head, when it is still shown and still of the year in the address
+  // under the head, when it is still shown and still the row (or of the year) in the address
   const m = history.state?.tm, k = m ? T.idx.get(m.id) : undefined;
   const j = k === undefined ? -1 : S.tm.vis.indexOf(k);
-  if (j < 0 || String(T.ev[k][3]) !== par.a) return false;
+  if (j < 0 || (par.r ? m.id !== par.r : String(T.ev[k][3]) !== par.a)) return false;
   const el = $('#tm-lista').getElementsByClassName('tm-ev')[j];
   window.scrollTo({ top: Math.max(0, el.getBoundingClientRect().top + window.scrollY - altoTempo() - m.dy), behavior: 'instant' });
   return true;
@@ -2429,13 +2470,20 @@ function agganciaTempo() {
   });
   $('#tm-col').addEventListener('change', () => scrivi());
   $('#tm-vv').addEventListener('change', () => scrivi());
-  let tq = null;
-  $('#tm-q').addEventListener('input', () => { clearTimeout(tq); tq = setTimeout(() => scrivi(true), 220); });
+  $('#tm-q').addEventListener('input', () => {
+    clearTimeout(tqTempo);
+    tqTempo = setTimeout(() => {
+      if (S.vista !== 'tempo' || !$('#tm-q')) return;
+      digitaTempo = true;                          // the field keeps what is being typed
+      try { scrivi(true); } finally { digitaTempo = false; }
+    }, 220);
+  });
   $('#tm-vai').addEventListener('submit', e => {
     e.preventDefault();
     const a = annoDaTesto($('#tm-anno').value, $('#tm-era').value);
     $('#tm-vai .errore')?.remove();
     if (a === null) { $('#tm-vai').insertAdjacentHTML('beforeend', '<span class="errore" role="alert">un anno, per esempio 587 o 30 d.C.</span>'); return; }
+    fuocoTempo = true;
     vai(hashTempo(S.tm.st, 'a=' + a));
   });
   // the strip: hover a bar for its count, click or drag to move, the keys of a slider
@@ -2471,7 +2519,7 @@ function agganciaTempo() {
     $$('rect.on', box).forEach(q => q.classList.remove('on'));
     box.querySelector(`rect[data-s="${s}"][data-b="${b}"]`)?.classList.add('on');
     const P = s < 9 ? T.per[s] : null;
-    tip.innerHTML = `<b>${num(c)}</b> ${pl(c, 'evento', 'eventi')} · ${esc(anniSegmento(s + 1, b / S.tm.nb[s], (b + 1) / S.tm.nb[s]))}<br><small>${P ? esc(titoloPeriodo(P[2])) : 'dopo la tavola (dal 135 d.C.)'}</small>`;
+    tip.innerHTML = `<b>${num(c)}</b> ${pl(c, 'evento', 'eventi')} · ${esc(anniSegmento(s, b))}<br><small>${P ? esc(titoloPeriodo(P[2])) : 'dopo la tavola (dal 135 d.C.)'}</small>`;
     tip.hidden = e.pointerType === 'touch';
     const tr = box.getBoundingClientRect();
     tip.style.left = Math.max(8, Math.min(e.clientX - tip.offsetWidth / 2, innerWidth - tip.offsetWidth - 8)) + 'px';
@@ -2502,6 +2550,12 @@ function agganciaTempo() {
   box.addEventListener('keydown', e => {
     const vis = S.tm.vis, g = S.tm.gruppi;
     if (!vis.length) return;
+    if (e.key === 'Tab' && !e.shiftKey && !e.altKey && !e.ctrlKey && !e.metaKey) {
+      // on from the slider to the rows on screen, not to the links of the first period
+      const el = $('#tm-lista').getElementsByClassName('tm-ev')[S.tm.primo ?? primoVisibile()];
+      if (el) { e.preventDefault(); el.focus({ preventScroll: true }); }
+      return;
+    }
     const a = S.tm.primo ?? 0;
     let j = null;
     // the arrows move by a span of years (a group), the pages by a period
@@ -2520,9 +2574,9 @@ function agganciaTempo() {
     memoTempo();
   });
 }
-let tTempo = null, rafTempo = 0;
+let tTempo = null, rafTempo = 0, tqTempo = null, digitaTempo = false, fuocoTempo = false;
 function memoTempo() {
-  // the year at the top of the screen in the address (a=), so Back returns there
+  // the year and the row at the top of the screen in the address (a=, r=), so Back and a copied address return there
   clearTimeout(tTempo);
   tTempo = setTimeout(() => {
     if (S.vista !== 'tempo' || !S.tm || !S.tm.vis.length || !$('#tm-lista')) return;
@@ -2534,7 +2588,9 @@ function memoTempo() {
     const el = $('#tm-lista').getElementsByClassName('tm-ev')[j];
     const tm = window.scrollY > 0 ? { id: T.ev[S.tm.vis[j]][0], dy: Math.round(el.getBoundingClientRect().top - altoTempo()) } : null;
     const resto = Object.entries(par).filter(([k]) => k === 'e').map(([k, v]) => `${k}=${v}`).join('&');
-    const h = String(a) === par.a ? location.hash : hashTempo(S.tm.st, (resto ? resto + '&' : '') + (window.scrollY > 0 ? 'a=' + a : '')).replace(/[?&]$/, '');
+    const r = T.ev[S.tm.vis[j]][0];
+    const h = String(a) === par.a && r === par.r ? location.hash
+      : hashTempo(S.tm.st, (resto ? resto + '&' : '') + (window.scrollY > 0 ? `a=${a}&r=${r}` : '')).replace(/[?&]$/, '');
     history.replaceState({ ...(history.state || {}), tm }, '', h);
   }, 250);
 }
@@ -2565,7 +2621,7 @@ function sezioneTempo(i) {
   const righe = xs.map(([k, t]) => {
     const e = T.ev[k], f = fonteT(e);
     const corpo = e[9] ? testoPiano(e[9]) : f === 'cronologia' ? A.cron.voci[e[2] - 1][11] : f === 'datazione' ? A.cron.voci[e[2][0] - 1][11] : testoPiano(htmlEvento(e));
-    return `<li><a href="#tempo?e=${esc(e[0])}">${esc(testoAnni(e))}</a> <small>${esc(FONTI_T[f][2])}${t === 0 ? ' · in questa nota' : ''}</small><span class="frase">${esc(corpo.length > 170 ? corpo.slice(0, 169).replace(/\s\S*$/, '') + '…' : corpo)}</span></li>`;
+    return `<li><a href="#tempo?e=${esc(e[0])}">${esc(testoAnni(e))}</a> <small>${esc(FONTI_T[f][2])}${t === 0 ? ' · in questa nota' : ''}${qualificaT(e).map(q => ' · ' + q).join('')}</small><span class="frase">${esc(corpo.length > 170 ? corpo.slice(0, 169).replace(/\s\S*$/, '') + '…' : corpo)}</span></li>`;
   });
   return `<section class="sez tm-sez"><h3>Nel tempo <span class="n">${xs.length}</span></h3>${elencoBreve(righe, 4)}<p class="tm-tutti"><a href="#tempo?e=${esc(T.ev[xs[0][0]][0])}">Apri la linea del tempo</a></p></section>`;
 }
@@ -3600,7 +3656,13 @@ function eventi() {
   window.addEventListener('scroll', memoScorrimento, { passive: true });
   window.addEventListener('scroll', scorriTempo, { passive: true });
   let tLargo = null;
-  window.addEventListener('resize', () => { clearTimeout(tLargo); tLargo = setTimeout(() => { if (S.vista === 'tempo' && S.tm && S.tm.w !== $('#tm-striscia')?.clientWidth) disegnaStriscia(); }, 150); });
+  window.addEventListener('resize', () => {
+    clearTimeout(tLargo);
+    tLargo = setTimeout(() => {
+      segnaScheda(S.vista);
+      if (S.vista === 'tempo' && S.tm && S.tm.w !== $('#tm-striscia')?.clientWidth) disegnaStriscia();
+    }, 150);
+  });
   $('#pannello').addEventListener('scroll', via, { passive: true });
   document.addEventListener('keydown', e => {
     const campo = e.target.closest('input, select, textarea');

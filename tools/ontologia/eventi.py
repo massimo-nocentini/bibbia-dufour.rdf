@@ -110,6 +110,15 @@ MESI = ('gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno', 'luglio', 
 MESE = re.compile(r'(?<![\w])(?:%s)\.?(?![\w])' % '|'.join(MESI), re.I)
 MESE_DOPO = re.compile(r'\s*(?:di |del )?(?:%s)\.?(?![\w])' % '|'.join(MESI), re.I)
 MESE_PRIMA = re.compile(r'(?<![\w])(?:%s|pasqua|pentecoste)\.?\s*$' % '|'.join(MESI), re.I)     # "giugno-luglio 587"
+# a bound before the words that name the end of a month or a thing and its year: "prima della fine del febbraio 44",
+# "a partire dal regno di Erode (37)", "a partire dal sinodo romano del 382"
+LIMITE_FINE = re.compile(r'(?<![\w])(?:prima|entro)\s+(?:della\s+fine|dell' + AP + r'\s*inizio|la\s+fine)\s+(?:del(?:l' + AP +
+                         r')?\s*|di\s+)?(?:(?:%s)\.?\s+)?$' % '|'.join(MESI), re.I)
+# (singular masculine: not "computato a partire dalla primavera (del 311)", "a partire dalle due precedenti edizioni (1955")
+LIMITE_DA = re.compile(r'(?<![\w])(?:a partire|sin|fin)\s+dal(?:l' + AP + r'\s*|\s+)(?:[^\s,;:.()«»]+\s+){1,4}\(?$', re.I)
+# a word of approximation just before: "va fatto risalire pressappoco al 605", "risalire circa fino all’VIII secolo"
+CIRCA_PRIMA = re.compile(r'(?<![\w])(?:pressappoco|circa|approssimativamente|all' + AP + r'incirca)\s+(?:[^\s,;:.()]+\s+){0,1}$',
+                         re.I)
 UNITA = re.compile(
     r'\s*(?:anni|anno|giorni|giorno|mesi|mese|settimane|settimana|ore|volte|uomini|donne|persone|abitanti|'
     r'soldati|carri|cavalli|città|generazioni|righe|stichi|versetti|capitoli|libri|salmi|cubiti|sicli|talenti|'
@@ -119,11 +128,31 @@ UNITA = re.compile(
     re.I)
 REGNO = re.compile(r'\s*[°º]?\s*(?:di|del|dello|della|dei|dell' + AP + r')\s+(?:regno|[A-ZÀ-Ü])')
 NUMERO = re.compile(r'(?<![\w.,§/–-])(\d{1,4})(?!\d|[.,]\d|[^\W\d_])')
-SEGUITO = re.compile(r'(?P<sep>\s*[–/-]\s*|\s+(?:o|oppure)\s+(?:il\s+|l' + AP + r'\s*)?)(?P<b>\d{1,4})(?!\d|[.,]\d|[^\W\d_])')
+SEGUITO = re.compile(r'(?P<sep>\s*[–/-]\s*|\s+(?:o|oppure)\s+(?:il\s+|l' + AP + r'\s*|nel\s+|nell' + AP + r'\s*|del\s+|dell' + AP +
+                     r'\s*)?)(?P<b>\d{1,4})(?!\d|[.,]\d|[^\W\d_])')     # "589/8", "143-37", "64 o 67", "nel 735 o nel 732"
 ALTERNATIVA = re.compile(r'\s*\((?:o|oppure)\s+(?P<alt>\d{1,4})\s*\??\)')     # "587 (o 586?) a.C."
 DALAL = re.compile(r'(?<![\w])(?P<cue>dal|dall' + AP + r'|tra il|fra il|tra l' + AP + r'|fra l' + AP + r')\s*(?P<anno>anno\s+)?'
                    r'(?P<a>\d{1,4})(?!\d|[.,]\d|[^\W\d_])(?P<q1>\s*\(\?\))?(?P<era1>' + ERA_IN + r')?' +
                    r'\s+(?:al|all' + AP + r'|e il|e l' + AP + r')\s*(?P<b>\d{1,4})(?!\d|[.,]\d|[^\W\d_])', re.I)
+# a span with months, seasons or the part of a year at its ends: "fra dicembre del 589 e gennaio del 588", "tra la
+# fine del 486 e l’inizio del 485", "dal 19 agosto del 28 al 18 agosto del 29", "dal settembre-ottobre del 27 al …",
+# "tra l’autunno 48 e l’estate 49", "dalla primavera del 50 alla fine dell’estate del 51", "dal 626 circa al luglio
+# del 587"; and "Dicembre 589 – gennaio 588", "Dicembre del 586 – gennaio del 585"
+_MESE = r'(?:%s)\.?(?:\s*[–-]\s*(?:%s)\.?)?' % ('|'.join(MESI), '|'.join(MESI))
+_DEL = r'(?:del\s+|dell' + AP + r'\s*)'
+
+
+def _pref(n):
+    return (r'(?:(?:il|lo|la|l' + AP + r')\s*)?(?P<p%d>(?:(?:fine|inizio|metà)\s+(?:della\s+|del\s+|dell' + AP + r'\s*))?'
+            r'(?:(?:\d{1,2}\s+)?' + _MESE + r'\s*' + _DEL + r'?)?)') % n
+
+
+_ANNO = r'(?!\d|[.,]\d|[^\W\d_])'
+TRA_MESI = re.compile(r'(?<![\w])(?P<cue>dal|dall' + AP + r'|dalla|tra|fra)\s*' + _pref(1) + r'(?P<a>\d{1,4})' + _ANNO +
+                      r'(?P<c1>\s*(?:ca\.|circa)(?![\w]))?(?P<era1>' + ERA_IN + r')?\s+(?P<sep>al|all' + AP + r'|alla|e)\s*' +
+                      _pref(2) + r'(?P<b>\d{1,4})' + _ANNO, re.I)
+TRATTINO_MESI = re.compile(r'(?<![\w])(?P<p1>' + _MESE + r'\s+' + _DEL + r'?)(?P<a>\d{1,4})' + _ANNO + r'\s*[–-]\s*(?P<p2>' +
+                           _MESE + r'\s+' + _DEL + r'?)(?P<b>\d{1,4})' + _ANNO, re.I)
 CIRCA_DOPO = re.compile(r'\s*(?:ca\.|circa)(?![\w])')
 INCERTO = re.compile(r'\s*(?:\(\?\)|\?)')
 PARTE = (r'(?<![\w])(?P<parte>(?:(?:all|dall|verso l|sin dall|fin dall)' + AP + r'\s*)?inizio\s+del(?:l' + AP + r')?\s*|'
@@ -138,10 +167,13 @@ SECOLO = re.compile(
     r'|(?P<r3>' + ROM + r')(?:\s*(?:–|-)\s*(?P<r4>' + ROM + r'))?\s*' + SEC +
     r'|(?P<o1>' + ORD + r')\s+secolo'
     r'|(?P<r5>' + ROM + r')\s+(?:al|all' + AP + r'|e il|e l' + AP + r')\s*(?P<r6>' + ROM + r')\s*' + SEC + r')' + ERA, re.I)
-# the turn of the era: "all’inizio (al principio) della nostra èra" is the start of the I century A.D., "alla
-# vigilia della nostra èra" the end of the I century B.C. (not "il 753 come inizio della nostra èra")
-NOSTRA_ERA = re.compile(r'(?<![\w])(?P<cue>(?:(?:all|dall|verso l)' + AP + r'\s*|(?:al|dal)\s+)(?:inizio|principio)|'
-                        r'alla\s+vigilia)\s+della\s+nostra\s+[eè]ra', re.I)
+# the turn of the era: "all’inizio (al principio) della nostra èra", "sull’inizio dell’èra cristiana" is the start of
+# the I century A.D., "alla vigilia della nostra èra" the end of the I century B.C., "intorno (vicino, in prossimità)
+# all’èra cristiana" both, 25 B.C. - 25 A.D.; "prima della nostra èra" and "posteriore all’èra cristiana" are bounds
+# (not "il 753 come inizio della nostra èra", nor a year before its suffix, "nel 63 prima della nostra èra")
+NOSTRA_ERA = re.compile(r'(?<![\w])(?:(?P<cue>(?:(?:all|dall|verso l|sull)' + AP + r'\s*|(?:al|dal)\s+)(?:inizio|principio)|'
+                        r'alla\s+vigilia|prima)\s+(?:della\s+nostra\s+[eè]ra|dell' + AP + r'\s*[eè]ra\s+cristiana)|'
+                        r'(?P<cue2>intorno|vicino|in\s+prossimità|posteriore)\s+(?:all|dell)' + AP + r'\s*[eè]ra\s+cristiana)', re.I)
 MILLENNIO = re.compile(
     PARTE + r'(?:(?P<m1>' + ROM + r')(?:\s*(?:–|-)\s*(?P<m2>' + ROM + r'))?\s+millennio|(?P<o1>' + ORD + r')\s+millennio'
     r'|millennio\s+(?P<m3>' + ROM + r'))' + ERA, re.I)
@@ -151,6 +183,8 @@ ALTRA_ERA = re.compile(r'\s*(?:seleucidic\w*|dell' + AP + r'\s*[eè]ra seleucid\
 DEBOLI_NT = ('dal', 'dall’', "dall'", 'al', 'all’', "all'", 'del', 'dell’', "dell'", 'fino al', 'fino all’', 'sino al',
              'mese')      # "febbraio 44", "l’autunno 48", "nell’inverno 54–55": two digits after a month, NT only
 MORBIDI = ('segnale debole', 'una cifra')    # refusals a row of eventi-correzioni.tsv may overrule
+PARTE_DECENNIO = re.compile(r'(?<![\w])(?:(?:all|dall|verso l)' + AP + r'\s*inizio|(?:alla|verso la|nella)\s+(?:(?:prima|seconda)\s+)?'
+                            r'metà|(?:alla|verso la|sulla)\s+fine)\s+$', re.I)
 PARTI = {'inizio': (0, 25), 'prima metà': (0, 50), 'metà': (25, 75), 'seconda metà': (50, 100), 'fine': (75, 100)}
 # the sentence ends of stage 2, not after an abbreviation of a date (a.C., ca., sec.); a dash ends a sentence
 # only after a full stop (the lemmas of a note, "… 39 d.C. — Filippo: …"), not inside one ("tempio — dal 538
@@ -273,15 +307,42 @@ def espressioni(text, spans=(), tavola=False):
         out[-1]['incerto'] = bool(INCERTO.match(t, m.end()))           # "(fine del I sec.?)"
         prendi(m.start(), m.end())
     for m in NOSTRA_ERA.finditer(t):
-        if not libero(m.start(), m.end()):
+        cue = ' '.join((m.group('cue') or m.group('cue2')).lower().split())
+        if not libero(m.start(), m.end()) or cue == 'prima' and re.search(r'\d\s*$', t[:m.start()]):
             continue
-        cue = ' '.join(m.group('cue').lower().split())
-        vigilia = 'vigilia' in cue
-        out.append(dict(raw=text[m.start():m.end()], offset=m.start(), kind='secolo', a=1, b=1,
-                        era='a.C.' if vigilia else 'd.C.', circa=True, limite='post' if cue.startswith('dal') else None,
-                        incerto=False, cue='nostra èra', forte=True, parte='fine' if vigilia else 'inizio'))
+        x = dict(raw=text[m.start():m.end()], offset=m.start(), kind='secolo', a=1, b=1, circa=True, incerto=False,
+                 cue='nostra èra', forte=True)
+        if m.group('cue2') and cue != 'posteriore':
+            x.update(kind='intervallo', a=25, b=25, era='a.C.', era_b='d.C.', limite=None)    # around the turn
+        else:
+            prima = 'vigilia' in cue or cue == 'prima'
+            x.update(era='a.C.' if prima else 'd.C.', parte='fine' if prima else 'inizio',
+                     limite='post' if cue.startswith('dal') or cue == 'posteriore' else 'ante' if cue == 'prima' else None)
+        out.append(x)
         prendi(m.start(), m.end())
-    # 2. "dal N al M", "tra il N e il M"
+    # 2. a span with months or parts of a year at its ends ("fra dicembre del 589 e gennaio del 588"), then "dal N
+    # al M", "tra il N e il M"
+    for m in list(TRA_MESI.finditer(t)) + list(TRATTINO_MESI.finditer(t)):
+        g = m.groupdict()
+        if not libero(m.start(), m.end()) or not (g['p1'].strip() or g['p2'].strip()) or \
+                g.get('cue') and (g['cue'].lower().startswith('d') != g['sep'].lower().startswith('a')):
+            continue
+        a, b = int(m.group('a')), int(m.group('b'))
+        fine = m.end()
+        e = re.match(ERA, t[fine:])
+        era2 = e.group('era') if e and e.group('era') else None
+        fine += e.end() if era2 else 0
+        e1, e2 = era_suffisso(g.get('era1')), era_suffisso(era2)
+        x = dict(raw=text[m.start():fine], offset=m.start(), kind='intervallo', a=a, b=b, era=e1 or e2,
+                 circa=bool(g.get('c1')), limite=None, incerto=False, cue=(g.get('cue') or 'mese').lower(),
+                 forte=True, dopo_mese=True, mesi=True)
+        if e1 and e2 and e1 != e2:
+            x['era_b'] = e2
+        if x['era'] is None and min(a, b) < 100:
+            x.update(cue='mese', forte=False)                           # two digits: read in the NT only, as "febbraio 44"
+        _scarti_numero(t, m.start('a'), m.end('b'), x, text, 1 if tavola else 100)
+        out.append(x)
+        prendi(m.start(), fine)
     for m in DALAL.finditer(t):
         if not libero(m.start(), m.end()):
             continue
@@ -336,7 +397,7 @@ def espressioni(text, spans=(), tavola=False):
             if len(s.group('b')) < len(m.group(1)) and '/' in s.group('sep'):     # 589/8 = 589-588
                 b = int(m.group(1)[:len(m.group(1)) - len(s.group('b'))] + s.group('b'))
             if b != a:
-                x.update(kind='intervallo', b=b, alternativa=b if s.group('sep').strip() in ('o', 'oppure') else None)
+                x.update(kind='intervallo', b=b, alternativa=b if s.group('sep').split()[:1] in (['o'], ['oppure']) else None)
                 fine = s.end()
             sb = SPAN_BARRA.match(t, fine) if '/' in s.group('sep') else None
             if sb:                                                       # "305/4–281", "359/8–338/7"
@@ -379,6 +440,11 @@ def espressioni(text, spans=(), tavola=False):
             inizio = m.start() - len(cf.group(0))
             if cf.group('cue3') and x['kind'] == 'anno' and a % 10 == 0 and a < 100:
                 x.update(kind='intervallo', b=a + 9, decennio=True)     # "gli anni 80": 80–89
+                pp = PARTE_DECENNIO.search(t[:inizio])
+                if pp:                                                  # "all’inizio degli anni 40": 40–42
+                    k = next(k for k in ('prima metà', 'seconda metà', 'metà', 'inizio', 'fine') if k in pp.group(0).lower())
+                    p0, p1 = PARTI[k]
+                    x.update(a=a + p0 // 10, b=a + p1 // 10 - (p1 % 10 == 0), parte=k)
         elif cd:
             x.update(cue=cd.group('cue').lower())
             inizio = m.start() - len(cd.group(0))
@@ -453,6 +519,8 @@ def espressioni(text, spans=(), tavola=False):
     for x in out:
         x.pop('fine', None)
         _limite_contesto(t, x)
+        if not x['circa'] and CIRCA_PRIMA.search(t[max(0, x['offset'] - 40):x['offset']]):
+            x['circa'] = True                                           # "va fatto risalire pressappoco al 605"
     out.sort(key=lambda x: x['offset'])
     return out
 
@@ -461,8 +529,8 @@ def _limite_contesto(t, x):
     """A bound said by the words before the expression: «anteriore al 735», «posteriore al 70», «fino al sec. II»,
     «a partire dal IV secolo», «Dalla fine del II sec.», «dal sec. VIII»; «non … anteriore agli anni 80» is the
     other bound. Not a span «dal N al M», nor the date of an origin («che data dal II sec. a.C.», ORIGINE)."""
-    if x['limite'] or x['kind'] == 'intervallo' and x['cue'] in ('dal', 'dall’', "dall'", 'tra il', 'fra il', 'tra l’',
-                                                                  'fra l’', "tra l'", "fra l'"):
+    if x['limite'] or x.get('mesi') or x['kind'] == 'intervallo' and x['cue'] in ('dal', 'dall’', "dall'", 'tra il', 'fra il',
+                                                                                  'tra l’', 'fra l’', "tra l'", "fra l'"):
         return
     r = x['raw'].lower()
     pre = t[max(0, x['offset'] - 50):x['offset']]
@@ -487,6 +555,10 @@ def _limite_contesto(t, x):
     elif x['kind'] in ('secolo', 'millennio') and x['a'] == x['b'] and \
             (da or re.search(r'(?<![\w])(?:dalla|dall[’\'])\s*$', pre, re.I)):
         lim = 'post'                                                    # "Dal IV secolo d.C.", "Dalla fine del II sec."
+    elif LIMITE_FINE.search(pre):
+        lim = 'ante'                                                    # "prima della fine del febbraio 44"
+    elif LIMITE_DA.search(pre) and (pre.endswith('(') or r.startswith(('del ', 'dell’', "dell'", 'della '))):
+        lim = 'post'                                                    # "a partire dal regno di Erode (37)"
     if lim:
         x['limite'] = lim
 
@@ -527,10 +599,10 @@ def _scarti_numero(t, a, fine, x, text, minimo=100):
         x['scarto'] = 'conteggio («%s»)' % UNITA.match(dopo).group(0).strip()
     elif MESE_DOPO.match(dopo) and n <= 31:
         x['scarto'] = 'giorno del mese'
+    elif ALTRA_ERA.match(dopo):
+        x['scarto'] = 'anno di un’altra era («%s»)' % ALTRA_ERA.match(dopo).group(0).strip()   # before «di R…»: «782 di Roma»
     elif (x['cue'] or '').endswith('anno') and REGNO.match(dopo) and not x['era']:
         x['scarto'] = 'anno di regno'
-    elif ALTRA_ERA.match(dopo):
-        x['scarto'] = 'anno di un’altra era («%s»)' % ALTRA_ERA.match(dopo).group(0).strip()
     elif x['era'] is None and n < 10 and x['cue'] not in ('(',) and not x['cue'].endswith('anni') and minimo > 1:
         x['scarto'] = 'una cifra senza era'
     elif not x['forte'] and x['era'] is None and n < minimo:
@@ -780,7 +852,8 @@ class Raccolta:
         return runs(self.vix[t] for l in links for t in l.get('targets', []) if t in self.vix)
 
     def aggiungi(self, ev):
-        ev.setdefault('periodo', periodo_di(ev['inizio'], self.per))
+        if 'periodo' not in ev:
+            ev['periodo'] = periodo_di(ev['inizio'], self.per)
         self.eventi.append(ev)
 
     # --- free text
@@ -806,11 +879,18 @@ class Raccolta:
             # from the last character of a date that ends with a full stop («… nel XIII sec. a.C. A Meneijeh …»)
             e0 = FRASE.search(text, x['offset'] + len(x['raw']) - x['raw'].endswith('.'))
             e0 = e0.start() + 1 if e0 and text[e0.start()] in '.!?' else (e0.start() if e0 else len(text))
+            lemma = re.match(r'\s*— (?=\S)', text[s0:e0])
+            if lemma:
+                s0 += lemma.end()                       # the dash of a note's lemma opening the sentence is not in it
             frase = text[s0:e0].strip()
             nella = [l for l in links if l.get('offset') is not None and s0 <= l['offset'] < e0]
-            if c is None and ctx_rif:
+            dai_rif = c is None and ctx_rif is not None
+            if dai_rif:
                 c = ctx_rif(nella)
             d, motivo = data(x, c, dec)
+            if d and dai_rif:
+                # the testament came from the references, not from a section of the paragraph: said so
+                d = d[:3] + (re.sub(r'^(?:fonte|sezione) (AT|NT)', r'riferimenti \1', d[3]),)
             base = dict(fonte=fonte, sorgente=sorgente, apri=apri, data=x['raw'], offset=x['offset'])
             if d is None:
                 if row and dec == 'scarta':
@@ -863,6 +943,7 @@ class Raccolta:
                                        era='a.C.' if v['start'] < 0 else 'd.C.', era_da='tavola (stage 2c)')
                 continue
             spans = [(l['offset'], l['length']) for l in cit[v['n']]]
+            limite = None
             for x in espressioni(v['text'], spans, tavola=True):
                 if x['limite'] and not x.get('scarto'):
                     x['scarto'] = 'un limite («%s»), non la data della voce' % x['cue']
@@ -870,6 +951,7 @@ class Raccolta:
                     x['scarto'] = 'una nascita («nato»), non la data della voce'   # "TIRAKA, … nato verso il 710"
                 d, motivo = data(x, ctx)
                 if d is None:
+                    limite = (x, d) if x['limite'] else None
                     self.non_datati.append(dict(fonte='cronologia', sorgente='cronologia.%d' % v['n'],
                                                 apri=hash_cron(v), data=x['raw'], offset=x['offset'],
                                                 motivo=motivo + ' (la voce resta nella linea, datata altrimenti)',
@@ -878,6 +960,12 @@ class Raccolta:
                 proprie[v['n']] = dict(inizio=d[0], fine=d[1], precisione=precisione(x), circa=x['circa'],
                                        limite=x['limite'], incerto=x['incerto'], data=x['raw'], offset=x['offset'],
                                        data_da='testo', era=d[2], era_da=d[3])
+                if x.get('parte'):
+                    proprie[v['n']]['parte'] = x['parte']                       # «nel IX sec. e nella prima metà …»
+                # a bound refused just before, «prima del 70? o verso l’80?», is the other hypothesis
+                y = limite and limite[0]
+                if y and re.fullmatch(r'\W*\s+o\s+', v['text'][y['offset'] + len(y['raw']):x['offset']]):
+                    proprie[v['n']]['alternativa'] = anno(y['a'], d[2])
                 break
         # then the row: the year in its margin, the dates of its entries, the rows around it, the period
         anni_riga = {}
@@ -891,6 +979,10 @@ class Raccolta:
                 if ds:
                     anni_riga[r] = (min(d['inizio'] for d in ds), max(d['fine'] for d in ds), 'voci', None,
                                     [d['inizio'] for d in ds])
+        # the entries of each column of a section, in the order of the print (the column reads down the rows)
+        colonne = defaultdict(list)
+        for v in voci:
+            colonne[(v['section'], v['column'])].append(v['n'])
         for v in voci:
             r = (v['section'], v['row'])
             ev = dict(id='ev:cronologia.%d' % v['n'], fonte='cronologia', sorgente='cronologia.%d' % v['n'],
@@ -905,25 +997,33 @@ class Raccolta:
                 ev.update(proprie[v['n']])
             elif testa:
                 # the heading of a column («ISRAELE», «GIUDA», «EGITTO»: one word in italic capitals, the name of
-                # its column) is not an event: it opens its column, at the first year of the entry it heads
-                d = next((proprie[w['n']] for w in voci if w['n'] > v['n'] and w['section'] == v['section']
-                          and w['column'] == v['column'] and w['n'] in proprie), None)
-                if d is None:
-                    self.errors.append('cronologia.%d: the heading %r heads no dated entry' % (v['n'], v['text']))
-                    d = dict(inizio=self.per[v['section'] - 1]['inizio'])
-                ev.update(inizio=d['inizio'], fine=d['inizio'], precisione='riga', data=None, offset=None,
-                          era='a.C.' if d['inizio'] < 0 else 'd.C.', data_da='colonna: intestazione', era_da='tavola')
+                # its column) is not an event: it opens its column, at the first year of the entry under it
+                # (set below, once the entries placed by their row have their years)
+                ev.update(inizio=None, fine=None, precisione='riga', data=None, offset=None, data_da='colonna: intestazione',
+                          era_da='tavola')
             elif r in anni_riga:
                 s, e, da, mg, _ = anni_riga[r]
-                # inside its row, an entry follows the dated entries of its column: «Pasqua 70 … / Presa
-                # delle mura … / Inizio di agosto … / 29 agosto 70» is 70, not the 69-79 of the row
-                # (it would sort before «Pasqua 70»); not when the column is out of order there
+                # an entry follows the dated entry above it in its column: «Pasqua 70 … / Presa delle mura … /
+                # Inizio di agosto … / 29 agosto 70» is 70, not the 69-79 of the row (it would sort before
+                # «Pasqua 70»). Above it in its row; in a row without a year in the margin also in the rows
+                # above, when that entry starts in the row's years («Ministero di Isaia» under «EZECHIA
+                # (716–687)», «Rivolta del sacerdote Mattatia» under «167–164: la grande persecuzione», not at the
+                # 171 of a Parthian king in the next column). Starting with it, it ends no earlier, so it sorts
+                # after it («ALESSANDRO MAGNO (336–323) / Ha come precettore Aristotele»); and no later than the
+                # dated entry under it in its row; not when the column is out of order there
                 col = [w['n'] for w in righe[r] if w['column'] == v['column']]
                 k = col.index(v['n'])
                 a = next((proprie[n] for n in reversed(col[:k]) if n in proprie), None)
+                if a is None and da == 'voci':
+                    cc = colonne[(v['section'], v['column'])]
+                    a = next((proprie[n] for n in reversed(cc[:cc.index(v['n'])]) if n in proprie), None)
+                    if a and not s <= a['inizio'] <= e:
+                        a = None
                 b = next((proprie[n] for n in col[k + 1:] if n in proprie), None)
                 s2 = max(s, a['inizio']) if a else s
                 e2 = min(e, b['fine']) if b else e
+                if a and (s2, e2) < (a['inizio'], a['fine']):
+                    e2 = a['fine']
                 if s2 <= e2 and (s2, e2) != (s, e):
                     s, e, mg = s2, e2, None
                     da = 'colonna'
@@ -935,7 +1035,8 @@ class Raccolta:
             else:
                 # between the rows around it (across the sections too): from the latest start of the row
                 # before to the earliest start of the row after; if the table is not in order there, from
-                # the earliest start before to the latest start after; else the period
+                # the latest start before to the latest start after (it still follows the row above: «73:
+                # Flavio Silva …», «Masada (Pasqua 74)» before «Una parte dei Sicari …»); else the period
                 k = ordine.index(r)
                 prima = next((anni_riga[q] for q in reversed(ordine[:k]) if q in anni_riga), None)
                 dopo = next((anni_riga[q] for q in ordine[k + 1:] if q in anni_riga), None)
@@ -944,8 +1045,8 @@ class Raccolta:
                 if prima and dopo:
                     if max(prima[4]) <= min(dopo[4]):
                         se = (max(prima[4]), min(dopo[4]))
-                    elif min(prima[4]) <= max(dopo[4]):
-                        se = (min(prima[4]), max(dopo[4]))
+                    elif max(prima[4]) <= max(dopo[4]):
+                        se = (max(prima[4]), max(dopo[4]))
                 if se:
                     ev.update(inizio=se[0], fine=se[1], precisione='riga', data=None, offset=None,
                               data_da='riga: tra le righe vicine', era_da='tavola',
@@ -956,7 +1057,19 @@ class Raccolta:
             ev.setdefault('limite', None)
             ev.setdefault('incerto', False)
             self.aggiungi(ev)
-        return {v['n']: e for v, e in zip(voci, self.eventi[-len(voci):])}
+        cron = {v['n']: e for v, e in zip(voci, self.eventi[-len(voci):])}
+        # a heading at the first year of the entry printed under it, however that one is placed («EGITTO» before
+        # «24ª dinastia. Capitale: Sais.», placed by its row at 716, not at the 715 of BOCCORIS further down)
+        for v in voci:
+            if cron[v['n']]['data_da'] == 'colonna: intestazione':
+                cc = colonne[(v['section'], v['column'])]
+                k = cc.index(v['n'])
+                if k + 1 == len(cc):
+                    self.errors.append('cronologia.%d: the heading %r heads no entry' % (v['n'], v['text']))
+                    continue
+                y = cron[cc[k + 1]]['inizio']
+                cron[v['n']].update(inizio=y, fine=y, era='a.C.' if y < 0 else 'd.C.', periodo=v['section'])
+        return cron
 
     # --- the dynasties
 
@@ -994,23 +1107,45 @@ class Raccolta:
     # --- the datings of the books
 
     def datazioni(self, cron):
+        """A dating of a book takes the date its own words give, when they give one («750 ca.: Amos e poco dopo
+        Osea», in the row of GEROBOAMO II (783–743); «Dal 53, lettere ai Filippesi»), else the date of its entry
+        (DATAZIONE_VOCE: another entry, «Del tempo di Alessandro: Zc 9-14» is the time of ALESSANDRO MAGNO)."""
+        per_voce = {e['cronologia']['voce']: e for e in cron.values()}
         for d in self.I['datazioni']:
             if d['tipo'] == 'citato':
                 continue
             c = cron[d['voce']]
             libri = [self.data_books[b] for b in d['libri']]
+            x = dict(data=c.get('data'), inizio=c['inizio'], fine=c['fine'], precisione=c['precisione'], circa=c['circa'],
+                     limite=c.get('limite'), incerto=c.get('incerto', False), data_da=c.get('data_da'))
+            for k in ('alternativa', 'parte'):
+                if c.get(k):
+                    x[k] = c[k]
+            altra = DATAZIONE_VOCE.get((d['voce'], d['nota']))
+            xs = [(y, data(y, 'aC' if c['era'] == 'a.C.' else 'dC')[0]) for y in espressioni(d['nota'], tavola=True)]
+            if altra:
+                o = per_voce[altra]
+                x.update(data=o['data'], inizio=o['inizio'], fine=o['fine'], precisione=o['precisione'], circa=o['circa'],
+                         limite=o['limite'], incerto=o['incerto'], data_da=o['data_da'])
+            elif len(xs) == 1 and xs[0][1] and (xs[0][1][:2], xs[0][0]['limite']) != ((c['inizio'], c['fine']), c.get('limite')):
+                y, dd = xs[0]
+                x = dict(data=y['raw'], inizio=dd[0], fine=dd[1], precisione=precisione(y), circa=y['circa'], limite=y['limite'],
+                         incerto=y['incerto'], data_da='testo')
+                if y.get('parte'):
+                    x['parte'] = y['parte']
             self.aggiungi(dict(
                 id='ev:datazione.%s' % d['id'], fonte='datazione', sorgente=d['id'], apri=c['apri'],
-                data=c.get('data'), offset=None, inizio=c['inizio'], fine=c['fine'],
-                precisione=c['precisione'], circa=c['circa'], limite=c.get('limite'), incerto=c.get('incerto', False),
-                era=c['era'], era_da='la voce della tavola', data_da=c.get('data_da'),
+                offset=None, era='a.C.' if x['fine'] < 0 else ('d.C.' if x['inizio'] > 0 else 'a.C.–d.C.'), era_da='la voce della tavola',
                 etichetta='%s: %s%s' % (TIPO_DATAZIONE[d['tipo']], ', '.join(libri),
                                         '' if d['nota'] == ', '.join(libri) else ' (%s)' % d['nota']),   # not «Abdia (Abdia)»
                 html='<b>%s</b>: %s. %s' % (TIPO_DATAZIONE[d['tipo']], H.escape(', '.join(libri)), c['html']),
                 frase=d['nota'], verso=None, versetti=c['versetti'], riferimenti=c['riferimenti'],
                 rango=(2, d['riga']), libri=d['libri'], tipo=d['tipo'], voce=d['voce'],
-                periodo=c['periodo'], stesso_evento=[c['id']]))
-            c.setdefault('stesso_evento', []).append('ev:datazione.%s' % d['id'])     # both ways
+                periodo=c['periodo'], **x))
+            # the same event as its entry, when it has its years (not «750 ca.: Amos …» in the row of GEROBOAMO II)
+            if (x['inizio'], x['fine']) == (c['inizio'], c['fine']):
+                self.eventi[-1]['stesso_evento'] = [c['id']]
+                c.setdefault('stesso_evento', []).append('ev:datazione.%s' % d['id'])     # both ways
 
     # --- the maps
 
@@ -1041,7 +1176,8 @@ class Raccolta:
                                                  ' (%s)' % H.escape(c['sottotitolo']) if c['sottotitolo'] else '',
                                                  H.escape(c['periodo'])),
                 frase=None, verso=None, versetti=self.runs_link_ranges(links[src]),
-                riferimenti=[[l['raw'], l['id']] for l in links[src]], rango=(3, k), libri=c['libri']))
+                riferimenti=[[l['raw'], l['id']] for l in links[src]], rango=(3, k), libri=c['libri'],
+                **({'parte': xs[0]['parte']} if xs[0].get('parte') else {})))
 
     def runs_link_ranges(self, links):
         ix = []
@@ -1054,6 +1190,8 @@ class Raccolta:
 ERE_DINASTIE = {'P01': 'a.C.', 'P05': 'a.C.', 'P07': 'a.C.', 'P29': 'd.C.', 'P31': 'd.C.'}
 ERE_DINASTIE_PERCHE = {'asmonei': 'gli Asmonei, prima di Erode (37–4 a.C.)',
                        'erodi': 'i discendenti di Erode (37–4 a.C.)'}
+# a dating whose words name the time of another entry of the table: (entry, words) -> that entry
+DATAZIONE_VOCE = {(238, 'Del tempo di Alessandro: Zc 9-14'): 239}       # ALESSANDRO MAGNO (336–323)
 TIPO_DATAZIONE = {'composizione': 'Composizione', 'ministero': 'Ministero', 'evento': 'Evento'}
 
 
@@ -1077,10 +1215,15 @@ def testamento_rif(testamento):
     return f
 
 
-def stesso_evento(eventi, cron_nomi, persone_cron):
-    """Link a dated sentence to a chronology entry with the same years when they share a cited verse
-    or a name of a ruler printed in small capitals or capitals in the entry; a person of the dynasties to
-    the entries that name them (integrazione.json, persone.tsv) with the same years."""
+def stesso_evento(eventi, cron_nomi, persone_cron, vix):
+    """Link a dated sentence to a chronology entry with the same years when they share a cited verse, when
+    the entry cites the verse of the note in a passage («probabilmente nel 740», on Is 6,1, and «740 Vocazione
+    di Isaia (Is 6,1)»; not in a whole chapter, «Marzo 160: Nicànore è sconfitto … (1Mac 7 …)» is not the
+    note on 1Mac 7,1 «Verrà riconosciuto da Roma nel 160»), or when the sentence names a ruler printed in small capitals or capitals in the entry; never a
+    bound («i brani anteriori al 605»: not the battle of Carchemish). A person of the dynasties to the entries
+    that name them (integrazione.json, persone.tsv) with the same years; a death only to an entry that tells a
+    death («Erode Agrippa I † 44» is «44: morte di Agrippa I», not «Pasqua 44: … Agrippa I fa decapitare
+    Giacomo»)."""
     per_anni = defaultdict(list)
     for e in eventi:
         if e['fonte'] == 'cronologia' and e['precisione'] in ('anno', 'intervallo', 'circa') and \
@@ -1090,26 +1233,35 @@ def stesso_evento(eventi, cron_nomi, persone_cron):
     for e in eventi:
         if e['fonte'] == 'dinastie':
             for c in per_anni.get((e['inizio'], e['fine']), []):
-                if c['cronologia']['voce'] in persone_cron.get(e['persona'], ()):
+                if c['cronologia']['voce'] in persone_cron.get(e['persona'], ()) and \
+                        (e['tipo'] != 'morte' or MORTE.search(c['frase'])):
                     e.setdefault('stesso_evento', []).append(c['id'])
                     c.setdefault('stesso_evento', []).append(e['id'])
                     e.setdefault('stesso_perche', []).append('persona nominata nella voce (persone.tsv)')
                     n += 1
             continue
         if e['fonte'] not in ('nota', 'introduzione', 'testo', 'dizionario') or \
-                e['precisione'] not in ('anno', 'intervallo', 'circa'):
+                e['precisione'] not in ('anno', 'intervallo', 'circa') or e['limite']:
             continue
         vs = set(_espandi(e['versetti']))
+        ancora = vix.get(e['verso'])
         for c in per_anni.get((e['inizio'], e['fine']), []):
             comuni = vs & set(_espandi(c['versetti']))
+            r = c['versetti']
+            passo = ancora is not None and any(a <= ancora <= b and b - a < PASSO for a, b in zip(r[::2], r[1::2]))
             nomi = [x for x in cron_nomi.get(c['cronologia']['voce'], ())
                     if re.search(r'(?<![\w])%s(?![\w])' % re.escape(x), e['frase'] or '', re.I)]
-            if comuni or nomi:
+            if comuni or passo or nomi:
                 e.setdefault('stesso_evento', []).append(c['id'])
                 c.setdefault('stesso_evento', []).append(e['id'])
-                e.setdefault('stesso_perche', []).append('versetti comuni' if comuni else 'nome: ' + nomi[0])
+                e.setdefault('stesso_perche', []).append('versetti comuni' if comuni else 'versetto della nota citato dalla voce'
+                                                         if passo else 'nome: ' + nomi[0])
                 n += 1
     return n
+
+
+PASSO = 12        # a run of the entry's verses up to this long is a passage, longer a chapter
+MORTE = re.compile(r'(?<![\w])(?:mort[eio]|muor\w*|uccis\w*|decedut\w*)(?![\w])|†', re.I)
 
 
 def _espandi(r):
@@ -1196,7 +1348,7 @@ def raccogli(data, coll, dz, P, I):
     pc = defaultdict(set)
     for x in I['persone']['cronologia']:
         pc[x['persona']].add(x['voce'])
-    nl = stesso_evento(T.eventi, nomi_cronologia(P), pc)
+    nl = stesso_evento(T.eventi, nomi_cronologia(P), pc, vix)
     return T, per, nl
 
 

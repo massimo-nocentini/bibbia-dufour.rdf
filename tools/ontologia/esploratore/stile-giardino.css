@@ -1027,6 +1027,7 @@ mark.tm-data { background: none; color: var(--rubrica); padding: 0; font-variant
 .tm-fonte { font-variant-caps: all-small-caps; letter-spacing: var(--spazio); font-size: .88rem; }
 .tm-pos { font-style: italic; }
 .tm-link { font: italic .78rem var(--ui); color: var(--richiamo); margin-left: .3rem; white-space: nowrap; }
+.tm-qual { font: italic .78rem var(--ui); color: var(--tenue); margin-left: .3rem; white-space: nowrap; }   /* «≈ dalla riga» beside it */
 .tm-sez .tm-tutti { margin: .4rem 0 0; font: italic .82rem var(--ui); }
 .carta-voce.sel { background: var(--sopra); }
 .tm-scala .tm-breve { display: none; }
@@ -1047,4 +1048,9 @@ mark.tm-data { background: none; color: var(--rubrica); padding: 0; font-variant
   .tm-anni { position: static; text-align: left; }
   .tm-set { font-size: .68rem; letter-spacing: 0; }      /* «dopo», on the narrow last segment, clear of the IX */
   .tm-scala { font-size: .68rem; }
+}
+@media (max-width: 360px) {
+  /* at 320-360 px «dopo» would still touch the IX: smaller, and out into the margin of the page */
+  .tm-set { font-size: .6rem; }
+  .tm-set:last-child { margin-right: -.55rem; }
 }

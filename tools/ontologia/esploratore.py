@@ -547,7 +547,8 @@ def tempo(E, P, data, pt, dz, ig, vix, errors):
     date in <mark class="tm-data">; '' otherwise: the page takes the chronology entry, the person, the map),
     runs of the verses cited, anchor verse (-1), same-event indices (both ways), column of the chronology
     (-1), placement of a chronology entry or dating (DATA_DA, -1), the other year of «N o M» (signed, 0),
-    rule of the era]. Where: cronologia the entry (from 1); dinastie the person; datazione [entry, books,
+    rule of the era, part of a century, millennium or decade ('inizio', 'prima metà', 'metà', 'seconda metà', 'fine',
+    '')]. Where: cronologia the entry (from 1); dinastie the person; datazione [entry, books,
     kind]; carta its row of int.carte; nota the note; introduzione [introduction, paragraph n]; testo [text,
     paragraph n]; dizionario [entry, paragraph n]."""
     from eventi import taglia_html
@@ -576,7 +577,7 @@ def tempo(E, P, data, pt, dz, ig, vix, errors):
             stesso[k].add(pos[x])
             stesso[pos[x]].add(k)            # both ways already in eventi.json; kept as a guard
     regole = sorted({e['era_da'] for e in E['eventi']})
-    ev, segnate = [], 0
+    ev, non_segnate = [], []
     for k, e in enumerate(E['eventi']):
         f = e['fonte']
         h = ''
@@ -601,10 +602,11 @@ def tempo(E, P, data, pt, dz, ig, vix, errors):
                 if '<' not in html[ha:hb]:
                     html = '%s<mark class="tm-data">%s</mark>%s' % (html[:ha], html[ha:hb], html[hb:])
                     hm = html_offsets(testo, html)
-                    segnate += 1
+                else:
+                    non_segnate.append(e['id'])
                 h = taglia_html(html, hm[a0], fine_html(html, hm[a0 + len(frase) - 1]))
-                if re.match(r'— (?=\S)', h):                     # the dash of a note's lemma opening it
-                    h, frase = h[2:], frase[2:]
+                if frase.startswith('—'):
+                    errors.append('%s: the sentence opens with the dash of a lemma' % e['id'])
                 if piano(h) != ' '.join(frase.split()):
                     errors.append('%s: the HTML of the sentence is not its text: %r' % (e['id'], piano(h)[:80]))
                 citate = len(re.findall(r'<a class="ci"', h)) + sum(len(x.split()) for x in re.findall(r'data-d="([^"]+)"', h))
@@ -619,11 +621,13 @@ def tempo(E, P, data, pt, dz, ig, vix, errors):
                    e['data'] or '', e['periodo'] or 0, h, e['versetti'],
                    vix[e['verso']] if e['verso'] else -1, sorted(stesso[k]), col,
                    DATA_DA.index(e['data_da']) if e.get('data_da') else -1,
-                   alt, regole.index(e['era_da'])])
-    if len(ev) != E['meta']['summary']['eventi'] or segnate < 0.9 * sum(1 for e in ev if e[9]):
-        errors.append('time line: %d events (%d expected), %d dates marked' % (len(ev), E['meta']['summary']['eventi'], segnate))
+                   alt, regole.index(e['era_da']), e.get('parte') or ''])
+    if len(ev) != E['meta']['summary']['eventi']:
+        errors.append('time line: %d events, %d expected' % (len(ev), E['meta']['summary']['eventi']))
+    # every date of a sentence marked (its HTML slice holds no tag)
+    errors += ['%s: the date is not marked in its sentence' % k for k in non_segnate]
     per = [[p['n'], p['romano'], p['titolo'], p['inizio'], p['fine']] for p in E['periodi']]
-    return dict(fonti=fonti, prec=prec, per=per, regole=regole, ev=ev, segnate=segnate)
+    return dict(fonti=fonti, prec=prec, per=per, regole=regole, ev=ev)
 
 
 def text_find(testo, frase, o):
@@ -638,7 +642,7 @@ def text_find(testo, frase, o):
 
 # ---------------------------------------------------------------- the front matter and the appendices
 
-NOTA_KIND =['nota', 'copre', 'capitolo', 'rimandi', 'nessuna']
+NOTA_KIND = ['nota', 'copre', 'capitolo', 'rimandi', 'nessuna']
 ITEM_KIND = ['rif', 'libro', 'vedi', 'pagina']
 EBRAICO = {n: ch for n, ch in zip('Alef Bet Ghimel Dalet He Vau Zain Het Tet Iod Caf Lamed Mem Nun Samec Ain Pe Sade '
                                   'Kof Res Sin Tau'.split(), 'אבגדהוזחטיכלמנסעפצקרשת')}
@@ -982,7 +986,7 @@ def main(a):
                                                        len(Q['cron']['cit'])))
         T = P['tempo']
         print('time line: %d events, %d sentences with their HTML, %d dates marked'
-              % (len(T['ev']), sum(1 for e in T['ev'] if e[9]), T['segnate']))
+              % (len(T['ev']), sum(1 for e in T['ev'] if e[9]), sum('<mark class="tm-data">' in e[9] for e in T['ev'])))
         print('data: JSON %.1f MB, gzip %.1f MB; page %s %.1f MB'
               % (nraw / 1e6, ngz / 1e6, os.path.relpath(out, C), len(page.encode('utf-8')) / 1e6))
     for e in errors[:20]:

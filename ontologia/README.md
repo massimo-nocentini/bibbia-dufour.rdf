@@ -18,7 +18,7 @@ chronology rows that name them, the chronology to the books it dates, the notes 
 codices they cite; and every correction or reading of the editor, from every table of the project,
 is one annotation (`bj:Intervento`) with its rule, source row and evidence. Every dated event is on one
 time line: the chronology entries, the dated persons of the dynasties, the datings of the books, the maps
-of a period and the 916 dates read in the notes, introductions, front matter and dictionary
+of a period and the 907 dates read in the notes, introductions, front matter and dictionary
 (`bj:EventoDatato`), each with its years, its place on the line and the verses its sentence cites.
 
 Both texts are copyrighted (EDB, Marietti): everything here is for local use only (see
@@ -648,15 +648,15 @@ discorso:nota/Sir.16.22.1 ─oa:hasSource→ nota:Sir.16.22 ; ─bj:iniziaIn→ 
 ### The time line: every dated event (stage 2f)
 
 `tools/ontologia/eventi.py` puts every dated event of the material on one line (`build/eventi.json`,
-1,555 events from 2,000,000 B.C., the first row of the chronological table, to the third millennium of a
+1,546 events from 2,000,000 B.C., the first row of the chronological table, to the third millennium of a
 preface); `rdf.py` brings it into the graph with the model the chronological table already had: integer
 years `bj:annoInizio` / `bj:annoFine` (negative before Christ, no year zero: not `xsd:gYear` nor OWL-Time,
 for the reason given above) and `bj:circa`, now on every object of the line, with its place on it and how
 its date was read. Nothing already in the graph is described twice: the 585 chronology entries, the 6
 persons of the dynasties with a date, the 40 datings of a book and the 8 maps with a period take the new
 terms on themselves; a date read in free text is a new resource, a `bj:EventoDatato` (a `schema:Event` and
-an `oa:SpecificResource` of its source, like a `bj:Discorso`): 916, in the notes 557, the introductions 268,
-the front matter 25, the Dizionario 66.
+an `oa:SpecificResource` of its source, like a `bj:Discorso`): 907, in the notes 546, the introductions 267,
+the front matter 26, the Dizionario 68.
 
 ```
 evento:nota/2Kgs.25.8/66 (bj:EventoDatato) ─oa:hasSource→ nota:2Kgs.25.8 ; bj:parte "nota"
@@ -665,33 +665,40 @@ evento:nota/2Kgs.25.8/66 (bj:EventoDatato) ─oa:hasSource→ nota:2Kgs.25.8 ; b
     ─bj:versettoAncora→ verso:2Kgs.25.8 ; ─bj:citazioneNellaFrase→ citazione:2Kgs.25.8-c1 , citazione:2Kgs.25.8-c2
     ─bj:citaVersetto→ verso:2Kgs.24.12 , verso:2Kgs.25.2
     bj:annoInizio -587 ; bj:annoFine -587 ; bj:circa false ; bj:precisione "anno" ; bj:regolaEra "fonte AT"
-    bj:posizioneLinea 511 ; ─bj:nelPeriodo→ cronologia:sezione/6
+    bj:posizioneLinea 508 ; ─bj:nelPeriodo→ cronologia:sezione/6
 cronologia:voce/131 (TIRAKA) bj:datataDa "testo" ; bj:datazione "verso il 690" ; bj:annoInizio -690 ; bj:precisione "circa"
 dinastia:P15 (Erode il Grande) bj:tipoDatazione "regno" ; bj:annoInizio -37 ; bj:annoFine -4 ; ─bj:stessoEvento→ cronologia:voce/380
 ```
 
-- **The line**: `bj:posizioneLinea` (1 to 1,555, the order of `eventi.json`: start, end, then the source
+- **The line**: `bj:posizioneLinea` (1 to 1,546, the order of `eventi.json`: start, end, then the source
   and the position in it); all and only the objects of the line have one, so `?x bj:posizioneLinea ?n`
   is the whole line (query 35). `bj:precisione`: `anno`, `intervallo`, `circa`, `secolo` (a part of
   one too: «fine del II sec.»), `millennio`, `riga` (an entry dated by its row), `periodo`;
-  `bj:regolaEra` the rule that decided the era (`suffisso`, `correzione: <reason>`, `ordine`, `fonte AT`,
-  `fonte NT`, …: `tools/ontologia/README.md`, stage 2f); `bj:limite` `ante` or `post` (88); `bj:incerto`;
+  `bj:regolaEra` the rule that decided the era, a string that starts with its key (`suffisso`, `correzione:
+  <reason>`, `ordine`, `fonte AT`, `fonte NT`, `fonte moderna`, `sezione NT`, `riferimenti AT`, `riferimenti NT`,
+  `tavola`, `tavola (stage 2c)`, `la voce della tavola`, `dinastie: …`), sometimes with a qualifier after it
+  («fonte NT; due cifre dopo «del» in un testo del NT»): 53 strings, so a query compares with `STRSTARTS`
+  (`?x bj:regolaEra "tavola"` alone finds 164 of the 552 entries dated by the table; `tools/ontologia/README.md`,
+  stage 2f); `bj:limite` `ante` or `post` (88); `bj:incerto`;
   `bj:annoAlternativo` («del 587 (o 586?) a.C.»: -586, signed like the years); `bj:nelPeriodo` the section of the table the start falls in (an entry's
   own section; none after 135 A.D., 80 events); `bj:stessoEvento` symmetric, stored both ways as
-  `eventi.json` lists them (the 63 links of a date of the text or a person to an entry with the same
-  years, and the 40 datings to their entry: 206 triples).
+  `eventi.json` lists them (the 75 links of a date of the text or a person to an entry with the same
+  years, and 36 of the 40 datings to their entry, the ones with its years: 222 triples), each triple counted in
+  the VoID subset of its subject (`vp:bibbia` 70, `vp:dizionario` 1, `vp:paratesto` 115, `vp:integrazione` 36).
 - **The chronology entries**: only the 388 dated by stage 2c had years; now all 585 have: `bj:datataDa`
   `tavola` (the 388, unchanged, `bj:datazione` as printed at the head of the entry), `testo` (68: the first
   date of their text, now also their `bj:datazione`), or their row (129, `bj:precisione` `riga`, no
-  `bj:datazione`: `riga: anno a margine` 32, `riga: date delle altre voci` 49, `riga: tra le voci della
-  colonna` 36, between the dated entries before and after it in its column, «Inizio di agosto: cessano i
-  sacrifici» between «Pasqua 70» and «29 agosto 70» is 70, not the 69–79 of its row, `riga: tra le righe
-  vicine` 9; and the 3 headings of a column, «ISRAELE», «GIUDA», «EGITTO», `colonna: intestazione`, at the
-  first year of the dated entry under them). A query that wants only printed dates asks for `bj:datazione` (query 22 does: it now lists the
-  entries dated by their text too).
+  `bj:datazione`: `riga: anno a margine` 30, `riga: date delle altre voci` 48, `riga: tra le voci della
+  colonna` 39, after the dated entry above it in its column and before the one under it in its row, «Inizio
+  di agosto: cessano i sacrifici» between «Pasqua 70» and «29 agosto 70» is 70, not the 69–79 of its row,
+  `riga: tra le righe vicine` 9; and the 3 headings of a column, «ISRAELE», «GIUDA», «EGITTO», `colonna:
+  intestazione`, at the first year of the entry under them). A query that wants only printed dates asks for `bj:datazione` (query 22 does: it now lists the
+  entries dated by their text too); query 31 shows `bj:datataDa` beside the years, so the 27 rows whose
+  years come from the row («riga: …», beside a printed date «—») say so.
 - **Persons, datings, maps**: the years go on the person («† 166» is a death, `bj:tipoDatazione` `morte`;
   «134–104» a reign, `regno`), on the `bj:Datazione` (the years of its entry, with the entry's
-  `bj:datataDa`), on the map (its period, still `dcterms:temporal` as printed).
+  `bj:datataDa`; or the date of its own words, «750 ca.: Amos e poco dopo Osea», `bj:datataDa` `testo` with
+  that `bj:datazione`: 3), on the map (its period, still `dcterms:temporal` as printed).
 - **The dates of free text**: `evento:<source>/<offset>` (`evento:nota/Exod.2.10/474`,
   `evento:paragrafo/storici.16/2202` for an introduction, `evento:paragrafo/prefazione-verdon.2/517` for
   the front matter, `evento:voce/gerusalemme/paragrafo/2/95` for the dictionary), `dcterms:identifier` the
@@ -699,10 +706,12 @@ dinastia:P15 (Erode il Grande) bj:tipoDatazione "regno" ; bj:annoInizio -37 ; bj
   `bj:datazione` is the expression as printed and `bj:posizioneTesto` where it starts in the plain text of
   the source (the `rdf:value` of a note's body, the `bj:testo` of a paragraph); `bj:testo` the whole
   sentence (`rdfs:label` a window of it around the date); `bj:citazioneNellaFrase` every citation of the
-  sentence (711, also the 2 unresolved ones) and `bj:citaVersetto` the verses of the resolved and partial
-  ones (6,787 pairs); `bj:versettoAncora` the verse the note is called from (only for notes).
+  sentence (706, 4 of them to 3 unresolved citations) and `bj:citaVersetto` the verses of the resolved and partial
+  ones (6,728 pairs); `bj:versettoAncora` the verse the note is called from (only for notes).
 - 26,225 triples (3,976,937 → 4,003,162): the 916 new resources and, on the 639 already there, their
-  place, years, precision, rule, period and links.
+  place, years, precision, rule, period and links; after the review of the feature (2026-11-03) 4,002,986:
+  907 dates of free text (ranges with months, «nel N o nel M» joined, the èra cristiana added), the
+  same-event links counted in the subset of their subject.
 
 ### Alignments
 
@@ -743,7 +752,7 @@ three subsets).
 `verifica_rdf.py` then checks the written files:
 
 - rdflib's N-Triples and Turtle parsers and the fast reader of `grafo.py` give the same
-  4,003,162 triples;
+  4,002,986 triples;
 - OWL sanity: each `bj:` term is declared with one kind; all 2.7 million triples with a
   `bj:` property have subject and object of its `rdfs:domain` and `rdfs:range`;
 - 147 SPARQL integrity queries on the whole graph, about 5 minutes (counts against the JSON, exactly one
@@ -774,13 +783,13 @@ three subsets).
   unbalanced ones, both ends when balanced, the ends of the text verses in order, the verses spanned
   between the ends (16,478), the offsets inside the text at a `«` and just after a `»`, nesting acyclic
   in one resource and inside a longer balanced quotation, the words when at most 200 characters;
-  31 on the time line (`eventi.json`): one position per event, 1 to 1,555 and distinct, the counts by
+  31 on the time line (`eventi.json`): one position per event, 1 to 1,546 and distinct, the counts by
   source, a start and an end with start ≤ end, the sums of the start and end years equal the JSON's, the
   line in order, precision and era rule on every object, the periods (an entry's is its section),
   `bj:stessoEvento` symmetric, as many as the JSON's links both ways and between equal years; for the
-  916 dates of free text, the source of their part, the date as printed at its offset in the source's
+  907 dates of free text, the source of their part, the date as printed at its offset in the source's
   text, the sentence holding it and in that text, a note's date anchored at the verse calling the note
-  (and only there), the 6,787 (date, verse) pairs, every anchor and cited verse a declared verse, every
+  (and only there), the 6,728 (date, verse) pairs, every anchor and cited verse a declared verse, every
   cited verse backed by a citation of the sentence, those citations citations of the source; the
   chronology's queries now ask for years on all 585 entries and for the 388 dates of stage 2c kept;
 - SHACL (`bj-forme.ttl`, pyshacl) on the **whole graph**: 57 node shapes (8 for the
@@ -844,42 +853,42 @@ Rows and rdflib timings at the last build (`build/query.md`); the graph loads on
 <!-- generato da tools/ontologia/statistiche.py: query -->
 | Query | Question | Rows | Seconds |
 |---|---|---:|---:|
-| `01-versetto.rq` | a verse (Gv 3,16) with its notes and margin references | 5 | 0.12 |
-| `02-entranti.rq` | incoming references to Is 7,14 (margins and note citations) | 27 | 1.18 |
-| `03-at-citato-nel-nt.rq` | OT verses quoted later in the NT (↗) | 618 | 0.18 |
+| `01-versetto.rq` | a verse (Gv 3,16) with its notes and margin references | 5 | 0.13 |
+| `02-entranti.rq` | incoming references to Is 7,14 (margins and note citations) | 27 | 1.19 |
+| `03-at-citato-nel-nt.rq` | OT verses quoted later in the NT (↗) | 618 | 0.19 |
 | `04-samuele-re-cronache.rq` | parallels (‖) between Samuel-Kings and Chronicles, both ways | 275 | 0.25 |
-| `05-piu-rimandati.rq` | the 25 verses most often named by a margin reference | 25 | 8.15 |
+| `05-piu-rimandati.rq` | the 25 verses most often named by a margin reference | 25 | 8.32 |
 | `06-note-che-citano.rq` | notes and introductions citing Gen 15,6 | 7 | 0.05 |
-| `07-note-chiave.rq` | key-note hubs: notes most often sent to by «+» | 25 | 0.57 |
+| `07-note-chiave.rq` | key-note hubs: notes most often sent to by «+» | 25 | 0.58 |
 | `08-due-passi.rq` | two-hop paths Gen 22,2 → ? → Rm 8,32 along `bj:rimandaA` | 1 | 0.02 |
-| `09-matrice-libri.rq` | book × book matrix of margin references | 2373 | 3.58 |
+| `09-matrice-libri.rq` | book × book matrix of margin references | 2373 | 3.64 |
 | `10-pericope.rq` | the verses of the pericope holding Lc 15,11, with their note counts | 22 | 0.02 |
 | `11-salmi-nel-nt.rq` | Psalms quoted in the NT, by NT book | 16 | 0.13 |
 | `12-irrisolti.rq` | unresolved references with their reason (BJ 85, dictionary 93) | 178 | 0.16 |
 | `13-voci-che-citano.rq` | the dictionary entries citing Gv 1,14, with section, paragraph, citation as printed, page (a paragraph before the first heading has no section) | 39 | 0.03 |
-| `14-piu-citati-dal-dizionario.rq` | the 25 verses most cited by the dictionary (citations, entries; Is 53,12 first) | 25 | 20.85 |
+| `14-piu-citati-dal-dizionario.rq` | the 25 verses most cited by the dictionary (citations, entries; Is 53,12 first) | 25 | 21.03 |
 | `15-voci-con-versetti-comuni.rq` | the entries sharing the most cited verses with AGNELLO DI DIO, and whether they are linked (the all-pairs form is in the file: about 2 minutes in rdflib) | 25 | 0.29 |
-| `16-voce-e-note-bj.rq` | for the entry ABELE: its verses, the BJ notes commenting on them and those citing them | 16 | 1.54 |
+| `16-voce-e-note-bj.rq` | for the entry ABELE: its verses, the BJ notes commenting on them and those citing them | 16 | 1.58 |
 | `17-dizionario-e-margini.rq` | pairs of verses a paragraph of AGNELLO DI DIO cites together that the BJ margins also link, with the margin references | 57 | 0.49 |
-| `18-autori-e-libri.rq` | the 70 authors: citations in the entries they signed, books cited, the most cited book (Grelot: Salmi, 483) | 70 | 3.50 |
+| `18-autori-e-libri.rq` | the 70 authors: citations in the entries they signed, books cited, the most cited book (Grelot: Salmi, 483) | 70 | 3.56 |
 | `19-indice-note-di-un-versetto.rq` | the entries of the index of notes pointing to Gv 1,14, the note they send to and how it matches | 5 | 0.02 |
-| `20-voce-indice-e-note.rq` | the entry ALLEANZA of the index of notes: sub-entries, references, the start of the notes they send to | 21 | 4.27 |
-| `21-temi-pastorali-di-un-libro.rq` | the pastoral themes pointing to most verses of Tobia, with their sub-themes | 4 | 2.60 |
+| `20-voce-indice-e-note.rq` | the entry ALLEANZA of the index of notes: sub-entries, references, the start of the notes they send to | 21 | 4.34 |
+| `21-temi-pastorali-di-un-libro.rq` | the pastoral themes pointing to most verses of Tobia, with their sub-themes | 4 | 2.64 |
 | `22-cronologia-esilio.rq` | the chronological table between 600 and 530 BC (the entries whose years overlap it, reigns across it included; by year, column, position): printed date, years, column, text, references | 35 | 0.34 |
 | `23-figli-di-erode.rq` | the children of Herod the Great with their mothers and spouses (`schema:`) | 5 | 0.02 |
 | `24-refusi-degli-indici.rq` | the misprints of the indices with the corrected reference, why, and the note it sends to | 21 | 0.05 |
-| `25-acrostici.rq` | the alphabetic poems by chapter: letters, the line where the Bet stanza begins (its first verse: Lam 3,4), letters missing in the Hebrew text | 15 | 0.53 |
+| `25-acrostici.rq` | the alphabetic poems by chapter: letters, the line where the Bet stanza begins (its first verse: Lam 3,4), letters missing in the Hebrew text | 15 | 0.54 |
 | `26-canone-greco.rq` | the deuterocanonical books of the Greek list and the books or chapters of this Bible they are | 9 | 0.01 |
 | `27-indice-e-dizionario.rq` | the alignments of the entries of the index of notes and of the themes with the dictionary: the SKOS property, the method, the reviewer and the shared verses; here for the entries holding «Amore» | 7 | 0.10 |
 | `28-erode-antipa.rq` | e le voci della tavola cronologica che lo riguardano. Herod Antipas: the verses naming him, by book, and the chronology entries about him | 5 | 0.02 |
 | `29-note-e-testimoni.rq` | e le versioni (TM, LXX, Volgata, ...). The codices and papyri named by the notes, with how many notes name them, and the versions | 38 | 0.40 |
 | `30-interventi.rq` | e regola, quanti interventi, con la motivazione e un esempio con il suo motivo. The editor's corrections and readings in one model: by table and rule, how many, the motivation, an example | 27 | 0.55 |
-| `31-libri-nella-cronologia.rq` | la voce, i suoi anni e il tipo (composizione, ministero, evento); dal libro si arriva alla sua introduzione. The books in the chronological table: for each book dated by hand, the entry, its years and the kind | 74 | 0.08 |
+| `31-libri-nella-cronologia.rq` | la voce, i suoi anni e il tipo (composizione, ministero, evento); dal libro si arriva alla sua introduzione. The books in the chronological table: for each book dated by hand, the entry, its years and the kind | 74 | 0.10 |
 | `32-misure-e-monete.rq` | rapporto stampato all'unità di base, e quanti versetti le nominano. The measures and coins: value (with the QUDT unit kept as data), printed ratio to the base, verses naming them | 61 | 0.09 |
 | `33-discorsi-di-un-capitolo.rq` | the quotations between guillemets that touch Gen 3 (bj:Discorso, in the text): where they start and end, their words (when short), how many characters, the quotation holding them | 13 | 1.11 |
-| `34-discorsi-piu-lunghi.rq` | the 25 longest quotations of the text: where they start and end, how many verses and characters | 25 | 1.12 |
-| `35-eventi-di-un-secolo.rq` | the 6th century BC (600-501) on the time line: every dated event starting in it (chronology entries, dates read in the notes, introductions and Dizionario, persons, datings of the books, maps), in the order of the line, with the date as printed, the years, the precision, where it is read and the verses cited | 215 | 7.87 |
-| `36-date-nelle-note-dei-re.rq` | the dates read in the notes on the books of Kings, in the order of time: the verse the note is called from, the date as printed, the years, the era rule and the chronology entry that is the same event | 33 | 6.38 |
+| `34-discorsi-piu-lunghi.rq` | the 25 longest quotations of the text: where they start and end, how many verses and characters | 25 | 1.13 |
+| `35-eventi-di-un-secolo.rq` | the 6th century BC (600-501) on the time line: every dated event starting in it (chronology entries, dates read in the notes, introductions and Dizionario, persons, datings of the books, maps), in the order of the line, with the date as printed, the years, the precision, where it is read and the verses cited | 210 | 7.92 |
+| `36-date-nelle-note-dei-re.rq` | the dates read in the notes on the books of Kings, in the order of time: the verse the note is called from, the date as printed, the years, the era rule and the chronology entry that is the same event | 33 | 6.22 |
 <!-- fine del blocco generato -->
 
 ## Size
@@ -889,38 +898,38 @@ VoID description; R2-01). `bj-dati.ttl.gz` and `bj-dati.nt.gz` are about 15.7 an
 `bj-ontologia.ttl` declares 345 `bj:` terms; `bj-forme.ttl` has 57 node shapes.
 
 <!-- generato da tools/ontologia/statistiche.py: dimensioni -->
-4,003,162 triples about 267,149 subjects (267,149 typed resources), 59 classes, 270 properties. Four VoID subsets:
-- the Bible: 2,662,443 triples (`vp:bibbia`);
-- the dictionary: 1,123,769 triples (`vp:dizionario`);
-- the front matter and appendices: 166,919 triples (`vp:paratesto`);
-- the links between the parts, the calendar, measures and maps, the corrections: 50,031 triples (`vp:integrazione`).
+4,002,986 triples about 267,140 subjects (267,140 typed resources), 59 classes, 270 properties. Four VoID subsets:
+- the Bible: 2,662,262 triples (`vp:bibbia`);
+- the dictionary: 1,123,801 triples (`vp:dizionario`);
+- the front matter and appendices: 166,844 triples (`vp:paratesto`);
+- the links between the parts, the calendar, measures and maps, the corrections: 50,079 triples (`vp:integrazione`).
 
 Linksets: `bj:riguardaLibro` 215, `skos:mappingRelation` 401, `bj:indicaVersetto` 16,449, `bj:citaTestimone` 4,870, `bj:nellIndice` 16,449, `bj:nominaPersona` 291, `bj:citatoNellaVoce` 119,506, `bj:voceCitaVersetto` 119,506.
 
 | Class | Resources | Property (largest) | Triples |
 |---|---:|---|---:|
-| `bj:Citazione` | 63,635 | `rdf:type` | 268,556 |
-| `bj:Passaggio` | 37,822 | `rdfs:label` | 254,958 |
-| `bj:Versetto` | 35,762 | `dcterms:identifier` | 254,954 |
+| `bj:Citazione` | 63,635 | `rdf:type` | 268,547 |
+| `bj:Passaggio` | 37,822 | `rdfs:label` | 254,949 |
+| `bj:Versetto` | 35,762 | `dcterms:identifier` | 254,945 |
 | `bj:Rimando` | 28,669 | `bj:comprende` | 196,516 |
-| `bj:Margine` | 18,455 | `bj:testo` | 168,356 |
-| `bj:CollegamentoVoce` | 18,207 | `bj:citaVersetto` | 148,076 |
+| `bj:Margine` | 18,455 | `bj:testo` | 168,347 |
+| `bj:CollegamentoVoce` | 18,207 | `bj:citaVersetto` | 148,017 |
 | `bj:Discorso` | 16,849 | `bj:voceCitaVersetto` | 119,506 |
 | `oa:TextualBody` | 12,195 | `bj:citatoNellaVoce` | 119,506 |
 | `bj:Nota` | 10,762 | `bj:stato` | 110,511 |
 | `bj:ParagrafoVoce` | 4,149 | `bj:aPassaggio` | 94,851 |
 | `bj:Pericope` | 3,455 | `bj:notaChiave` | 92,304 |
 | `bj:SezioneVoce` | 3,022 | `bj:conParalleli` | 92,304 |
-| `bj:Pagina` | 2,935 | `bj:posizioneTesto` | 88,811 |
+| `bj:Pagina` | 2,935 | `bj:posizioneTesto` | 88,802 |
 | `bj:VoceIndice` | 2,512 | `prov:wasDerivedFrom` | 88,042 |
 | `bj:Intervento` | 1,433 | `bj:posizioneHtml` | 87,825 |
 | `bj:Capitolo` | 1,339 | `bj:pagina` | 86,310 |
-| `bj:EventoDatato` | 916 | `bj:rimandaA` | 83,959 |
+| `bj:EventoDatato` | 907 | `bj:rimandaA` | 83,959 |
 | `skos:Concept` | 849 | `bj:lunghezza` | 75,525 |
 | `bj:Voce` | 849 | `bj:conCf` | 63,635 |
 | `bj:PaginaDizionario` | 778 | `bj:fineHtml` | 58,608 |
 | `bj:Paragrafo` | 625 | `bj:nellaVoce` | 55,635 |
-| `bj:EventoCronologia` | 585 | `oa:hasSource` | 55,587 |
+| `bj:EventoCronologia` | 585 | `oa:hasSource` | 55,578 |
 | `bj:VoceRinvio` | 519 | `bj:etichetta` | 52,690 |
 | `bj:Allineamento` | 466 | `bj:ordine` | 48,341 |
 | `bj:Divisione` | 452 | `bj:posizione` | 47,124 |
@@ -941,14 +950,14 @@ Linksets: `bj:riguardaLibro` 215, `skos:mappingRelation` 401, `bj:indicaVersetto
 | `bj:Mese` | 12 | `bj:daVersetto` | 28,669 |
 | `bj:Versione` | 11 | `bj:parolaPrecedente` | 27,597 |
 | `bj:Carta` | 10 | `bj:daNota` | 25,437 |
-| `bj:SezioneCronologia` | 9 | `bj:testoHtml` | 21,890 |
+| `bj:SezioneCronologia` | 9 | `bj:testoHtml` | 21,888 |
 | `bj:Festa` | 8 | `skos:related` | 19,704 |
 | `bj:TestoPreliminare` | 7 | `bj:accantoA` | 18,455 |
 | `bj:GruppoCanone` | 7 | `bj:tipoCollegamento` | 18,207 |
 | `skos:ConceptScheme` | 5 | `bj:forma` | 18,207 |
 | `bj:Stampa` | 5 | `bj:daVoce` | 18,207 |
 | `bj:SchemaNumerazione` | 5 | `bj:aVoce` | 18,198 |
-| `bj:Testamento` | 2 | `bj:parte` | 17,765 |
+| `bj:Testamento` | 2 | `bj:parte` | 17,756 |
 | `bj:Indice` | 2 | `bj:inizioCarattere` | 16,848 |
 | `bj:Canone` | 2 | `bj:iniziaIn` | 16,848 |
 | `bj:TavolaMisure` | 1 | `bj:finisceIn` | 16,848 |
@@ -966,6 +975,10 @@ their place on the line, years, precision, era rule, period and same-event links
 19,484 (the dates of the notes and introductions), the dictionary 2,156 (its dates), the front matter and
 appendices 4,207 (the 25 dates of the front matter, the entries and persons on the line, with the
 same-event links of the entries to their datings), the links between the parts 378 (the datings and maps).
+After the review of the feature (2026-11-03): 4,002,986 triples, the Bible 2,662,262, the dictionary
+1,123,801, the front matter and appendices 166,844, the links between the parts 50,079; each `bj:stessoEvento`
+triple is counted in the subset of its subject (the Bible 70, the dictionary 1, the front matter and
+appendices 115, the links 36), not all in the front matter as before.
 
 Session F4 (2026-11-01) added 200,064 triples (3,776,873 → 3,976,937): the 16,849 quotations
 (`bj:Discorso`, 16,765 in the Bible subset, 84 in the front matter and appendices) with their ends,
@@ -1044,5 +1057,6 @@ identifiers of the pages and of the front matter (R2-02), the kinds of reason, t
   was read by hand twice, but a later edit of the text could trip a rule; dates with no cue are missed
   (bibliographic years on purpose); the era of a year without a suffix comes from the testament of the
   text unless `eventi-correzioni.tsv` says otherwise; a decade («gli anni 80») is an `intervallo`.
-  `bj:stessoEvento` joins only exactly equal years with a shared verse or name: «verso il 605» in a note
-  and the entry dated 605 are not linked.
+  `bj:stessoEvento` joins only exactly equal years with a shared verse, the note's verse cited by the entry in
+  a passage, or a name: «verso il 605» in a note and the entry dated 605 are not linked, nor are dates the
+  entry's names spell in lower case (about 70 more a reader would make).

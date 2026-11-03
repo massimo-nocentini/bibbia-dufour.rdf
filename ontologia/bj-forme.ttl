@@ -537,7 +537,12 @@ bjf:PersonaStorica a sh:NodeShape ;
                 [ sh:path bj:numeroTavola ; sh:maxCount 1 ; sh:pattern "^[0-9]+[a-c]?$" ] ,
                 [ sh:path bj:corsivo ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:boolean ] ,
                 [ sh:path bj:datazione ; sh:maxCount 1 ; sh:datatype xsd:string ] ,
-                [ sh:path bj:tipoDatazione ; sh:maxCount 1 ; sh:in ( "morte" "regno" ) ] .
+                [ sh:path bj:tipoDatazione ; sh:maxCount 1 ; sh:in ( "morte" "regno" ) ] ;
+    # a person with a date is on the time line, a death or a reign; one without, not
+    sh:xone ( [ sh:property [ sh:path bj:datazione ; sh:minCount 1 ] , [ sh:path bj:posizioneLinea ; sh:minCount 1 ] ,
+                            [ sh:path bj:tipoDatazione ; sh:minCount 1 ] ]
+              [ sh:property [ sh:path bj:datazione ; sh:maxCount 0 ] , [ sh:path bj:posizioneLinea ; sh:maxCount 0 ] ,
+                            [ sh:path bj:tipoDatazione ; sh:maxCount 0 ] ] ) .
 
 # An acrostic letter: one of the 22 letters, its name without parentheses (the bracketed ones are
 # flagged bj:mancanteNelTesto), the line it opens.
@@ -590,7 +595,11 @@ bjf:Datazione a sh:NodeShape ;
     sh:property [ sh:path bj:datazioneDi ; sh:minCount 1 ; sh:maxCount 1 ; sh:class bj:EventoCronologia ] ,
                 [ sh:path bj:datazioneLibro ; sh:minCount 1 ; sh:class bj:Libro ] ,
                 [ sh:path bj:tipoDatazione ; sh:minCount 1 ; sh:maxCount 1 ;
-                  sh:in ( "composizione" "ministero" "evento" "citato" ) ] .
+                  sh:in ( "composizione" "ministero" "evento" "citato" ) ] ;
+    # a dating of a book is on the time line; a book only cited by the entry is not
+    sh:xone ( [ sh:property [ sh:path bj:tipoDatazione ; sh:in ( "composizione" "ministero" "evento" ) ] ,
+                            [ sh:path bj:posizioneLinea ; sh:minCount 1 ] ]
+              [ sh:property [ sh:path bj:tipoDatazione ; sh:in ( "citato" ) ] , [ sh:path bj:posizioneLinea ; sh:maxCount 0 ] ] ) .
 
 bjf:Versione a sh:NodeShape ;
     sh:targetClass bj:Versione ;
@@ -720,6 +729,11 @@ bjf:EventoDatato a sh:NodeShape ;
                 [ sh:path bj:citazioneNellaFrase ; sh:class bj:Citazione ] ,
                 [ sh:path bj:citaVersetto ; sh:class bj:Versetto ] ,
                 [ sh:path bj:versettoAncora ; sh:maxCount 1 ; sh:class bj:Versetto ] ;
-    sh:xone ( [ sh:property [ sh:path bj:parte ; sh:in ( "nota" ) ] , [ sh:path bj:versettoAncora ; sh:minCount 1 ] ]
-              [ sh:property [ sh:path bj:parte ; sh:in ( "introduzione" "preliminari" "dizionario" ) ] ,
-                            [ sh:path bj:versettoAncora ; sh:maxCount 0 ] ] ) .
+    # the part says the kind of the source: a note (with its anchor verse), a paragraph of an introduction or of
+    # the front matter, a paragraph of the Dizionario
+    sh:xone ( [ sh:property [ sh:path bj:parte ; sh:in ( "nota" ) ] , [ sh:path bj:versettoAncora ; sh:minCount 1 ] ,
+                            [ sh:path oa:hasSource ; sh:class bj:Nota ] ]
+              [ sh:property [ sh:path bj:parte ; sh:in ( "introduzione" "preliminari" ) ] ,
+                            [ sh:path bj:versettoAncora ; sh:maxCount 0 ] , [ sh:path oa:hasSource ; sh:class bj:Paragrafo ] ]
+              [ sh:property [ sh:path bj:parte ; sh:in ( "dizionario" ) ] ,
+                            [ sh:path bj:versettoAncora ; sh:maxCount 0 ] , [ sh:path oa:hasSource ; sh:class bj:ParagrafoVoce ] ] ) .

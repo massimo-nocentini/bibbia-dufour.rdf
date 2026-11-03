@@ -30,9 +30,9 @@
     void:dataDump <https://massimo-nocentini.github.io/bibbia-gerusalemme/bj-dati.nt.gz> , <https://massimo-nocentini.github.io/bibbia-gerusalemme/bj-dati.ttl.gz> ;
     void:feature <http://www.w3.org/ns/formats/N-Triples> , <http://www.w3.org/ns/formats/Turtle> ;
     void:exampleResource verso:John.3.16 , verso:Gen.1.1 , voce:abele , <https://massimo-nocentini.github.io/bibbia-gerusalemme/id/indice/note/voce/91> ;
-    void:triples 4003162 ;
-    void:distinctSubjects 267149 ;
-    void:entities 267149 ;
+    void:triples 4002986 ;
+    void:distinctSubjects 267140 ;
+    void:entities 267140 ;
     void:classes 59 ;
     void:properties 270 ;
     void:subset vp:bibbia , vp:dizionario , vp:paratesto , vp:integrazione , vp:voci-versetti , vp:versetti-voci , vp:indice-versetti , vp:versetti-indice , vp:indice-dizionario , vp:versetti-persone , vp:cronologia-libri , vp:note-testimoni ;
@@ -53,7 +53,7 @@ vp:classe-bj-Divisione void:class bj:Divisione ; void:entities 452 .
 vp:classe-bj-Dizionario void:class bj:Dizionario ; void:entities 1 .
 vp:classe-bj-Edizione void:class bj:Edizione ; void:entities 1 .
 vp:classe-bj-EventoCronologia void:class bj:EventoCronologia ; void:entities 585 .
-vp:classe-bj-EventoDatato void:class bj:EventoDatato ; void:entities 916 .
+vp:classe-bj-EventoDatato void:class bj:EventoDatato ; void:entities 907 .
 vp:classe-bj-Festa void:class bj:Festa ; void:entities 8 .
 vp:classe-bj-GruppoCanone void:class bj:GruppoCanone ; void:entities 7 .
 vp:classe-bj-Indice void:class bj:Indice ; void:entities 2 .
@@ -110,9 +110,9 @@ vp:proprieta-bj-allineamentoA void:property bj:allineamentoA ; void:triples 466 
 vp:proprieta-bj-allineamentoDa void:property bj:allineamentoDa ; void:triples 466 .
 vp:proprieta-bj-ambito void:property bj:ambito ; void:triples 10762 .
 vp:proprieta-bj-anniMargine void:property bj:anniMargine ; void:triples 107 .
-vp:proprieta-bj-annoAlternativo void:property bj:annoAlternativo ; void:triples 7 .
-vp:proprieta-bj-annoFine void:property bj:annoFine ; void:triples 1555 .
-vp:proprieta-bj-annoInizio void:property bj:annoInizio ; void:triples 1555 .
+vp:proprieta-bj-annoAlternativo void:property bj:annoAlternativo ; void:triples 12 .
+vp:proprieta-bj-annoFine void:property bj:annoFine ; void:triples 1546 .
+vp:proprieta-bj-annoInizio void:property bj:annoInizio ; void:triples 1546 .
 vp:proprieta-bj-apocrifo void:property bj:apocrifo ; void:triples 35 .
 vp:proprieta-bj-approssimativo void:property bj:approssimativo ; void:triples 61 .
 vp:proprieta-bj-apreCapitolo void:property bj:apreCapitolo ; void:triples 1093 .
@@ -120,12 +120,12 @@ vp:proprieta-bj-apreLibro void:property bj:apreLibro ; void:triples 73 .
 vp:proprieta-bj-attraversa void:property bj:attraversa ; void:triples 16478 .
 vp:proprieta-bj-categoriaManoscritto void:property bj:categoriaManoscritto ; void:triples 56 .
 vp:proprieta-bj-categoriaMotivo void:property bj:categoriaMotivo ; void:triples 198 .
-vp:proprieta-bj-circa void:property bj:circa ; void:triples 1555 .
+vp:proprieta-bj-circa void:property bj:circa ; void:triples 1546 .
 vp:proprieta-bj-citaTestimone void:property bj:citaTestimone ; void:triples 4870 .
-vp:proprieta-bj-citaVersetto void:property bj:citaVersetto ; void:triples 148076 .
+vp:proprieta-bj-citaVersetto void:property bj:citaVersetto ; void:triples 148017 .
 vp:proprieta-bj-citatoIn void:property bj:citatoIn ; void:triples 1370 .
 vp:proprieta-bj-citatoNellaVoce void:property bj:citatoNellaVoce ; void:triples 119506 .
-vp:proprieta-bj-citazioneNellaFrase void:property bj:citazioneNellaFrase ; void:triples 711 .
+vp:proprieta-bj-citazioneNellaFrase void:property bj:citazioneNellaFrase ; void:triples 706 .
 vp:proprieta-bj-codiceOsis void:property bj:codiceOsis ; void:triples 74 .
 vp:proprieta-bj-colonna void:property bj:colonna ; void:triples 585 .
 vp:proprieta-bj-commenta void:property bj:commenta ; void:triples 38939 .
@@ -149,7 +149,7 @@ vp:proprieta-bj-daVoceIndice void:property bj:daVoceIndice ; void:triples 4957 .
 vp:proprieta-bj-daVoceTavola void:property bj:daVoceTavola ; void:triples 70 .
 vp:proprieta-bj-dataStampata void:property bj:dataStampata ; void:triples 5 .
 vp:proprieta-bj-datataDa void:property bj:datataDa ; void:triples 625 .
-vp:proprieta-bj-datazione void:property bj:datazione ; void:triples 1378 .
+vp:proprieta-bj-datazione void:property bj:datazione ; void:triples 1379 .
 vp:proprieta-bj-datazioneDi void:property bj:datazioneDi ; void:triples 160 .
 vp:proprieta-bj-datazioneLibro void:property bj:datazioneLibro ; void:triples 223 .
 vp:proprieta-bj-dentroDi void:property bj:dentroDi ; void:triples 11 .
@@ -200,7 +200,7 @@ vp:proprieta-bj-lettera void:property bj:lettera ; void:triples 849 .
 vp:proprieta-bj-letteraEbraica void:property bj:letteraEbraica ; void:triples 339 .
 vp:proprieta-bj-libroCitato void:property bj:libroCitato ; void:triples 10 .
 vp:proprieta-bj-libroImplicito void:property bj:libroImplicito ; void:triples 3655 .
-vp:proprieta-bj-limite void:property bj:limite ; void:triples 88 .
+vp:proprieta-bj-limite void:property bj:limite ; void:triples 93 .
 vp:proprieta-bj-livello void:property bj:livello ; void:triples 3474 .
 vp:proprieta-bj-lunghezza void:property bj:lunghezza ; void:triples 75525 .
 vp:proprieta-bj-luogo void:property bj:luogo ; void:triples 1 .
@@ -213,7 +213,7 @@ vp:proprieta-bj-metodoAllineamento void:property bj:metodoAllineamento ; void:tr
 vp:proprieta-bj-motivo void:property bj:motivo ; void:triples 200 .
 vp:proprieta-bj-nelMargine void:property bj:nelMargine ; void:triples 28669 .
 vp:proprieta-bj-nelMese void:property bj:nelMese ; void:triples 8 .
-vp:proprieta-bj-nelPeriodo void:property bj:nelPeriodo ; void:triples 1475 .
+vp:proprieta-bj-nelPeriodo void:property bj:nelPeriodo ; void:triples 1466 .
 vp:proprieta-bj-nellIndice void:property bj:nellIndice ; void:triples 16449 .
 vp:proprieta-bj-nellaCronologia void:property bj:nellaCronologia ; void:triples 215 .
 vp:proprieta-bj-nellaVoce void:property bj:nellaVoce ; void:triples 55635 .
@@ -241,16 +241,16 @@ vp:proprieta-bj-paginaPdf void:property bj:paginaPdf ; void:triples 3801 .
 vp:proprieta-bj-paginaPdfCarta void:property bj:paginaPdfCarta ; void:triples 10 .
 vp:proprieta-bj-paralleloA void:property bj:paralleloA ; void:triples 14926 .
 vp:proprieta-bj-parolaPrecedente void:property bj:parolaPrecedente ; void:triples 27597 .
-vp:proprieta-bj-parte void:property bj:parte ; void:triples 17765 .
+vp:proprieta-bj-parte void:property bj:parte ; void:triples 17756 .
 vp:proprieta-bj-percorso void:property bj:percorso ; void:triples 8978 .
 vp:proprieta-bj-poesia void:property bj:poesia ; void:triples 35762 .
 vp:proprieta-bj-posizione void:property bj:posizione ; void:triples 47124 .
 vp:proprieta-bj-posizioneAlfabeto void:property bj:posizioneAlfabeto ; void:triples 339 .
 vp:proprieta-bj-posizioneHtml void:property bj:posizioneHtml ; void:triples 87825 .
-vp:proprieta-bj-posizioneLinea void:property bj:posizioneLinea ; void:triples 1555 .
-vp:proprieta-bj-posizioneTesto void:property bj:posizioneTesto ; void:triples 88811 .
+vp:proprieta-bj-posizioneLinea void:property bj:posizioneLinea ; void:triples 1546 .
+vp:proprieta-bj-posizioneTesto void:property bj:posizioneTesto ; void:triples 88802 .
 vp:proprieta-bj-precede void:property bj:precede ; void:triples 35761 .
-vp:proprieta-bj-precisione void:property bj:precisione ; void:triples 1555 .
+vp:proprieta-bj-precisione void:property bj:precisione ; void:triples 1546 .
 vp:proprieta-bj-proprietaMapping void:property bj:proprietaMapping ; void:triples 466 .
 vp:proprieta-bj-qualifica void:property bj:qualifica ; void:triples 9 .
 vp:proprieta-bj-qualificatore void:property bj:qualificatore ; void:triples 164 .
@@ -260,7 +260,7 @@ vp:proprieta-bj-rapporto void:property bj:rapporto ; void:triples 46 .
 vp:proprieta-bj-rapportoA void:property bj:rapportoA ; void:triples 41 .
 vp:proprieta-bj-rapportoDecimale void:property bj:rapportoDecimale ; void:triples 41 .
 vp:proprieta-bj-regola void:property bj:regola ; void:triples 2758 .
-vp:proprieta-bj-regolaEra void:property bj:regolaEra ; void:triples 1555 .
+vp:proprieta-bj-regolaEra void:property bj:regolaEra ; void:triples 1546 .
 vp:proprieta-bj-relazione void:property bj:relazione ; void:triples 28669 .
 vp:proprieta-bj-revisore void:property bj:revisore ; void:triples 466 .
 vp:proprieta-bj-richiamaVoce void:property bj:richiamaVoce ; void:triples 8242 .
@@ -291,13 +291,13 @@ vp:proprieta-bj-stampatoNelVersetto void:property bj:stampatoNelVersetto ; void:
 vp:proprieta-bj-stampatore void:property bj:stampatore ; void:triples 1 .
 vp:proprieta-bj-stato void:property bj:stato ; void:triples 110511 .
 vp:proprieta-bj-statoFonte void:property bj:statoFonte ; void:triples 220 .
-vp:proprieta-bj-stessoEvento void:property bj:stessoEvento ; void:triples 206 .
+vp:proprieta-bj-stessoEvento void:property bj:stessoEvento ; void:triples 222 .
 vp:proprieta-bj-stile void:property bj:stile ; void:triples 724 .
 vp:proprieta-bj-suffisso void:property bj:suffisso ; void:triples 104 .
 vp:proprieta-bj-tabellaFonte void:property bj:tabellaFonte ; void:triples 1939 .
-vp:proprieta-bj-testo void:property bj:testo ; void:triples 168356 .
+vp:proprieta-bj-testo void:property bj:testo ; void:triples 168347 .
 vp:proprieta-bj-testoCorretto void:property bj:testoCorretto ; void:triples 23 .
-vp:proprieta-bj-testoHtml void:property bj:testoHtml ; void:triples 21890 .
+vp:proprieta-bj-testoHtml void:property bj:testoHtml ; void:triples 21888 .
 vp:proprieta-bj-testoLetto void:property bj:testoLetto ; void:triples 131 .
 vp:proprieta-bj-testoRinvii void:property bj:testoRinvii ; void:triples 849 .
 vp:proprieta-bj-testoStampato void:property bj:testoStampato ; void:triples 1085 .
@@ -318,7 +318,7 @@ vp:proprieta-bj-valoreStampato void:property bj:valoreStampato ; void:triples 58
 vp:proprieta-bj-vediAncheVoce void:property bj:vediAncheVoce ; void:triples 4646 .
 vp:proprieta-bj-vediVoce void:property bj:vediVoce ; void:triples 247 .
 vp:proprieta-bj-versettiComuni void:property bj:versettiComuni ; void:triples 466 .
-vp:proprieta-bj-versettoAncora void:property bj:versettoAncora ; void:triples 557 .
+vp:proprieta-bj-versettoAncora void:property bj:versettoAncora ; void:triples 546 .
 vp:proprieta-bj-versettoComune void:property bj:versettoComune ; void:triples 6525 .
 vp:proprieta-bj-voceCitaVersetto void:property bj:voceCitaVersetto ; void:triples 119506 .
 vp:proprieta-bj-volume void:property bj:volume ; void:triples 95 .
@@ -329,7 +329,7 @@ vp:proprieta-dcterms-bibliographicCitation void:property dcterms:bibliographicCi
 vp:proprieta-dcterms-creator void:property dcterms:creator ; void:triples 440 .
 vp:proprieta-dcterms-date void:property dcterms:date ; void:triples 5 .
 vp:proprieta-dcterms-description void:property dcterms:description ; void:triples 1 .
-vp:proprieta-dcterms-identifier void:property dcterms:identifier ; void:triples 254954 .
+vp:proprieta-dcterms-identifier void:property dcterms:identifier ; void:triples 254945 .
 vp:proprieta-dcterms-isPartOf void:property dcterms:isPartOf ; void:triples 46558 .
 vp:proprieta-dcterms-issued void:property dcterms:issued ; void:triples 2 .
 vp:proprieta-dcterms-language void:property dcterms:language ; void:triples 2 .
@@ -342,15 +342,15 @@ vp:proprieta-foaf-familyName void:property foaf:familyName ; void:triples 78 .
 vp:proprieta-foaf-givenName void:property foaf:givenName ; void:triples 78 .
 vp:proprieta-foaf-name void:property foaf:name ; void:triples 112 .
 vp:proprieta-oa-hasBody void:property oa:hasBody ; void:triples 12195 .
-vp:proprieta-oa-hasSource void:property oa:hasSource ; void:triples 55587 .
+vp:proprieta-oa-hasSource void:property oa:hasSource ; void:triples 55578 .
 vp:proprieta-oa-hasTarget void:property oa:hasTarget ; void:triples 12421 .
 vp:proprieta-oa-motivatedBy void:property oa:motivatedBy ; void:triples 12195 .
 vp:proprieta-prov-wasAttributedTo void:property prov:wasAttributedTo ; void:triples 1433 .
 vp:proprieta-prov-wasDerivedFrom void:property prov:wasDerivedFrom ; void:triples 88042 .
-vp:proprieta-rdf-type void:property rdf:type ; void:triples 268556 .
+vp:proprieta-rdf-type void:property rdf:type ; void:triples 268547 .
 vp:proprieta-rdf-value void:property rdf:value ; void:triples 12195 .
 vp:proprieta-rdfs-comment void:property rdfs:comment ; void:triples 562 .
-vp:proprieta-rdfs-label void:property rdfs:label ; void:triples 254958 .
+vp:proprieta-rdfs-label void:property rdfs:label ; void:triples 254949 .
 vp:proprieta-schema-children void:property schema:children ; void:triples 32 .
 vp:proprieta-schema-parent void:property schema:parent ; void:triples 32 .
 vp:proprieta-schema-spouse void:property schema:spouse ; void:triples 24 .
@@ -371,16 +371,16 @@ vp:proprieta-skos-topConceptOf void:property skos:topConceptOf ; void:triples 16
 vp:bibbia a void:Dataset ;
     dcterms:title "La Bibbia di Gerusalemme: versetti, note, rimandi, citazioni"@it , "The Jerusalem Bible: verses, notes, margins, citations"@en ;
     dcterms:source "progetti/<volume>/*.tex" ;
-    void:triples 2662443 ;
-    void:entities 190258 ;
+    void:triples 2662262 ;
+    void:entities 190303 ;
     void:classPartition vp:bibbia-classe-bj-Bibbia , vp:bibbia-classe-bj-Capitolo , vp:bibbia-classe-bj-Citazione , vp:bibbia-classe-bj-Discorso , vp:bibbia-classe-bj-Divisione , vp:bibbia-classe-bj-EventoDatato , vp:bibbia-classe-bj-Introduzione , vp:bibbia-classe-bj-LetteraAcrostica , vp:bibbia-classe-bj-Libro , vp:bibbia-classe-bj-Margine , vp:bibbia-classe-bj-Nota , vp:bibbia-classe-bj-Pagina , vp:bibbia-classe-bj-Paragrafo , vp:bibbia-classe-bj-Passaggio , vp:bibbia-classe-bj-Pericope , vp:bibbia-classe-bj-Rimando , vp:bibbia-classe-bj-Testamento , vp:bibbia-classe-bj-Versetto , vp:bibbia-classe-oa-TextualBody ;
-    void:propertyPartition vp:bibbia-proprieta-bj-aPassaggio , vp:bibbia-proprieta-bj-accantoA , vp:bibbia-proprieta-bj-acrostico , vp:bibbia-proprieta-bj-ambito , vp:bibbia-proprieta-bj-annoAlternativo , vp:bibbia-proprieta-bj-annoFine , vp:bibbia-proprieta-bj-annoInizio , vp:bibbia-proprieta-bj-apreCapitolo , vp:bibbia-proprieta-bj-attraversa , vp:bibbia-proprieta-bj-categoriaMotivo , vp:bibbia-proprieta-bj-circa , vp:bibbia-proprieta-bj-citaVersetto , vp:bibbia-proprieta-bj-citatoIn , vp:bibbia-proprieta-bj-citazioneNellaFrase , vp:bibbia-proprieta-bj-codiceOsis , vp:bibbia-proprieta-bj-commenta , vp:bibbia-proprieta-bj-comprende , vp:bibbia-proprieta-bj-conCf , vp:bibbia-proprieta-bj-conParalleli , vp:bibbia-proprieta-bj-daNota , vp:bibbia-proprieta-bj-daParagrafo , vp:bibbia-proprieta-bj-daVersetto , vp:bibbia-proprieta-bj-datazione , vp:bibbia-proprieta-bj-dentroDi , vp:bibbia-proprieta-bj-dentroVersetto , vp:bibbia-proprieta-bj-doppioneDelRimando , vp:bibbia-proprieta-bj-doppioneDi , vp:bibbia-proprieta-bj-estensione , vp:bibbia-proprieta-bj-etichetta , vp:bibbia-proprieta-bj-fine , vp:bibbia-proprieta-bj-fineCarattere , vp:bibbia-proprieta-bj-fineHtml , vp:bibbia-proprieta-bj-finisceIn , vp:bibbia-proprieta-bj-haLetteraAcrostica , vp:bibbia-proprieta-bj-haNota , vp:bibbia-proprieta-bj-inDivisione , vp:bibbia-proprieta-bj-inLibro , vp:bibbia-proprieta-bj-inPericope , vp:bibbia-proprieta-bj-inVersetto , vp:bibbia-proprieta-bj-incerto , vp:bibbia-proprieta-bj-iniziaIn , vp:bibbia-proprieta-bj-inizio , vp:bibbia-proprieta-bj-inizioCarattere , vp:bibbia-proprieta-bj-interpretazione , vp:bibbia-proprieta-bj-intestazione , vp:bibbia-proprieta-bj-introduce , vp:bibbia-proprieta-bj-letteraEbraica , vp:bibbia-proprieta-bj-libroCitato , vp:bibbia-proprieta-bj-limite , vp:bibbia-proprieta-bj-livello , vp:bibbia-proprieta-bj-lunghezza , vp:bibbia-proprieta-bj-mancanteNelTesto , vp:bibbia-proprieta-bj-mandaAMargine , vp:bibbia-proprieta-bj-mandaANota , vp:bibbia-proprieta-bj-motivo , vp:bibbia-proprieta-bj-nelMargine , vp:bibbia-proprieta-bj-nelPeriodo , vp:bibbia-proprieta-bj-notaChiave , vp:bibbia-proprieta-bj-numero , vp:bibbia-proprieta-bj-numeroAlternativo , vp:bibbia-proprieta-bj-numeroCapitolo , vp:bibbia-proprieta-bj-omesso , vp:bibbia-proprieta-bj-ordine , vp:bibbia-proprieta-bj-pagina , vp:bibbia-proprieta-bj-paginaPdf , vp:bibbia-proprieta-bj-paralleloA , vp:bibbia-proprieta-bj-parolaPrecedente , vp:bibbia-proprieta-bj-parte , vp:bibbia-proprieta-bj-poesia , vp:bibbia-proprieta-bj-posizione , vp:bibbia-proprieta-bj-posizioneAlfabeto , vp:bibbia-proprieta-bj-posizioneHtml , vp:bibbia-proprieta-bj-posizioneLinea , vp:bibbia-proprieta-bj-posizioneTesto , vp:bibbia-proprieta-bj-precede , vp:bibbia-proprieta-bj-precisione , vp:bibbia-proprieta-bj-qualificatore , vp:bibbia-proprieta-bj-regolaEra , vp:bibbia-proprieta-bj-relazione , vp:bibbia-proprieta-bj-richiamataDa , vp:bibbia-proprieta-bj-rigo , vp:bibbia-proprieta-bj-rimandaA , vp:bibbia-proprieta-bj-rinviaANotaChiave , vp:bibbia-proprieta-bj-sbilanciato , vp:bibbia-proprieta-bj-secondoVersione , vp:bibbia-proprieta-bj-segno , vp:bibbia-proprieta-bj-segue , vp:bibbia-proprieta-bj-sigla , vp:bibbia-proprieta-bj-stampatoNelCapitolo , vp:bibbia-proprieta-bj-stampatoNelVersetto , vp:bibbia-proprieta-bj-stato , vp:bibbia-proprieta-bj-suffisso , vp:bibbia-proprieta-bj-testo , vp:bibbia-proprieta-bj-testoHtml , vp:bibbia-proprieta-bj-titoletto , vp:bibbia-proprieta-bj-titoloBreve , vp:bibbia-proprieta-bj-titoloSalmo , vp:bibbia-proprieta-bj-traParentesi , vp:bibbia-proprieta-bj-versettoAncora , vp:bibbia-proprieta-bj-volume , vp:bibbia-proprieta-dc-format , vp:bibbia-proprieta-dc-language , vp:bibbia-proprieta-dcterms-description , vp:bibbia-proprieta-dcterms-identifier , vp:bibbia-proprieta-dcterms-isPartOf , vp:bibbia-proprieta-dcterms-publisher , vp:bibbia-proprieta-dcterms-title , vp:bibbia-proprieta-oa-hasBody , vp:bibbia-proprieta-oa-hasSource , vp:bibbia-proprieta-oa-hasTarget , vp:bibbia-proprieta-oa-motivatedBy , vp:bibbia-proprieta-prov-wasDerivedFrom , vp:bibbia-proprieta-rdf-type , vp:bibbia-proprieta-rdf-value , vp:bibbia-proprieta-rdfs-label .
+    void:propertyPartition vp:bibbia-proprieta-bj-aPassaggio , vp:bibbia-proprieta-bj-accantoA , vp:bibbia-proprieta-bj-acrostico , vp:bibbia-proprieta-bj-ambito , vp:bibbia-proprieta-bj-annoAlternativo , vp:bibbia-proprieta-bj-annoFine , vp:bibbia-proprieta-bj-annoInizio , vp:bibbia-proprieta-bj-apreCapitolo , vp:bibbia-proprieta-bj-attraversa , vp:bibbia-proprieta-bj-categoriaMotivo , vp:bibbia-proprieta-bj-circa , vp:bibbia-proprieta-bj-citaVersetto , vp:bibbia-proprieta-bj-citatoIn , vp:bibbia-proprieta-bj-citazioneNellaFrase , vp:bibbia-proprieta-bj-codiceOsis , vp:bibbia-proprieta-bj-commenta , vp:bibbia-proprieta-bj-comprende , vp:bibbia-proprieta-bj-conCf , vp:bibbia-proprieta-bj-conParalleli , vp:bibbia-proprieta-bj-daNota , vp:bibbia-proprieta-bj-daParagrafo , vp:bibbia-proprieta-bj-daVersetto , vp:bibbia-proprieta-bj-datazione , vp:bibbia-proprieta-bj-dentroDi , vp:bibbia-proprieta-bj-dentroVersetto , vp:bibbia-proprieta-bj-doppioneDelRimando , vp:bibbia-proprieta-bj-doppioneDi , vp:bibbia-proprieta-bj-estensione , vp:bibbia-proprieta-bj-etichetta , vp:bibbia-proprieta-bj-fine , vp:bibbia-proprieta-bj-fineCarattere , vp:bibbia-proprieta-bj-fineHtml , vp:bibbia-proprieta-bj-finisceIn , vp:bibbia-proprieta-bj-haLetteraAcrostica , vp:bibbia-proprieta-bj-haNota , vp:bibbia-proprieta-bj-inDivisione , vp:bibbia-proprieta-bj-inLibro , vp:bibbia-proprieta-bj-inPericope , vp:bibbia-proprieta-bj-inVersetto , vp:bibbia-proprieta-bj-incerto , vp:bibbia-proprieta-bj-iniziaIn , vp:bibbia-proprieta-bj-inizio , vp:bibbia-proprieta-bj-inizioCarattere , vp:bibbia-proprieta-bj-interpretazione , vp:bibbia-proprieta-bj-intestazione , vp:bibbia-proprieta-bj-introduce , vp:bibbia-proprieta-bj-letteraEbraica , vp:bibbia-proprieta-bj-libroCitato , vp:bibbia-proprieta-bj-limite , vp:bibbia-proprieta-bj-livello , vp:bibbia-proprieta-bj-lunghezza , vp:bibbia-proprieta-bj-mancanteNelTesto , vp:bibbia-proprieta-bj-mandaAMargine , vp:bibbia-proprieta-bj-mandaANota , vp:bibbia-proprieta-bj-motivo , vp:bibbia-proprieta-bj-nelMargine , vp:bibbia-proprieta-bj-nelPeriodo , vp:bibbia-proprieta-bj-notaChiave , vp:bibbia-proprieta-bj-numero , vp:bibbia-proprieta-bj-numeroAlternativo , vp:bibbia-proprieta-bj-numeroCapitolo , vp:bibbia-proprieta-bj-omesso , vp:bibbia-proprieta-bj-ordine , vp:bibbia-proprieta-bj-pagina , vp:bibbia-proprieta-bj-paginaPdf , vp:bibbia-proprieta-bj-paralleloA , vp:bibbia-proprieta-bj-parolaPrecedente , vp:bibbia-proprieta-bj-parte , vp:bibbia-proprieta-bj-poesia , vp:bibbia-proprieta-bj-posizione , vp:bibbia-proprieta-bj-posizioneAlfabeto , vp:bibbia-proprieta-bj-posizioneHtml , vp:bibbia-proprieta-bj-posizioneLinea , vp:bibbia-proprieta-bj-posizioneTesto , vp:bibbia-proprieta-bj-precede , vp:bibbia-proprieta-bj-precisione , vp:bibbia-proprieta-bj-qualificatore , vp:bibbia-proprieta-bj-regolaEra , vp:bibbia-proprieta-bj-relazione , vp:bibbia-proprieta-bj-richiamataDa , vp:bibbia-proprieta-bj-rigo , vp:bibbia-proprieta-bj-rimandaA , vp:bibbia-proprieta-bj-rinviaANotaChiave , vp:bibbia-proprieta-bj-sbilanciato , vp:bibbia-proprieta-bj-secondoVersione , vp:bibbia-proprieta-bj-segno , vp:bibbia-proprieta-bj-segue , vp:bibbia-proprieta-bj-sigla , vp:bibbia-proprieta-bj-stampatoNelCapitolo , vp:bibbia-proprieta-bj-stampatoNelVersetto , vp:bibbia-proprieta-bj-stato , vp:bibbia-proprieta-bj-stessoEvento , vp:bibbia-proprieta-bj-suffisso , vp:bibbia-proprieta-bj-testo , vp:bibbia-proprieta-bj-testoHtml , vp:bibbia-proprieta-bj-titoletto , vp:bibbia-proprieta-bj-titoloBreve , vp:bibbia-proprieta-bj-titoloSalmo , vp:bibbia-proprieta-bj-traParentesi , vp:bibbia-proprieta-bj-versettoAncora , vp:bibbia-proprieta-bj-volume , vp:bibbia-proprieta-dc-format , vp:bibbia-proprieta-dc-language , vp:bibbia-proprieta-dcterms-description , vp:bibbia-proprieta-dcterms-identifier , vp:bibbia-proprieta-dcterms-isPartOf , vp:bibbia-proprieta-dcterms-publisher , vp:bibbia-proprieta-dcterms-title , vp:bibbia-proprieta-oa-hasBody , vp:bibbia-proprieta-oa-hasSource , vp:bibbia-proprieta-oa-hasTarget , vp:bibbia-proprieta-oa-motivatedBy , vp:bibbia-proprieta-prov-wasDerivedFrom , vp:bibbia-proprieta-rdf-type , vp:bibbia-proprieta-rdf-value , vp:bibbia-proprieta-rdfs-label .
 vp:bibbia-classe-bj-Bibbia void:class bj:Bibbia ; void:entities 1 .
 vp:bibbia-classe-bj-Capitolo void:class bj:Capitolo ; void:entities 1339 .
 vp:bibbia-classe-bj-Citazione void:class bj:Citazione ; void:entities 28126 .
 vp:bibbia-classe-bj-Discorso void:class bj:Discorso ; void:entities 16765 .
 vp:bibbia-classe-bj-Divisione void:class bj:Divisione ; void:entities 452 .
-vp:bibbia-classe-bj-EventoDatato void:class bj:EventoDatato ; void:entities 768 .
+vp:bibbia-classe-bj-EventoDatato void:class bj:EventoDatato ; void:entities 813 .
 vp:bibbia-classe-bj-Introduzione void:class bj:Introduzione ; void:entities 21 .
 vp:bibbia-classe-bj-LetteraAcrostica void:class bj:LetteraAcrostica ; void:entities 339 .
 vp:bibbia-classe-bj-Libro void:class bj:Libro ; void:entities 74 .
@@ -398,16 +398,16 @@ vp:bibbia-proprieta-bj-aPassaggio void:property bj:aPassaggio ; void:triples 590
 vp:bibbia-proprieta-bj-accantoA void:property bj:accantoA ; void:triples 18455 .
 vp:bibbia-proprieta-bj-acrostico void:property bj:acrostico ; void:triples 339 .
 vp:bibbia-proprieta-bj-ambito void:property bj:ambito ; void:triples 10762 .
-vp:bibbia-proprieta-bj-annoAlternativo void:property bj:annoAlternativo ; void:triples 7 .
-vp:bibbia-proprieta-bj-annoFine void:property bj:annoFine ; void:triples 825 .
-vp:bibbia-proprieta-bj-annoInizio void:property bj:annoInizio ; void:triples 825 .
+vp:bibbia-proprieta-bj-annoAlternativo void:property bj:annoAlternativo ; void:triples 10 .
+vp:bibbia-proprieta-bj-annoFine void:property bj:annoFine ; void:triples 813 .
+vp:bibbia-proprieta-bj-annoInizio void:property bj:annoInizio ; void:triples 813 .
 vp:bibbia-proprieta-bj-apreCapitolo void:property bj:apreCapitolo ; void:triples 1093 .
 vp:bibbia-proprieta-bj-attraversa void:property bj:attraversa ; void:triples 16478 .
 vp:bibbia-proprieta-bj-categoriaMotivo void:property bj:categoriaMotivo ; void:triples 76 .
-vp:bibbia-proprieta-bj-circa void:property bj:circa ; void:triples 825 .
-vp:bibbia-proprieta-bj-citaVersetto void:property bj:citaVersetto ; void:triples 143288 .
+vp:bibbia-proprieta-bj-circa void:property bj:circa ; void:triples 813 .
+vp:bibbia-proprieta-bj-citaVersetto void:property bj:citaVersetto ; void:triples 143229 .
 vp:bibbia-proprieta-bj-citatoIn void:property bj:citatoIn ; void:triples 1370 .
-vp:bibbia-proprieta-bj-citazioneNellaFrase void:property bj:citazioneNellaFrase ; void:triples 595 .
+vp:bibbia-proprieta-bj-citazioneNellaFrase void:property bj:citazioneNellaFrase ; void:triples 590 .
 vp:bibbia-proprieta-bj-codiceOsis void:property bj:codiceOsis ; void:triples 74 .
 vp:bibbia-proprieta-bj-commenta void:property bj:commenta ; void:triples 38939 .
 vp:bibbia-proprieta-bj-comprende void:property bj:comprende ; void:triples 144612 .
@@ -416,7 +416,7 @@ vp:bibbia-proprieta-bj-conParalleli void:property bj:conParalleli ; void:triples
 vp:bibbia-proprieta-bj-daNota void:property bj:daNota ; void:triples 25437 .
 vp:bibbia-proprieta-bj-daParagrafo void:property bj:daParagrafo ; void:triples 2689 .
 vp:bibbia-proprieta-bj-daVersetto void:property bj:daVersetto ; void:triples 28669 .
-vp:bibbia-proprieta-bj-datazione void:property bj:datazione ; void:triples 825 .
+vp:bibbia-proprieta-bj-datazione void:property bj:datazione ; void:triples 813 .
 vp:bibbia-proprieta-bj-dentroDi void:property bj:dentroDi ; void:triples 11 .
 vp:bibbia-proprieta-bj-dentroVersetto void:property bj:dentroVersetto ; void:triples 3455 .
 vp:bibbia-proprieta-bj-doppioneDelRimando void:property bj:doppioneDelRimando ; void:triples 9 .
@@ -442,7 +442,7 @@ vp:bibbia-proprieta-bj-intestazione void:property bj:intestazione ; void:triples
 vp:bibbia-proprieta-bj-introduce void:property bj:introduce ; void:triples 81 .
 vp:bibbia-proprieta-bj-letteraEbraica void:property bj:letteraEbraica ; void:triples 339 .
 vp:bibbia-proprieta-bj-libroCitato void:property bj:libroCitato ; void:triples 1 .
-vp:bibbia-proprieta-bj-limite void:property bj:limite ; void:triples 76 .
+vp:bibbia-proprieta-bj-limite void:property bj:limite ; void:triples 79 .
 vp:bibbia-proprieta-bj-livello void:property bj:livello ; void:triples 452 .
 vp:bibbia-proprieta-bj-lunghezza void:property bj:lunghezza ; void:triples 44889 .
 vp:bibbia-proprieta-bj-mancanteNelTesto void:property bj:mancanteNelTesto ; void:triples 5 .
@@ -450,7 +450,7 @@ vp:bibbia-proprieta-bj-mandaAMargine void:property bj:mandaAMargine ; void:tripl
 vp:bibbia-proprieta-bj-mandaANota void:property bj:mandaANota ; void:triples 7493 .
 vp:bibbia-proprieta-bj-motivo void:property bj:motivo ; void:triples 78 .
 vp:bibbia-proprieta-bj-nelMargine void:property bj:nelMargine ; void:triples 28669 .
-vp:bibbia-proprieta-bj-nelPeriodo void:property bj:nelPeriodo ; void:triples 770 .
+vp:bibbia-proprieta-bj-nelPeriodo void:property bj:nelPeriodo ; void:triples 758 .
 vp:bibbia-proprieta-bj-notaChiave void:property bj:notaChiave ; void:triples 56795 .
 vp:bibbia-proprieta-bj-numero void:property bj:numero ; void:triples 40583 .
 vp:bibbia-proprieta-bj-numeroAlternativo void:property bj:numeroAlternativo ; void:triples 870 .
@@ -461,17 +461,17 @@ vp:bibbia-proprieta-bj-pagina void:property bj:pagina ; void:triples 69772 .
 vp:bibbia-proprieta-bj-paginaPdf void:property bj:paginaPdf ; void:triples 2935 .
 vp:bibbia-proprieta-bj-paralleloA void:property bj:paralleloA ; void:triples 14926 .
 vp:bibbia-proprieta-bj-parolaPrecedente void:property bj:parolaPrecedente ; void:triples 27597 .
-vp:bibbia-proprieta-bj-parte void:property bj:parte ; void:triples 17590 .
+vp:bibbia-proprieta-bj-parte void:property bj:parte ; void:triples 17578 .
 vp:bibbia-proprieta-bj-poesia void:property bj:poesia ; void:triples 35762 .
 vp:bibbia-proprieta-bj-posizione void:property bj:posizione ; void:triples 47124 .
 vp:bibbia-proprieta-bj-posizioneAlfabeto void:property bj:posizioneAlfabeto ; void:triples 339 .
 vp:bibbia-proprieta-bj-posizioneHtml void:property bj:posizioneHtml ; void:triples 57343 .
-vp:bibbia-proprieta-bj-posizioneLinea void:property bj:posizioneLinea ; void:triples 825 .
-vp:bibbia-proprieta-bj-posizioneTesto void:property bj:posizioneTesto ; void:triples 58168 .
+vp:bibbia-proprieta-bj-posizioneLinea void:property bj:posizioneLinea ; void:triples 813 .
+vp:bibbia-proprieta-bj-posizioneTesto void:property bj:posizioneTesto ; void:triples 58156 .
 vp:bibbia-proprieta-bj-precede void:property bj:precede ; void:triples 35761 .
-vp:bibbia-proprieta-bj-precisione void:property bj:precisione ; void:triples 825 .
+vp:bibbia-proprieta-bj-precisione void:property bj:precisione ; void:triples 813 .
 vp:bibbia-proprieta-bj-qualificatore void:property bj:qualificatore ; void:triples 162 .
-vp:bibbia-proprieta-bj-regolaEra void:property bj:regolaEra ; void:triples 825 .
+vp:bibbia-proprieta-bj-regolaEra void:property bj:regolaEra ; void:triples 813 .
 vp:bibbia-proprieta-bj-relazione void:property bj:relazione ; void:triples 28669 .
 vp:bibbia-proprieta-bj-richiamataDa void:property bj:richiamataDa ; void:triples 10762 .
 vp:bibbia-proprieta-bj-rigo void:property bj:rigo ; void:triples 339 .
@@ -485,42 +485,43 @@ vp:bibbia-proprieta-bj-sigla void:property bj:sigla ; void:triples 74 .
 vp:bibbia-proprieta-bj-stampatoNelCapitolo void:property bj:stampatoNelCapitolo ; void:triples 1 .
 vp:bibbia-proprieta-bj-stampatoNelVersetto void:property bj:stampatoNelVersetto ; void:triples 1250 .
 vp:bibbia-proprieta-bj-stato void:property bj:stato ; void:triples 56795 .
+vp:bibbia-proprieta-bj-stessoEvento void:property bj:stessoEvento ; void:triples 70 .
 vp:bibbia-proprieta-bj-suffisso void:property bj:suffisso ; void:triples 104 .
-vp:bibbia-proprieta-bj-testo void:property bj:testo ; void:triples 127730 .
-vp:bibbia-proprieta-bj-testoHtml void:property bj:testoHtml ; void:triples 18058 .
+vp:bibbia-proprieta-bj-testo void:property bj:testo ; void:triples 127718 .
+vp:bibbia-proprieta-bj-testoHtml void:property bj:testoHtml ; void:triples 18056 .
 vp:bibbia-proprieta-bj-titoletto void:property bj:titoletto ; void:triples 88 .
 vp:bibbia-proprieta-bj-titoloBreve void:property bj:titoloBreve ; void:triples 221 .
 vp:bibbia-proprieta-bj-titoloSalmo void:property bj:titoloSalmo ; void:triples 121 .
 vp:bibbia-proprieta-bj-traParentesi void:property bj:traParentesi ; void:triples 2 .
-vp:bibbia-proprieta-bj-versettoAncora void:property bj:versettoAncora ; void:triples 557 .
+vp:bibbia-proprieta-bj-versettoAncora void:property bj:versettoAncora ; void:triples 546 .
 vp:bibbia-proprieta-bj-volume void:property bj:volume ; void:triples 95 .
 vp:bibbia-proprieta-dc-format void:property dc:format ; void:triples 10762 .
 vp:bibbia-proprieta-dc-language void:property dc:language ; void:triples 10762 .
 vp:bibbia-proprieta-dcterms-description void:property dcterms:description ; void:triples 1 .
-vp:bibbia-proprieta-dcterms-identifier void:property dcterms:identifier ; void:triples 179553 .
+vp:bibbia-proprieta-dcterms-identifier void:property dcterms:identifier ; void:triples 179541 .
 vp:bibbia-proprieta-dcterms-isPartOf void:property dcterms:isPartOf ; void:triples 37724 .
 vp:bibbia-proprieta-dcterms-publisher void:property dcterms:publisher ; void:triples 1 .
 vp:bibbia-proprieta-dcterms-title void:property dcterms:title ; void:triples 4003 .
 vp:bibbia-proprieta-oa-hasBody void:property oa:hasBody ; void:triples 10762 .
-vp:bibbia-proprieta-oa-hasSource void:property oa:hasSource ; void:triples 48614 .
+vp:bibbia-proprieta-oa-hasSource void:property oa:hasSource ; void:triples 48602 .
 vp:bibbia-proprieta-oa-hasTarget void:property oa:hasTarget ; void:triples 10988 .
 vp:bibbia-proprieta-oa-motivatedBy void:property oa:motivatedBy ; void:triples 10762 .
 vp:bibbia-proprieta-prov-wasDerivedFrom void:property prov:wasDerivedFrom ; void:triples 69772 .
-vp:bibbia-proprieta-rdf-type void:property rdf:type ; void:triples 190315 .
+vp:bibbia-proprieta-rdf-type void:property rdf:type ; void:triples 190303 .
 vp:bibbia-proprieta-rdf-value void:property rdf:value ; void:triples 10762 .
-vp:bibbia-proprieta-rdfs-label void:property rdfs:label ; void:triples 179555 .
+vp:bibbia-proprieta-rdfs-label void:property rdfs:label ; void:triples 179543 .
 
 vp:dizionario a void:Dataset ;
     dcterms:title "Dizionario di Teologia Biblica (X. Léon-Dufour, Marietti 1976): voci, collegamenti e citazioni bibliche"@it , "Dizionario di Teologia Biblica (X. Léon-Dufour, Marietti 1976): entries, links and Bible citations"@en ;
     dcterms:source "../dufour/corpus/data" ;
-    void:triples 1123769 ;
-    void:entities 64872 ;
+    void:triples 1123801 ;
+    void:entities 64875 ;
     void:classPartition vp:dizionario-classe-bj-Citazione , vp:dizionario-classe-bj-CollegamentoVoce , vp:dizionario-classe-bj-Dizionario , vp:dizionario-classe-bj-EventoDatato , vp:dizionario-classe-bj-PaginaDizionario , vp:dizionario-classe-bj-ParagrafoVoce , vp:dizionario-classe-bj-Passaggio , vp:dizionario-classe-bj-SezioneVoce , vp:dizionario-classe-bj-Voce , vp:dizionario-classe-bj-VoceRinvio , vp:dizionario-classe-foaf-Person , vp:dizionario-classe-skos-Concept , vp:dizionario-classe-skos-ConceptScheme ;
-    void:propertyPartition vp:dizionario-proprieta-bj-aPassaggio , vp:dizionario-proprieta-bj-aSezione , vp:dizionario-proprieta-bj-aVoce , vp:dizionario-proprieta-bj-annoFine , vp:dizionario-proprieta-bj-annoInizio , vp:dizionario-proprieta-bj-categoriaMotivo , vp:dizionario-proprieta-bj-circa , vp:dizionario-proprieta-bj-citaVersetto , vp:dizionario-proprieta-bj-citatoNellaVoce , vp:dizionario-proprieta-bj-citazioneNellaFrase , vp:dizionario-proprieta-bj-comprende , vp:dizionario-proprieta-bj-conCf , vp:dizionario-proprieta-bj-conParalleli , vp:dizionario-proprieta-bj-conversione , vp:dizionario-proprieta-bj-curatore , vp:dizionario-proprieta-bj-daParagrafo , vp:dizionario-proprieta-bj-daSezione , vp:dizionario-proprieta-bj-daVoce , vp:dizionario-proprieta-bj-datazione , vp:dizionario-proprieta-bj-eAltrove , vp:dizionario-proprieta-bj-edizione , vp:dizionario-proprieta-bj-esitoPercorso , vp:dizionario-proprieta-bj-estensione , vp:dizionario-proprieta-bj-etichetta , vp:dizionario-proprieta-bj-fine , vp:dizionario-proprieta-bj-fineHtml , vp:dizionario-proprieta-bj-firma , vp:dizionario-proprieta-bj-forma , vp:dizionario-proprieta-bj-inizio , vp:dizionario-proprieta-bj-interpretazione , vp:dizionario-proprieta-bj-lettera , vp:dizionario-proprieta-bj-libroImplicito , vp:dizionario-proprieta-bj-limite , vp:dizionario-proprieta-bj-livello , vp:dizionario-proprieta-bj-lunghezza , vp:dizionario-proprieta-bj-metodo , vp:dizionario-proprieta-bj-motivo , vp:dizionario-proprieta-bj-nelPeriodo , vp:dizionario-proprieta-bj-nellaVoce , vp:dizionario-proprieta-bj-notaChiave , vp:dizionario-proprieta-bj-numero , vp:dizionario-proprieta-bj-numeroParole , vp:dizionario-proprieta-bj-ordine , vp:dizionario-proprieta-bj-ordineReligioso , vp:dizionario-proprieta-bj-pagina , vp:dizionario-proprieta-bj-paginaFinale , vp:dizionario-proprieta-bj-paginaPdf , vp:dizionario-proprieta-bj-parte , vp:dizionario-proprieta-bj-percorso , vp:dizionario-proprieta-bj-posizioneHtml , vp:dizionario-proprieta-bj-posizioneLinea , vp:dizionario-proprieta-bj-posizioneTesto , vp:dizionario-proprieta-bj-precisione , vp:dizionario-proprieta-bj-regolaEra , vp:dizionario-proprieta-bj-richiamaVoce , vp:dizionario-proprieta-bj-rinviaAVoce , vp:dizionario-proprieta-bj-sede , vp:dizionario-proprieta-bj-stato , vp:dizionario-proprieta-bj-statoFonte , vp:dizionario-proprieta-bj-testo , vp:dizionario-proprieta-bj-testoHtml , vp:dizionario-proprieta-bj-testoRinvii , vp:dizionario-proprieta-bj-tipoCollegamento , vp:dizionario-proprieta-bj-tipoMotivo , vp:dizionario-proprieta-bj-tipoSezione , vp:dizionario-proprieta-bj-traduttore , vp:dizionario-proprieta-bj-vediAncheVoce , vp:dizionario-proprieta-bj-voceCitaVersetto , vp:dizionario-proprieta-dcterms-alternative , vp:dizionario-proprieta-dcterms-bibliographicCitation , vp:dizionario-proprieta-dcterms-creator , vp:dizionario-proprieta-dcterms-identifier , vp:dizionario-proprieta-dcterms-isPartOf , vp:dizionario-proprieta-dcterms-issued , vp:dizionario-proprieta-dcterms-language , vp:dizionario-proprieta-dcterms-publisher , vp:dizionario-proprieta-dcterms-rights , vp:dizionario-proprieta-dcterms-source , vp:dizionario-proprieta-dcterms-title , vp:dizionario-proprieta-foaf-familyName , vp:dizionario-proprieta-foaf-givenName , vp:dizionario-proprieta-foaf-name , vp:dizionario-proprieta-oa-hasSource , vp:dizionario-proprieta-prov-wasDerivedFrom , vp:dizionario-proprieta-rdf-type , vp:dizionario-proprieta-rdfs-label , vp:dizionario-proprieta-skos-altLabel , vp:dizionario-proprieta-skos-hasTopConcept , vp:dizionario-proprieta-skos-inScheme , vp:dizionario-proprieta-skos-prefLabel , vp:dizionario-proprieta-skos-related , vp:dizionario-proprieta-skos-topConceptOf .
+    void:propertyPartition vp:dizionario-proprieta-bj-aPassaggio , vp:dizionario-proprieta-bj-aSezione , vp:dizionario-proprieta-bj-aVoce , vp:dizionario-proprieta-bj-annoFine , vp:dizionario-proprieta-bj-annoInizio , vp:dizionario-proprieta-bj-categoriaMotivo , vp:dizionario-proprieta-bj-circa , vp:dizionario-proprieta-bj-citaVersetto , vp:dizionario-proprieta-bj-citatoNellaVoce , vp:dizionario-proprieta-bj-citazioneNellaFrase , vp:dizionario-proprieta-bj-comprende , vp:dizionario-proprieta-bj-conCf , vp:dizionario-proprieta-bj-conParalleli , vp:dizionario-proprieta-bj-conversione , vp:dizionario-proprieta-bj-curatore , vp:dizionario-proprieta-bj-daParagrafo , vp:dizionario-proprieta-bj-daSezione , vp:dizionario-proprieta-bj-daVoce , vp:dizionario-proprieta-bj-datazione , vp:dizionario-proprieta-bj-eAltrove , vp:dizionario-proprieta-bj-edizione , vp:dizionario-proprieta-bj-esitoPercorso , vp:dizionario-proprieta-bj-estensione , vp:dizionario-proprieta-bj-etichetta , vp:dizionario-proprieta-bj-fine , vp:dizionario-proprieta-bj-fineHtml , vp:dizionario-proprieta-bj-firma , vp:dizionario-proprieta-bj-forma , vp:dizionario-proprieta-bj-inizio , vp:dizionario-proprieta-bj-interpretazione , vp:dizionario-proprieta-bj-lettera , vp:dizionario-proprieta-bj-libroImplicito , vp:dizionario-proprieta-bj-limite , vp:dizionario-proprieta-bj-livello , vp:dizionario-proprieta-bj-lunghezza , vp:dizionario-proprieta-bj-metodo , vp:dizionario-proprieta-bj-motivo , vp:dizionario-proprieta-bj-nelPeriodo , vp:dizionario-proprieta-bj-nellaVoce , vp:dizionario-proprieta-bj-notaChiave , vp:dizionario-proprieta-bj-numero , vp:dizionario-proprieta-bj-numeroParole , vp:dizionario-proprieta-bj-ordine , vp:dizionario-proprieta-bj-ordineReligioso , vp:dizionario-proprieta-bj-pagina , vp:dizionario-proprieta-bj-paginaFinale , vp:dizionario-proprieta-bj-paginaPdf , vp:dizionario-proprieta-bj-parte , vp:dizionario-proprieta-bj-percorso , vp:dizionario-proprieta-bj-posizioneHtml , vp:dizionario-proprieta-bj-posizioneLinea , vp:dizionario-proprieta-bj-posizioneTesto , vp:dizionario-proprieta-bj-precisione , vp:dizionario-proprieta-bj-regolaEra , vp:dizionario-proprieta-bj-richiamaVoce , vp:dizionario-proprieta-bj-rinviaAVoce , vp:dizionario-proprieta-bj-sede , vp:dizionario-proprieta-bj-stato , vp:dizionario-proprieta-bj-statoFonte , vp:dizionario-proprieta-bj-stessoEvento , vp:dizionario-proprieta-bj-testo , vp:dizionario-proprieta-bj-testoHtml , vp:dizionario-proprieta-bj-testoRinvii , vp:dizionario-proprieta-bj-tipoCollegamento , vp:dizionario-proprieta-bj-tipoMotivo , vp:dizionario-proprieta-bj-tipoSezione , vp:dizionario-proprieta-bj-traduttore , vp:dizionario-proprieta-bj-vediAncheVoce , vp:dizionario-proprieta-bj-voceCitaVersetto , vp:dizionario-proprieta-dcterms-alternative , vp:dizionario-proprieta-dcterms-bibliographicCitation , vp:dizionario-proprieta-dcterms-creator , vp:dizionario-proprieta-dcterms-identifier , vp:dizionario-proprieta-dcterms-isPartOf , vp:dizionario-proprieta-dcterms-issued , vp:dizionario-proprieta-dcterms-language , vp:dizionario-proprieta-dcterms-publisher , vp:dizionario-proprieta-dcterms-rights , vp:dizionario-proprieta-dcterms-source , vp:dizionario-proprieta-dcterms-title , vp:dizionario-proprieta-foaf-familyName , vp:dizionario-proprieta-foaf-givenName , vp:dizionario-proprieta-foaf-name , vp:dizionario-proprieta-oa-hasSource , vp:dizionario-proprieta-prov-wasDerivedFrom , vp:dizionario-proprieta-rdf-type , vp:dizionario-proprieta-rdfs-label , vp:dizionario-proprieta-skos-altLabel , vp:dizionario-proprieta-skos-hasTopConcept , vp:dizionario-proprieta-skos-inScheme , vp:dizionario-proprieta-skos-prefLabel , vp:dizionario-proprieta-skos-related , vp:dizionario-proprieta-skos-topConceptOf .
 vp:dizionario-classe-bj-Citazione void:class bj:Citazione ; void:entities 30257 .
 vp:dizionario-classe-bj-CollegamentoVoce void:class bj:CollegamentoVoce ; void:entities 18207 .
 vp:dizionario-classe-bj-Dizionario void:class bj:Dizionario ; void:entities 1 .
-vp:dizionario-classe-bj-EventoDatato void:class bj:EventoDatato ; void:entities 65 .
+vp:dizionario-classe-bj-EventoDatato void:class bj:EventoDatato ; void:entities 68 .
 vp:dizionario-classe-bj-PaginaDizionario void:class bj:PaginaDizionario ; void:entities 778 .
 vp:dizionario-classe-bj-ParagrafoVoce void:class bj:ParagrafoVoce ; void:entities 4149 .
 vp:dizionario-classe-bj-Passaggio void:class bj:Passaggio ; void:entities 6103 .
@@ -533,10 +534,10 @@ vp:dizionario-classe-skos-ConceptScheme void:class skos:ConceptScheme ; void:ent
 vp:dizionario-proprieta-bj-aPassaggio void:property bj:aPassaggio ; void:triples 30165 .
 vp:dizionario-proprieta-bj-aSezione void:property bj:aSezione ; void:triples 5761 .
 vp:dizionario-proprieta-bj-aVoce void:property bj:aVoce ; void:triples 18198 .
-vp:dizionario-proprieta-bj-annoFine void:property bj:annoFine ; void:triples 66 .
-vp:dizionario-proprieta-bj-annoInizio void:property bj:annoInizio ; void:triples 66 .
+vp:dizionario-proprieta-bj-annoFine void:property bj:annoFine ; void:triples 68 .
+vp:dizionario-proprieta-bj-annoInizio void:property bj:annoInizio ; void:triples 68 .
 vp:dizionario-proprieta-bj-categoriaMotivo void:property bj:categoriaMotivo ; void:triples 95 .
-vp:dizionario-proprieta-bj-circa void:property bj:circa ; void:triples 66 .
+vp:dizionario-proprieta-bj-circa void:property bj:circa ; void:triples 68 .
 vp:dizionario-proprieta-bj-citaVersetto void:property bj:citaVersetto ; void:triples 1024 .
 vp:dizionario-proprieta-bj-citatoNellaVoce void:property bj:citatoNellaVoce ; void:triples 119506 .
 vp:dizionario-proprieta-bj-citazioneNellaFrase void:property bj:citazioneNellaFrase ; void:triples 116 .
@@ -548,7 +549,7 @@ vp:dizionario-proprieta-bj-curatore void:property bj:curatore ; void:triples 6 .
 vp:dizionario-proprieta-bj-daParagrafo void:property bj:daParagrafo ; void:triples 40238 .
 vp:dizionario-proprieta-bj-daSezione void:property bj:daSezione ; void:triples 80 .
 vp:dizionario-proprieta-bj-daVoce void:property bj:daVoce ; void:triples 18207 .
-vp:dizionario-proprieta-bj-datazione void:property bj:datazione ; void:triples 66 .
+vp:dizionario-proprieta-bj-datazione void:property bj:datazione ; void:triples 68 .
 vp:dizionario-proprieta-bj-eAltrove void:property bj:eAltrove ; void:triples 283 .
 vp:dizionario-proprieta-bj-edizione void:property bj:edizione ; void:triples 1 .
 vp:dizionario-proprieta-bj-esitoPercorso void:property bj:esitoPercorso ; void:triples 8146 .
@@ -562,12 +563,12 @@ vp:dizionario-proprieta-bj-inizio void:property bj:inizio ; void:triples 6103 .
 vp:dizionario-proprieta-bj-interpretazione void:property bj:interpretazione ; void:triples 282 .
 vp:dizionario-proprieta-bj-lettera void:property bj:lettera ; void:triples 849 .
 vp:dizionario-proprieta-bj-libroImplicito void:property bj:libroImplicito ; void:triples 3574 .
-vp:dizionario-proprieta-bj-limite void:property bj:limite ; void:triples 12 .
+vp:dizionario-proprieta-bj-limite void:property bj:limite ; void:triples 13 .
 vp:dizionario-proprieta-bj-livello void:property bj:livello ; void:triples 3022 .
 vp:dizionario-proprieta-bj-lunghezza void:property bj:lunghezza ; void:triples 30257 .
 vp:dizionario-proprieta-bj-metodo void:property bj:metodo ; void:triples 10061 .
 vp:dizionario-proprieta-bj-motivo void:property bj:motivo ; void:triples 95 .
-vp:dizionario-proprieta-bj-nelPeriodo void:property bj:nelPeriodo ; void:triples 66 .
+vp:dizionario-proprieta-bj-nelPeriodo void:property bj:nelPeriodo ; void:triples 68 .
 vp:dizionario-proprieta-bj-nellaVoce void:property bj:nellaVoce ; void:triples 55635 .
 vp:dizionario-proprieta-bj-notaChiave void:property bj:notaChiave ; void:triples 30257 .
 vp:dizionario-proprieta-bj-numero void:property bj:numero ; void:triples 4927 .
@@ -577,19 +578,20 @@ vp:dizionario-proprieta-bj-ordineReligioso void:property bj:ordineReligioso ; vo
 vp:dizionario-proprieta-bj-pagina void:property bj:pagina ; void:triples 8020 .
 vp:dizionario-proprieta-bj-paginaFinale void:property bj:paginaFinale ; void:triples 310 .
 vp:dizionario-proprieta-bj-paginaPdf void:property bj:paginaPdf ; void:triples 778 .
-vp:dizionario-proprieta-bj-parte void:property bj:parte ; void:triples 66 .
+vp:dizionario-proprieta-bj-parte void:property bj:parte ; void:triples 68 .
 vp:dizionario-proprieta-bj-percorso void:property bj:percorso ; void:triples 8978 .
 vp:dizionario-proprieta-bj-posizioneHtml void:property bj:posizioneHtml ; void:triples 30257 .
-vp:dizionario-proprieta-bj-posizioneLinea void:property bj:posizioneLinea ; void:triples 66 .
-vp:dizionario-proprieta-bj-posizioneTesto void:property bj:posizioneTesto ; void:triples 30323 .
-vp:dizionario-proprieta-bj-precisione void:property bj:precisione ; void:triples 66 .
-vp:dizionario-proprieta-bj-regolaEra void:property bj:regolaEra ; void:triples 66 .
+vp:dizionario-proprieta-bj-posizioneLinea void:property bj:posizioneLinea ; void:triples 68 .
+vp:dizionario-proprieta-bj-posizioneTesto void:property bj:posizioneTesto ; void:triples 30325 .
+vp:dizionario-proprieta-bj-precisione void:property bj:precisione ; void:triples 68 .
+vp:dizionario-proprieta-bj-regolaEra void:property bj:regolaEra ; void:triples 68 .
 vp:dizionario-proprieta-bj-richiamaVoce void:property bj:richiamaVoce ; void:triples 8242 .
 vp:dizionario-proprieta-bj-rinviaAVoce void:property bj:rinviaAVoce ; void:triples 2142 .
 vp:dizionario-proprieta-bj-sede void:property bj:sede ; void:triples 68 .
 vp:dizionario-proprieta-bj-stato void:property bj:stato ; void:triples 48464 .
 vp:dizionario-proprieta-bj-statoFonte void:property bj:statoFonte ; void:triples 220 .
-vp:dizionario-proprieta-bj-testo void:property bj:testo ; void:triples 34472 .
+vp:dizionario-proprieta-bj-stessoEvento void:property bj:stessoEvento ; void:triples 1 .
+vp:dizionario-proprieta-bj-testo void:property bj:testo ; void:triples 34474 .
 vp:dizionario-proprieta-bj-testoHtml void:property bj:testoHtml ; void:triples 3458 .
 vp:dizionario-proprieta-bj-testoRinvii void:property bj:testoRinvii ; void:triples 849 .
 vp:dizionario-proprieta-bj-tipoCollegamento void:property bj:tipoCollegamento ; void:triples 18207 .
@@ -601,7 +603,7 @@ vp:dizionario-proprieta-bj-voceCitaVersetto void:property bj:voceCitaVersetto ; 
 vp:dizionario-proprieta-dcterms-alternative void:property dcterms:alternative ; void:triples 1 .
 vp:dizionario-proprieta-dcterms-bibliographicCitation void:property dcterms:bibliographicCitation ; void:triples 1 .
 vp:dizionario-proprieta-dcterms-creator void:property dcterms:creator ; void:triples 436 .
-vp:dizionario-proprieta-dcterms-identifier void:property dcterms:identifier ; void:triples 63504 .
+vp:dizionario-proprieta-dcterms-identifier void:property dcterms:identifier ; void:triples 63506 .
 vp:dizionario-proprieta-dcterms-isPartOf void:property dcterms:isPartOf ; void:triples 7949 .
 vp:dizionario-proprieta-dcterms-issued void:property dcterms:issued ; void:triples 1 .
 vp:dizionario-proprieta-dcterms-language void:property dcterms:language ; void:triples 1 .
@@ -612,10 +614,10 @@ vp:dizionario-proprieta-dcterms-title void:property dcterms:title ; void:triples
 vp:dizionario-proprieta-foaf-familyName void:property foaf:familyName ; void:triples 72 .
 vp:dizionario-proprieta-foaf-givenName void:property foaf:givenName ; void:triples 72 .
 vp:dizionario-proprieta-foaf-name void:property foaf:name ; void:triples 72 .
-vp:dizionario-proprieta-oa-hasSource void:property oa:hasSource ; void:triples 6169 .
+vp:dizionario-proprieta-oa-hasSource void:property oa:hasSource ; void:triples 6171 .
 vp:dizionario-proprieta-prov-wasDerivedFrom void:property prov:wasDerivedFrom ; void:triples 8747 .
-vp:dizionario-proprieta-rdf-type void:property rdf:type ; void:triples 64873 .
-vp:dizionario-proprieta-rdfs-label void:property rdfs:label ; void:triples 63504 .
+vp:dizionario-proprieta-rdf-type void:property rdf:type ; void:triples 64875 .
+vp:dizionario-proprieta-rdfs-label void:property rdfs:label ; void:triples 63506 .
 vp:dizionario-proprieta-skos-altLabel void:property skos:altLabel ; void:triples 60 .
 vp:dizionario-proprieta-skos-hasTopConcept void:property skos:hasTopConcept ; void:triples 849 .
 vp:dizionario-proprieta-skos-inScheme void:property skos:inScheme ; void:triples 849 .
@@ -626,17 +628,17 @@ vp:dizionario-proprieta-skos-topConceptOf void:property skos:topConceptOf ; void
 vp:paratesto a void:Dataset ;
     dcterms:title "La Bibbia di Gerusalemme: pagine iniziali e appendici (edizione, presentazione e prefazioni, canone, abbreviazioni e codici, xilografie, indice delle note, indice dei temi pastorali, tavola cronologica, dinastie)"@it , "The Jerusalem Bible: front matter and appendices (edition, presentation and prefaces, canon, abbreviations and codices, woodcuts, index of notes, index of pastoral themes, chronological table, dynasties)"@en ;
     dcterms:source "progetti/introduzione-generale, progetti/appendici" ;
-    void:triples 166919 ;
-    void:entities 9680 ;
+    void:triples 166844 ;
+    void:entities 9623 ;
     void:classPartition vp:paratesto-classe-bj-Abbreviazione , vp:paratesto-classe-bj-Canone , vp:paratesto-classe-bj-Citazione , vp:paratesto-classe-bj-Discorso , vp:paratesto-classe-bj-Edizione , vp:paratesto-classe-bj-EventoCronologia , vp:paratesto-classe-bj-EventoDatato , vp:paratesto-classe-bj-GruppoCanone , vp:paratesto-classe-bj-Indice , vp:paratesto-classe-bj-Manoscritto , vp:paratesto-classe-bj-PaginaAppendice , vp:paratesto-classe-bj-PaginaPreliminare , vp:paratesto-classe-bj-Paragrafo , vp:paratesto-classe-bj-Passaggio , vp:paratesto-classe-bj-PersonaStorica , vp:paratesto-classe-bj-SezioneCronologia , vp:paratesto-classe-bj-Stampa , vp:paratesto-classe-bj-TavolaCronologica , vp:paratesto-classe-bj-TavolaGenealogica , vp:paratesto-classe-bj-TestoPreliminare , vp:paratesto-classe-bj-VoceCanone , vp:paratesto-classe-bj-VoceIndice , vp:paratesto-classe-bj-Xilografia , vp:paratesto-classe-foaf-Person , vp:paratesto-classe-schema-Person , vp:paratesto-classe-skos-ConceptScheme ;
-    void:propertyPartition vp:paratesto-proprieta-bj-aPassaggio , vp:paratesto-proprieta-bj-aPassaggioCorretto , vp:paratesto-proprieta-bj-abbreviaLibro , vp:paratesto-proprieta-bj-abbreviaManoscritto , vp:paratesto-proprieta-bj-anniMargine , vp:paratesto-proprieta-bj-annoFine , vp:paratesto-proprieta-bj-annoInizio , vp:paratesto-proprieta-bj-apocrifo , vp:paratesto-proprieta-bj-apreLibro , vp:paratesto-proprieta-bj-categoriaManoscritto , vp:paratesto-proprieta-bj-categoriaMotivo , vp:paratesto-proprieta-bj-circa , vp:paratesto-proprieta-bj-citaVersetto , vp:paratesto-proprieta-bj-colonna , vp:paratesto-proprieta-bj-comprende , vp:paratesto-proprieta-bj-comprendeCapitolo , vp:paratesto-proprieta-bj-comprendeLibro , vp:paratesto-proprieta-bj-conCf , vp:paratesto-proprieta-bj-conParalleli , vp:paratesto-proprieta-bj-correzione , vp:paratesto-proprieta-bj-corrispondenzaNota , vp:paratesto-proprieta-bj-corsivo , vp:paratesto-proprieta-bj-curatore , vp:paratesto-proprieta-bj-daEvento , vp:paratesto-proprieta-bj-daParagrafo , vp:paratesto-proprieta-bj-daVoceIndice , vp:paratesto-proprieta-bj-dataStampata , vp:paratesto-proprieta-bj-datataDa , vp:paratesto-proprieta-bj-datazione , vp:paratesto-proprieta-bj-descrizione , vp:paratesto-proprieta-bj-deuterocanonico , vp:paratesto-proprieta-bj-direzioneEditoriale , vp:paratesto-proprieta-bj-edizioneDi , vp:paratesto-proprieta-bj-estensione , vp:paratesto-proprieta-bj-etichetta , vp:paratesto-proprieta-bj-fine , vp:paratesto-proprieta-bj-fineCarattere , vp:paratesto-proprieta-bj-fineHtml , vp:paratesto-proprieta-bj-finisceIn , vp:paratesto-proprieta-bj-firma , vp:paratesto-proprieta-bj-illustra , vp:paratesto-proprieta-bj-illustraVersetto , vp:paratesto-proprieta-bj-imprimatur , vp:paratesto-proprieta-bj-incerto , vp:paratesto-proprieta-bj-indicaNota , vp:paratesto-proprieta-bj-indicaVersetto , vp:paratesto-proprieta-bj-iniziaIn , vp:paratesto-proprieta-bj-inizio , vp:paratesto-proprieta-bj-inizioCarattere , vp:paratesto-proprieta-bj-interpretazione , vp:paratesto-proprieta-bj-isbn , vp:paratesto-proprieta-bj-libroCitato , vp:paratesto-proprieta-bj-libroImplicito , vp:paratesto-proprieta-bj-lunghezza , vp:paratesto-proprieta-bj-luogo , vp:paratesto-proprieta-bj-mandaANota , vp:paratesto-proprieta-bj-motivo , vp:paratesto-proprieta-bj-nelPeriodo , vp:paratesto-proprieta-bj-nellIndice , vp:paratesto-proprieta-bj-nomeMaiuscoletto , vp:paratesto-proprieta-bj-nomeMaiuscolo , vp:paratesto-proprieta-bj-notaChiave , vp:paratesto-proprieta-bj-numero , vp:paratesto-proprieta-bj-numeroGregoryAland , vp:paratesto-proprieta-bj-numeroTavola , vp:paratesto-proprieta-bj-ordine , vp:paratesto-proprieta-bj-pagina , vp:paratesto-proprieta-bj-paginaPdf , vp:paratesto-proprieta-bj-parte , vp:paratesto-proprieta-bj-posizioneHtml , vp:paratesto-proprieta-bj-posizioneLinea , vp:paratesto-proprieta-bj-posizioneTesto , vp:paratesto-proprieta-bj-precisione , vp:paratesto-proprieta-bj-qualifica , vp:paratesto-proprieta-bj-qualificatore , vp:paratesto-proprieta-bj-regolaEra , vp:paratesto-proprieta-bj-riga , vp:paratesto-proprieta-bj-rinviaAIntroduzione , vp:paratesto-proprieta-bj-secondoVersione , vp:paratesto-proprieta-bj-seguito , vp:paratesto-proprieta-bj-significato , vp:paratesto-proprieta-bj-sottotitolo , vp:paratesto-proprieta-bj-stampaDi , vp:paratesto-proprieta-bj-stampatore , vp:paratesto-proprieta-bj-stato , vp:paratesto-proprieta-bj-stessoEvento , vp:paratesto-proprieta-bj-stile , vp:paratesto-proprieta-bj-testo , vp:paratesto-proprieta-bj-testoCorretto , vp:paratesto-proprieta-bj-testoHtml , vp:paratesto-proprieta-bj-tipoAbbreviazione , vp:paratesto-proprieta-bj-tipoDatazione , vp:paratesto-proprieta-bj-titoletto , vp:paratesto-proprieta-bj-vediVoce , vp:paratesto-proprieta-dcterms-creator , vp:paratesto-proprieta-dcterms-date , vp:paratesto-proprieta-dcterms-identifier , vp:paratesto-proprieta-dcterms-isPartOf , vp:paratesto-proprieta-dcterms-issued , vp:paratesto-proprieta-dcterms-language , vp:paratesto-proprieta-dcterms-publisher , vp:paratesto-proprieta-dcterms-rights , vp:paratesto-proprieta-dcterms-source , vp:paratesto-proprieta-dcterms-title , vp:paratesto-proprieta-foaf-familyName , vp:paratesto-proprieta-foaf-givenName , vp:paratesto-proprieta-foaf-name , vp:paratesto-proprieta-oa-hasSource , vp:paratesto-proprieta-prov-wasDerivedFrom , vp:paratesto-proprieta-rdf-type , vp:paratesto-proprieta-rdfs-comment , vp:paratesto-proprieta-rdfs-label , vp:paratesto-proprieta-schema-children , vp:paratesto-proprieta-schema-parent , vp:paratesto-proprieta-schema-spouse , vp:paratesto-proprieta-skos-altLabel , vp:paratesto-proprieta-skos-broader , vp:paratesto-proprieta-skos-hasTopConcept , vp:paratesto-proprieta-skos-inScheme , vp:paratesto-proprieta-skos-narrower , vp:paratesto-proprieta-skos-notation , vp:paratesto-proprieta-skos-prefLabel , vp:paratesto-proprieta-skos-related , vp:paratesto-proprieta-skos-topConceptOf .
+    void:propertyPartition vp:paratesto-proprieta-bj-aPassaggio , vp:paratesto-proprieta-bj-aPassaggioCorretto , vp:paratesto-proprieta-bj-abbreviaLibro , vp:paratesto-proprieta-bj-abbreviaManoscritto , vp:paratesto-proprieta-bj-anniMargine , vp:paratesto-proprieta-bj-annoAlternativo , vp:paratesto-proprieta-bj-annoFine , vp:paratesto-proprieta-bj-annoInizio , vp:paratesto-proprieta-bj-apocrifo , vp:paratesto-proprieta-bj-apreLibro , vp:paratesto-proprieta-bj-categoriaManoscritto , vp:paratesto-proprieta-bj-categoriaMotivo , vp:paratesto-proprieta-bj-circa , vp:paratesto-proprieta-bj-citaVersetto , vp:paratesto-proprieta-bj-colonna , vp:paratesto-proprieta-bj-comprende , vp:paratesto-proprieta-bj-comprendeCapitolo , vp:paratesto-proprieta-bj-comprendeLibro , vp:paratesto-proprieta-bj-conCf , vp:paratesto-proprieta-bj-conParalleli , vp:paratesto-proprieta-bj-correzione , vp:paratesto-proprieta-bj-corrispondenzaNota , vp:paratesto-proprieta-bj-corsivo , vp:paratesto-proprieta-bj-curatore , vp:paratesto-proprieta-bj-daEvento , vp:paratesto-proprieta-bj-daParagrafo , vp:paratesto-proprieta-bj-daVoceIndice , vp:paratesto-proprieta-bj-dataStampata , vp:paratesto-proprieta-bj-datataDa , vp:paratesto-proprieta-bj-datazione , vp:paratesto-proprieta-bj-descrizione , vp:paratesto-proprieta-bj-deuterocanonico , vp:paratesto-proprieta-bj-direzioneEditoriale , vp:paratesto-proprieta-bj-edizioneDi , vp:paratesto-proprieta-bj-estensione , vp:paratesto-proprieta-bj-etichetta , vp:paratesto-proprieta-bj-fine , vp:paratesto-proprieta-bj-fineCarattere , vp:paratesto-proprieta-bj-fineHtml , vp:paratesto-proprieta-bj-finisceIn , vp:paratesto-proprieta-bj-firma , vp:paratesto-proprieta-bj-illustra , vp:paratesto-proprieta-bj-illustraVersetto , vp:paratesto-proprieta-bj-imprimatur , vp:paratesto-proprieta-bj-incerto , vp:paratesto-proprieta-bj-indicaNota , vp:paratesto-proprieta-bj-indicaVersetto , vp:paratesto-proprieta-bj-iniziaIn , vp:paratesto-proprieta-bj-inizio , vp:paratesto-proprieta-bj-inizioCarattere , vp:paratesto-proprieta-bj-interpretazione , vp:paratesto-proprieta-bj-isbn , vp:paratesto-proprieta-bj-libroCitato , vp:paratesto-proprieta-bj-libroImplicito , vp:paratesto-proprieta-bj-lunghezza , vp:paratesto-proprieta-bj-luogo , vp:paratesto-proprieta-bj-mandaANota , vp:paratesto-proprieta-bj-motivo , vp:paratesto-proprieta-bj-nelPeriodo , vp:paratesto-proprieta-bj-nellIndice , vp:paratesto-proprieta-bj-nomeMaiuscoletto , vp:paratesto-proprieta-bj-nomeMaiuscolo , vp:paratesto-proprieta-bj-notaChiave , vp:paratesto-proprieta-bj-numero , vp:paratesto-proprieta-bj-numeroGregoryAland , vp:paratesto-proprieta-bj-numeroTavola , vp:paratesto-proprieta-bj-ordine , vp:paratesto-proprieta-bj-pagina , vp:paratesto-proprieta-bj-paginaPdf , vp:paratesto-proprieta-bj-parte , vp:paratesto-proprieta-bj-posizioneHtml , vp:paratesto-proprieta-bj-posizioneLinea , vp:paratesto-proprieta-bj-posizioneTesto , vp:paratesto-proprieta-bj-precisione , vp:paratesto-proprieta-bj-qualifica , vp:paratesto-proprieta-bj-qualificatore , vp:paratesto-proprieta-bj-regolaEra , vp:paratesto-proprieta-bj-riga , vp:paratesto-proprieta-bj-rinviaAIntroduzione , vp:paratesto-proprieta-bj-secondoVersione , vp:paratesto-proprieta-bj-seguito , vp:paratesto-proprieta-bj-significato , vp:paratesto-proprieta-bj-sottotitolo , vp:paratesto-proprieta-bj-stampaDi , vp:paratesto-proprieta-bj-stampatore , vp:paratesto-proprieta-bj-stato , vp:paratesto-proprieta-bj-stessoEvento , vp:paratesto-proprieta-bj-stile , vp:paratesto-proprieta-bj-testo , vp:paratesto-proprieta-bj-testoCorretto , vp:paratesto-proprieta-bj-testoHtml , vp:paratesto-proprieta-bj-tipoAbbreviazione , vp:paratesto-proprieta-bj-tipoDatazione , vp:paratesto-proprieta-bj-titoletto , vp:paratesto-proprieta-bj-vediVoce , vp:paratesto-proprieta-dcterms-creator , vp:paratesto-proprieta-dcterms-date , vp:paratesto-proprieta-dcterms-identifier , vp:paratesto-proprieta-dcterms-isPartOf , vp:paratesto-proprieta-dcterms-issued , vp:paratesto-proprieta-dcterms-language , vp:paratesto-proprieta-dcterms-publisher , vp:paratesto-proprieta-dcterms-rights , vp:paratesto-proprieta-dcterms-source , vp:paratesto-proprieta-dcterms-title , vp:paratesto-proprieta-foaf-familyName , vp:paratesto-proprieta-foaf-givenName , vp:paratesto-proprieta-foaf-name , vp:paratesto-proprieta-oa-hasSource , vp:paratesto-proprieta-prov-wasDerivedFrom , vp:paratesto-proprieta-rdf-type , vp:paratesto-proprieta-rdfs-comment , vp:paratesto-proprieta-rdfs-label , vp:paratesto-proprieta-schema-children , vp:paratesto-proprieta-schema-parent , vp:paratesto-proprieta-schema-spouse , vp:paratesto-proprieta-skos-altLabel , vp:paratesto-proprieta-skos-broader , vp:paratesto-proprieta-skos-hasTopConcept , vp:paratesto-proprieta-skos-inScheme , vp:paratesto-proprieta-skos-narrower , vp:paratesto-proprieta-skos-notation , vp:paratesto-proprieta-skos-prefLabel , vp:paratesto-proprieta-skos-related , vp:paratesto-proprieta-skos-topConceptOf .
 vp:paratesto-classe-bj-Abbreviazione void:class bj:Abbreviazione ; void:entities 147 .
 vp:paratesto-classe-bj-Canone void:class bj:Canone ; void:entities 2 .
 vp:paratesto-classe-bj-Citazione void:class bj:Citazione ; void:entities 5182 .
 vp:paratesto-classe-bj-Discorso void:class bj:Discorso ; void:entities 84 .
 vp:paratesto-classe-bj-Edizione void:class bj:Edizione ; void:entities 1 .
 vp:paratesto-classe-bj-EventoCronologia void:class bj:EventoCronologia ; void:entities 585 .
-vp:paratesto-classe-bj-EventoDatato void:class bj:EventoDatato ; void:entities 83 .
+vp:paratesto-classe-bj-EventoDatato void:class bj:EventoDatato ; void:entities 26 .
 vp:paratesto-classe-bj-GruppoCanone void:class bj:GruppoCanone ; void:entities 7 .
 vp:paratesto-classe-bj-Indice void:class bj:Indice ; void:entities 2 .
 vp:paratesto-classe-bj-Manoscritto void:class bj:Manoscritto ; void:entities 56 .
@@ -661,13 +663,14 @@ vp:paratesto-proprieta-bj-aPassaggioCorretto void:property bj:aPassaggioCorretto
 vp:paratesto-proprieta-bj-abbreviaLibro void:property bj:abbreviaLibro ; void:triples 74 .
 vp:paratesto-proprieta-bj-abbreviaManoscritto void:property bj:abbreviaManoscritto ; void:triples 56 .
 vp:paratesto-proprieta-bj-anniMargine void:property bj:anniMargine ; void:triples 107 .
-vp:paratesto-proprieta-bj-annoFine void:property bj:annoFine ; void:triples 616 .
-vp:paratesto-proprieta-bj-annoInizio void:property bj:annoInizio ; void:triples 616 .
+vp:paratesto-proprieta-bj-annoAlternativo void:property bj:annoAlternativo ; void:triples 1 .
+vp:paratesto-proprieta-bj-annoFine void:property bj:annoFine ; void:triples 617 .
+vp:paratesto-proprieta-bj-annoInizio void:property bj:annoInizio ; void:triples 617 .
 vp:paratesto-proprieta-bj-apocrifo void:property bj:apocrifo ; void:triples 35 .
 vp:paratesto-proprieta-bj-apreLibro void:property bj:apreLibro ; void:triples 73 .
 vp:paratesto-proprieta-bj-categoriaManoscritto void:property bj:categoriaManoscritto ; void:triples 56 .
 vp:paratesto-proprieta-bj-categoriaMotivo void:property bj:categoriaMotivo ; void:triples 27 .
-vp:paratesto-proprieta-bj-circa void:property bj:circa ; void:triples 616 .
+vp:paratesto-proprieta-bj-circa void:property bj:circa ; void:triples 617 .
 vp:paratesto-proprieta-bj-citaVersetto void:property bj:citaVersetto ; void:triples 2675 .
 vp:paratesto-proprieta-bj-colonna void:property bj:colonna ; void:triples 585 .
 vp:paratesto-proprieta-bj-comprende void:property bj:comprende ; void:triples 5206 .
@@ -684,7 +687,7 @@ vp:paratesto-proprieta-bj-daParagrafo void:property bj:daParagrafo ; void:triple
 vp:paratesto-proprieta-bj-daVoceIndice void:property bj:daVoceIndice ; void:triples 4957 .
 vp:paratesto-proprieta-bj-dataStampata void:property bj:dataStampata ; void:triples 5 .
 vp:paratesto-proprieta-bj-datataDa void:property bj:datataDa ; void:triples 585 .
-vp:paratesto-proprieta-bj-datazione void:property bj:datazione ; void:triples 487 .
+vp:paratesto-proprieta-bj-datazione void:property bj:datazione ; void:triples 488 .
 vp:paratesto-proprieta-bj-descrizione void:property bj:descrizione ; void:triples 56 .
 vp:paratesto-proprieta-bj-deuterocanonico void:property bj:deuterocanonico ; void:triples 35 .
 vp:paratesto-proprieta-bj-direzioneEditoriale void:property bj:direzioneEditoriale ; void:triples 1 .
@@ -713,7 +716,7 @@ vp:paratesto-proprieta-bj-lunghezza void:property bj:lunghezza ; void:triples 30
 vp:paratesto-proprieta-bj-luogo void:property bj:luogo ; void:triples 1 .
 vp:paratesto-proprieta-bj-mandaANota void:property bj:mandaANota ; void:triples 5 .
 vp:paratesto-proprieta-bj-motivo void:property bj:motivo ; void:triples 27 .
-vp:paratesto-proprieta-bj-nelPeriodo void:property bj:nelPeriodo ; void:triples 591 .
+vp:paratesto-proprieta-bj-nelPeriodo void:property bj:nelPeriodo ; void:triples 592 .
 vp:paratesto-proprieta-bj-nellIndice void:property bj:nellIndice ; void:triples 16449 .
 vp:paratesto-proprieta-bj-nomeMaiuscoletto void:property bj:nomeMaiuscoletto ; void:triples 190 .
 vp:paratesto-proprieta-bj-nomeMaiuscolo void:property bj:nomeMaiuscolo ; void:triples 97 .
@@ -724,14 +727,14 @@ vp:paratesto-proprieta-bj-numeroTavola void:property bj:numeroTavola ; void:trip
 vp:paratesto-proprieta-bj-ordine void:property bj:ordine ; void:triples 8281 .
 vp:paratesto-proprieta-bj-pagina void:property bj:pagina ; void:triples 8427 .
 vp:paratesto-proprieta-bj-paginaPdf void:property bj:paginaPdf ; void:triples 76 .
-vp:paratesto-proprieta-bj-parte void:property bj:parte ; void:triples 109 .
+vp:paratesto-proprieta-bj-parte void:property bj:parte ; void:triples 110 .
 vp:paratesto-proprieta-bj-posizioneHtml void:property bj:posizioneHtml ; void:triples 225 .
-vp:paratesto-proprieta-bj-posizioneLinea void:property bj:posizioneLinea ; void:triples 616 .
-vp:paratesto-proprieta-bj-posizioneTesto void:property bj:posizioneTesto ; void:triples 250 .
-vp:paratesto-proprieta-bj-precisione void:property bj:precisione ; void:triples 616 .
+vp:paratesto-proprieta-bj-posizioneLinea void:property bj:posizioneLinea ; void:triples 617 .
+vp:paratesto-proprieta-bj-posizioneTesto void:property bj:posizioneTesto ; void:triples 251 .
+vp:paratesto-proprieta-bj-precisione void:property bj:precisione ; void:triples 617 .
 vp:paratesto-proprieta-bj-qualifica void:property bj:qualifica ; void:triples 9 .
 vp:paratesto-proprieta-bj-qualificatore void:property bj:qualificatore ; void:triples 2 .
-vp:paratesto-proprieta-bj-regolaEra void:property bj:regolaEra ; void:triples 616 .
+vp:paratesto-proprieta-bj-regolaEra void:property bj:regolaEra ; void:triples 617 .
 vp:paratesto-proprieta-bj-riga void:property bj:riga ; void:triples 585 .
 vp:paratesto-proprieta-bj-rinviaAIntroduzione void:property bj:rinviaAIntroduzione ; void:triples 17 .
 vp:paratesto-proprieta-bj-secondoVersione void:property bj:secondoVersione ; void:triples 2 .
@@ -741,9 +744,9 @@ vp:paratesto-proprieta-bj-sottotitolo void:property bj:sottotitolo ; void:triple
 vp:paratesto-proprieta-bj-stampaDi void:property bj:stampaDi ; void:triples 5 .
 vp:paratesto-proprieta-bj-stampatore void:property bj:stampatore ; void:triples 1 .
 vp:paratesto-proprieta-bj-stato void:property bj:stato ; void:triples 5182 .
-vp:paratesto-proprieta-bj-stessoEvento void:property bj:stessoEvento ; void:triples 206 .
+vp:paratesto-proprieta-bj-stessoEvento void:property bj:stessoEvento ; void:triples 115 .
 vp:paratesto-proprieta-bj-stile void:property bj:stile ; void:triples 724 .
-vp:paratesto-proprieta-bj-testo void:property bj:testo ; void:triples 6084 .
+vp:paratesto-proprieta-bj-testo void:property bj:testo ; void:triples 6085 .
 vp:paratesto-proprieta-bj-testoCorretto void:property bj:testoCorretto ; void:triples 20 .
 vp:paratesto-proprieta-bj-testoHtml void:property bj:testoHtml ; void:triples 374 .
 vp:paratesto-proprieta-bj-tipoAbbreviazione void:property bj:tipoAbbreviazione ; void:triples 147 .
@@ -752,7 +755,7 @@ vp:paratesto-proprieta-bj-titoletto void:property bj:titoletto ; void:triples 22
 vp:paratesto-proprieta-bj-vediVoce void:property bj:vediVoce ; void:triples 247 .
 vp:paratesto-proprieta-dcterms-creator void:property dcterms:creator ; void:triples 4 .
 vp:paratesto-proprieta-dcterms-date void:property dcterms:date ; void:triples 5 .
-vp:paratesto-proprieta-dcterms-identifier void:property dcterms:identifier ; void:triples 9586 .
+vp:paratesto-proprieta-dcterms-identifier void:property dcterms:identifier ; void:triples 9587 .
 vp:paratesto-proprieta-dcterms-isPartOf void:property dcterms:isPartOf ; void:triples 861 .
 vp:paratesto-proprieta-dcterms-issued void:property dcterms:issued ; void:triples 1 .
 vp:paratesto-proprieta-dcterms-language void:property dcterms:language ; void:triples 1 .
@@ -763,11 +766,11 @@ vp:paratesto-proprieta-dcterms-title void:property dcterms:title ; void:triples 
 vp:paratesto-proprieta-foaf-familyName void:property foaf:familyName ; void:triples 5 .
 vp:paratesto-proprieta-foaf-givenName void:property foaf:givenName ; void:triples 5 .
 vp:paratesto-proprieta-foaf-name void:property foaf:name ; void:triples 39 .
-vp:paratesto-proprieta-oa-hasSource void:property oa:hasSource ; void:triples 744 .
+vp:paratesto-proprieta-oa-hasSource void:property oa:hasSource ; void:triples 745 .
 vp:paratesto-proprieta-prov-wasDerivedFrom void:property prov:wasDerivedFrom ; void:triples 8427 .
-vp:paratesto-proprieta-rdf-type void:property rdf:type ; void:triples 9622 .
+vp:paratesto-proprieta-rdf-type void:property rdf:type ; void:triples 9623 .
 vp:paratesto-proprieta-rdfs-comment void:property rdfs:comment ; void:triples 15 .
-vp:paratesto-proprieta-rdfs-label void:property rdfs:label ; void:triples 9588 .
+vp:paratesto-proprieta-rdfs-label void:property rdfs:label ; void:triples 9589 .
 vp:paratesto-proprieta-schema-children void:property schema:children ; void:triples 32 .
 vp:paratesto-proprieta-schema-parent void:property schema:parent ; void:triples 32 .
 vp:paratesto-proprieta-schema-spouse void:property schema:spouse ; void:triples 24 .
@@ -784,10 +787,10 @@ vp:paratesto-proprieta-skos-topConceptOf void:property skos:topConceptOf ; void:
 vp:integrazione a void:Dataset ;
     dcterms:title "Collegamenti tra le parti (indici, temi e Dizionario; persone; cronologia e libri; versioni e codici), calendario, misure e monete, carte, correzioni (bj:Intervento) e schemi di numerazione"@it , "Links between the parts (indices, themes and dictionary; persons; chronology and books; versions and codices), calendar, measures and coins, maps, corrections (bj:Intervento) and numbering schemes"@en ;
     dcterms:source "tools/ontologia/*.tsv, tools/ontologia/integrazione.py" ;
-    void:triples 50031 ;
+    void:triples 50079 ;
     void:entities 3746 ;
     void:classPartition vp:integrazione-classe-bj-Allineamento , vp:integrazione-classe-bj-Calendario , vp:integrazione-classe-bj-Carta , vp:integrazione-classe-bj-Citazione , vp:integrazione-classe-bj-Datazione , vp:integrazione-classe-bj-Festa , vp:integrazione-classe-bj-Intervento , vp:integrazione-classe-bj-Mese , vp:integrazione-classe-bj-PaginaAppendice , vp:integrazione-classe-bj-Passaggio , vp:integrazione-classe-bj-SchemaNumerazione , vp:integrazione-classe-bj-TavolaMisure , vp:integrazione-classe-bj-Unita , vp:integrazione-classe-bj-Versione , vp:integrazione-classe-foaf-Person , vp:integrazione-classe-oa-TextualBody , vp:integrazione-classe-skos-ConceptScheme ;
-    void:propertyPartition vp:integrazione-proprieta-bj-aPassaggio , vp:integrazione-proprieta-bj-abbreviaVersione , vp:integrazione-proprieta-bj-allineamentoA , vp:integrazione-proprieta-bj-allineamentoDa , vp:integrazione-proprieta-bj-annoFine , vp:integrazione-proprieta-bj-annoInizio , vp:integrazione-proprieta-bj-approssimativo , vp:integrazione-proprieta-bj-circa , vp:integrazione-proprieta-bj-citaTestimone , vp:integrazione-proprieta-bj-citaVersetto , vp:integrazione-proprieta-bj-comprende , vp:integrazione-proprieta-bj-conCf , vp:integrazione-proprieta-bj-conParalleli , vp:integrazione-proprieta-bj-correzione , vp:integrazione-proprieta-bj-daVoceTavola , vp:integrazione-proprieta-bj-datataDa , vp:integrazione-proprieta-bj-datazioneDi , vp:integrazione-proprieta-bj-datazioneLibro , vp:integrazione-proprieta-bj-equivaleA , vp:integrazione-proprieta-bj-estensione , vp:integrazione-proprieta-bj-fileFonte , vp:integrazione-proprieta-bj-fine , vp:integrazione-proprieta-bj-giorno , vp:integrazione-proprieta-bj-immagine , vp:integrazione-proprieta-bj-incerto , vp:integrazione-proprieta-bj-indicaPersona , vp:integrazione-proprieta-bj-inizio , vp:integrazione-proprieta-bj-interpretazione , vp:integrazione-proprieta-bj-legenda , vp:integrazione-proprieta-bj-lunghezza , vp:integrazione-proprieta-bj-mandaANota , vp:integrazione-proprieta-bj-meseSolare , vp:integrazione-proprieta-bj-metodoAllineamento , vp:integrazione-proprieta-bj-nelMese , vp:integrazione-proprieta-bj-nelPeriodo , vp:integrazione-proprieta-bj-nellaCronologia , vp:integrazione-proprieta-bj-nomeAntico , vp:integrazione-proprieta-bj-nomeMacedone , vp:integrazione-proprieta-bj-nominaMese , vp:integrazione-proprieta-bj-nominaMisura , vp:integrazione-proprieta-bj-nominaPersona , vp:integrazione-proprieta-bj-nominatoIn , vp:integrazione-proprieta-bj-notaChiave , vp:integrazione-proprieta-bj-numero , vp:integrazione-proprieta-bj-ordine , vp:integrazione-proprieta-bj-pagina , vp:integrazione-proprieta-bj-paginaPdf , vp:integrazione-proprieta-bj-paginaPdfCarta , vp:integrazione-proprieta-bj-posizioneLinea , vp:integrazione-proprieta-bj-posizioneTesto , vp:integrazione-proprieta-bj-precisione , vp:integrazione-proprieta-bj-proprietaMapping , vp:integrazione-proprieta-bj-raffiguraLibro , vp:integrazione-proprieta-bj-raffiguraPassaggio , vp:integrazione-proprieta-bj-rapporto , vp:integrazione-proprieta-bj-rapportoA , vp:integrazione-proprieta-bj-rapportoDecimale , vp:integrazione-proprieta-bj-regola , vp:integrazione-proprieta-bj-regolaEra , vp:integrazione-proprieta-bj-revisore , vp:integrazione-proprieta-bj-rigaFonte , vp:integrazione-proprieta-bj-righeTabella , vp:integrazione-proprieta-bj-riguardaLibro , vp:integrazione-proprieta-bj-riguardaPersona , vp:integrazione-proprieta-bj-schemaNumerazione , vp:integrazione-proprieta-bj-stato , vp:integrazione-proprieta-bj-tabellaFonte , vp:integrazione-proprieta-bj-testo , vp:integrazione-proprieta-bj-testoCorretto , vp:integrazione-proprieta-bj-testoLetto , vp:integrazione-proprieta-bj-testoStampato , vp:integrazione-proprieta-bj-tipoDatazione , vp:integrazione-proprieta-bj-tipoMisura , vp:integrazione-proprieta-bj-unitaQudt , vp:integrazione-proprieta-bj-valore , vp:integrazione-proprieta-bj-valoreStampato , vp:integrazione-proprieta-bj-versettiComuni , vp:integrazione-proprieta-bj-versettoComune , vp:integrazione-proprieta-dc-format , vp:integrazione-proprieta-dc-language , vp:integrazione-proprieta-dcterms-identifier , vp:integrazione-proprieta-dcterms-isPartOf , vp:integrazione-proprieta-dcterms-temporal , vp:integrazione-proprieta-dcterms-title , vp:integrazione-proprieta-foaf-familyName , vp:integrazione-proprieta-foaf-givenName , vp:integrazione-proprieta-foaf-name , vp:integrazione-proprieta-oa-hasBody , vp:integrazione-proprieta-oa-hasSource , vp:integrazione-proprieta-oa-hasTarget , vp:integrazione-proprieta-oa-motivatedBy , vp:integrazione-proprieta-prov-wasAttributedTo , vp:integrazione-proprieta-prov-wasDerivedFrom , vp:integrazione-proprieta-rdf-type , vp:integrazione-proprieta-rdf-value , vp:integrazione-proprieta-rdfs-comment , vp:integrazione-proprieta-rdfs-label , vp:integrazione-proprieta-skos-altLabel , vp:integrazione-proprieta-skos-broadMatch , vp:integrazione-proprieta-skos-closeMatch , vp:integrazione-proprieta-skos-hasTopConcept , vp:integrazione-proprieta-skos-inScheme , vp:integrazione-proprieta-skos-narrowMatch , vp:integrazione-proprieta-skos-notation , vp:integrazione-proprieta-skos-prefLabel , vp:integrazione-proprieta-skos-relatedMatch , vp:integrazione-proprieta-skos-topConceptOf .
+    void:propertyPartition vp:integrazione-proprieta-bj-aPassaggio , vp:integrazione-proprieta-bj-abbreviaVersione , vp:integrazione-proprieta-bj-allineamentoA , vp:integrazione-proprieta-bj-allineamentoDa , vp:integrazione-proprieta-bj-annoAlternativo , vp:integrazione-proprieta-bj-annoFine , vp:integrazione-proprieta-bj-annoInizio , vp:integrazione-proprieta-bj-approssimativo , vp:integrazione-proprieta-bj-circa , vp:integrazione-proprieta-bj-citaTestimone , vp:integrazione-proprieta-bj-citaVersetto , vp:integrazione-proprieta-bj-comprende , vp:integrazione-proprieta-bj-conCf , vp:integrazione-proprieta-bj-conParalleli , vp:integrazione-proprieta-bj-correzione , vp:integrazione-proprieta-bj-daVoceTavola , vp:integrazione-proprieta-bj-datataDa , vp:integrazione-proprieta-bj-datazione , vp:integrazione-proprieta-bj-datazioneDi , vp:integrazione-proprieta-bj-datazioneLibro , vp:integrazione-proprieta-bj-equivaleA , vp:integrazione-proprieta-bj-estensione , vp:integrazione-proprieta-bj-fileFonte , vp:integrazione-proprieta-bj-fine , vp:integrazione-proprieta-bj-giorno , vp:integrazione-proprieta-bj-immagine , vp:integrazione-proprieta-bj-incerto , vp:integrazione-proprieta-bj-indicaPersona , vp:integrazione-proprieta-bj-inizio , vp:integrazione-proprieta-bj-interpretazione , vp:integrazione-proprieta-bj-legenda , vp:integrazione-proprieta-bj-limite , vp:integrazione-proprieta-bj-lunghezza , vp:integrazione-proprieta-bj-mandaANota , vp:integrazione-proprieta-bj-meseSolare , vp:integrazione-proprieta-bj-metodoAllineamento , vp:integrazione-proprieta-bj-nelMese , vp:integrazione-proprieta-bj-nelPeriodo , vp:integrazione-proprieta-bj-nellaCronologia , vp:integrazione-proprieta-bj-nomeAntico , vp:integrazione-proprieta-bj-nomeMacedone , vp:integrazione-proprieta-bj-nominaMese , vp:integrazione-proprieta-bj-nominaMisura , vp:integrazione-proprieta-bj-nominaPersona , vp:integrazione-proprieta-bj-nominatoIn , vp:integrazione-proprieta-bj-notaChiave , vp:integrazione-proprieta-bj-numero , vp:integrazione-proprieta-bj-ordine , vp:integrazione-proprieta-bj-pagina , vp:integrazione-proprieta-bj-paginaPdf , vp:integrazione-proprieta-bj-paginaPdfCarta , vp:integrazione-proprieta-bj-posizioneLinea , vp:integrazione-proprieta-bj-posizioneTesto , vp:integrazione-proprieta-bj-precisione , vp:integrazione-proprieta-bj-proprietaMapping , vp:integrazione-proprieta-bj-raffiguraLibro , vp:integrazione-proprieta-bj-raffiguraPassaggio , vp:integrazione-proprieta-bj-rapporto , vp:integrazione-proprieta-bj-rapportoA , vp:integrazione-proprieta-bj-rapportoDecimale , vp:integrazione-proprieta-bj-regola , vp:integrazione-proprieta-bj-regolaEra , vp:integrazione-proprieta-bj-revisore , vp:integrazione-proprieta-bj-rigaFonte , vp:integrazione-proprieta-bj-righeTabella , vp:integrazione-proprieta-bj-riguardaLibro , vp:integrazione-proprieta-bj-riguardaPersona , vp:integrazione-proprieta-bj-schemaNumerazione , vp:integrazione-proprieta-bj-stato , vp:integrazione-proprieta-bj-stessoEvento , vp:integrazione-proprieta-bj-tabellaFonte , vp:integrazione-proprieta-bj-testo , vp:integrazione-proprieta-bj-testoCorretto , vp:integrazione-proprieta-bj-testoLetto , vp:integrazione-proprieta-bj-testoStampato , vp:integrazione-proprieta-bj-tipoDatazione , vp:integrazione-proprieta-bj-tipoMisura , vp:integrazione-proprieta-bj-unitaQudt , vp:integrazione-proprieta-bj-valore , vp:integrazione-proprieta-bj-valoreStampato , vp:integrazione-proprieta-bj-versettiComuni , vp:integrazione-proprieta-bj-versettoComune , vp:integrazione-proprieta-dc-format , vp:integrazione-proprieta-dc-language , vp:integrazione-proprieta-dcterms-identifier , vp:integrazione-proprieta-dcterms-isPartOf , vp:integrazione-proprieta-dcterms-temporal , vp:integrazione-proprieta-dcterms-title , vp:integrazione-proprieta-foaf-familyName , vp:integrazione-proprieta-foaf-givenName , vp:integrazione-proprieta-foaf-name , vp:integrazione-proprieta-oa-hasBody , vp:integrazione-proprieta-oa-hasSource , vp:integrazione-proprieta-oa-hasTarget , vp:integrazione-proprieta-oa-motivatedBy , vp:integrazione-proprieta-prov-wasAttributedTo , vp:integrazione-proprieta-prov-wasDerivedFrom , vp:integrazione-proprieta-rdf-type , vp:integrazione-proprieta-rdf-value , vp:integrazione-proprieta-rdfs-comment , vp:integrazione-proprieta-rdfs-label , vp:integrazione-proprieta-skos-altLabel , vp:integrazione-proprieta-skos-broadMatch , vp:integrazione-proprieta-skos-closeMatch , vp:integrazione-proprieta-skos-hasTopConcept , vp:integrazione-proprieta-skos-inScheme , vp:integrazione-proprieta-skos-narrowMatch , vp:integrazione-proprieta-skos-notation , vp:integrazione-proprieta-skos-prefLabel , vp:integrazione-proprieta-skos-relatedMatch , vp:integrazione-proprieta-skos-topConceptOf .
 vp:integrazione-classe-bj-Allineamento void:class bj:Allineamento ; void:entities 466 .
 vp:integrazione-classe-bj-Calendario void:class bj:Calendario ; void:entities 1 .
 vp:integrazione-classe-bj-Carta void:class bj:Carta ; void:entities 10 .
@@ -809,6 +812,7 @@ vp:integrazione-proprieta-bj-aPassaggio void:property bj:aPassaggio ; void:tripl
 vp:integrazione-proprieta-bj-abbreviaVersione void:property bj:abbreviaVersione ; void:triples 9 .
 vp:integrazione-proprieta-bj-allineamentoA void:property bj:allineamentoA ; void:triples 466 .
 vp:integrazione-proprieta-bj-allineamentoDa void:property bj:allineamentoDa ; void:triples 466 .
+vp:integrazione-proprieta-bj-annoAlternativo void:property bj:annoAlternativo ; void:triples 1 .
 vp:integrazione-proprieta-bj-annoFine void:property bj:annoFine ; void:triples 48 .
 vp:integrazione-proprieta-bj-annoInizio void:property bj:annoInizio ; void:triples 48 .
 vp:integrazione-proprieta-bj-approssimativo void:property bj:approssimativo ; void:triples 61 .
@@ -821,6 +825,7 @@ vp:integrazione-proprieta-bj-conParalleli void:property bj:conParalleli ; void:t
 vp:integrazione-proprieta-bj-correzione void:property bj:correzione ; void:triples 3 .
 vp:integrazione-proprieta-bj-daVoceTavola void:property bj:daVoceTavola ; void:triples 70 .
 vp:integrazione-proprieta-bj-datataDa void:property bj:datataDa ; void:triples 40 .
+vp:integrazione-proprieta-bj-datazione void:property bj:datazione ; void:triples 10 .
 vp:integrazione-proprieta-bj-datazioneDi void:property bj:datazioneDi ; void:triples 160 .
 vp:integrazione-proprieta-bj-datazioneLibro void:property bj:datazioneLibro ; void:triples 223 .
 vp:integrazione-proprieta-bj-equivaleA void:property bj:equivaleA ; void:triples 9 .
@@ -834,6 +839,7 @@ vp:integrazione-proprieta-bj-indicaPersona void:property bj:indicaPersona ; void
 vp:integrazione-proprieta-bj-inizio void:property bj:inizio ; void:triples 60 .
 vp:integrazione-proprieta-bj-interpretazione void:property bj:interpretazione ; void:triples 3 .
 vp:integrazione-proprieta-bj-legenda void:property bj:legenda ; void:triples 3 .
+vp:integrazione-proprieta-bj-limite void:property bj:limite ; void:triples 1 .
 vp:integrazione-proprieta-bj-lunghezza void:property bj:lunghezza ; void:triples 70 .
 vp:integrazione-proprieta-bj-mandaANota void:property bj:mandaANota ; void:triples 1 .
 vp:integrazione-proprieta-bj-meseSolare void:property bj:meseSolare ; void:triples 12 .
@@ -871,6 +877,7 @@ vp:integrazione-proprieta-bj-riguardaLibro void:property bj:riguardaLibro ; void
 vp:integrazione-proprieta-bj-riguardaPersona void:property bj:riguardaPersona ; void:triples 112 .
 vp:integrazione-proprieta-bj-schemaNumerazione void:property bj:schemaNumerazione ; void:triples 93 .
 vp:integrazione-proprieta-bj-stato void:property bj:stato ; void:triples 70 .
+vp:integrazione-proprieta-bj-stessoEvento void:property bj:stessoEvento ; void:triples 36 .
 vp:integrazione-proprieta-bj-tabellaFonte void:property bj:tabellaFonte ; void:triples 1939 .
 vp:integrazione-proprieta-bj-testo void:property bj:testo ; void:triples 70 .
 vp:integrazione-proprieta-bj-testoCorretto void:property bj:testoCorretto ; void:triples 3 .

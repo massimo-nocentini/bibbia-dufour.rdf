@@ -1166,6 +1166,7 @@ mark.tm-data { background: var(--rubrica-lieve); color: inherit; padding: 0 .12e
 .tm-fonte { font-style: italic; }
 .tm-pos { font-style: italic; }
 .tm-link { font: italic .85rem var(--ui); color: var(--secondo); margin-left: .3rem; white-space: nowrap; }
+.tm-qual { font: italic .85rem var(--ui); color: var(--tenue); margin-left: .3rem; white-space: nowrap; }   /* «≈ dalla riga» beside it */
 .tm-sez .tm-tutti { margin: .4rem 0 0; font: italic .95rem var(--ui); }
 .carta-voce.sel { background: var(--sopra); }
 .tm-scala .tm-breve { display: none; }

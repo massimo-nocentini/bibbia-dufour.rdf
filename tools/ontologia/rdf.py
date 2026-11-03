@@ -1539,6 +1539,7 @@ def eventi(G, E, data):
     chronology entries dated by stage 2c are already there (G.link drops them, the checks compare them)."""
     vs = data['verses']
     ids = {e['id']: risorsa_evento(e) for e in E['eventi']}
+    fonte = {e['id']: e['fonte'] for e in E['eventi']}
     for e in E['eventi']:
         X = ids[e['id']]
         if e['fonte'] in FONTI_TESTO:
@@ -1562,8 +1563,9 @@ def eventi(G, E, data):
                     G.add(X, 'bj:citaVersetto', verso(vs[k]['id']))
         else:
             G.parte = FONTI_RISORSE[e['fonte']][0]
-            if e['fonte'] == 'cronologia' and e.get('data_da') == 'testo':
-                G.add(X, 'bj:datazione', s(e['data']))      # the date its text gives (stage 2c gave none)
+            if e['fonte'] in ('cronologia', 'datazione') and e.get('data_da') == 'testo':
+                # the date its text gives (stage 2c gave none); a dating, the date of its own words («750 ca.»)
+                G.add(X, 'bj:datazione', s(e['data']))
             if e['fonte'] == 'dinastie':
                 G.add(X, 'bj:tipoDatazione', s(e['tipo']))
         G.add(X, 'bj:posizioneLinea', i(e['n']))
@@ -1582,21 +1584,31 @@ def eventi(G, E, data):
             G.add(X, 'bj:annoAlternativo', i(e['alternativa']))      # signed as the years
         if e['periodo']:
             G.add(X, 'bj:nelPeriodo', iri('cronologia', 'sezione/%d' % e['periodo']))
-        for y in e.get('stesso_evento', []):    # symmetric, as in eventi.json (G.link drops the second copy)
-            G.link(X, 'bj:stessoEvento', ids[y])
-            G.link(ids[y], 'bj:stessoEvento', X)
+        # symmetric, as in eventi.json (G.link drops the second copy); each triple in the part of its subject
+        for y in e.get('stesso_evento', []):
+            for a, z, f in ((X, ids[y], e['fonte']), (ids[y], X, fonte[y])):
+                G.parte = parte_fonte(f)
+                G.link(a, 'bj:stessoEvento', z)
     G.parte = 'bibbia'
+
+
+def parte_fonte(f):
+    """The part of the graph (VoID subset) of the events of a source of eventi.json."""
+    return FONTI_TESTO[f][1] if f in FONTI_TESTO else FONTI_RISORSE[f][0]
 
 
 def checks_eventi(G, E, data, coll, dz):
     """The time line against eventi.json: one resource per event, its years (the chronology's of stage 2c
-    unchanged), the date at its offset in the text of its source, the verses equal to the targets of the
-    citations of the sentence, the same-event links both ways."""
+    unchanged), every other field of the event on it (position, precision, circa, era rule, placement, bound,
+    uncertain, other year, period, the date as printed, label and sentence of a dated text, the exact
+    same-event links), the date at its offset in the text of its source, the verses equal to the targets of
+    the citations of the sentence, the same-event links both ways."""
     tipi = Counter(o for po in G.per.values() for p, o in po if p == 'rdf:type')
     attesi = sum(1 for e in E['eventi'] if e['fonte'] in FONTI_TESTO)
     err = [] if tipi['bj:EventoDatato'] == attesi else [
         'bj:EventoDatato: %d resources, %d in eventi.json' % (tipi['bj:EventoDatato'], attesi)]
     vix = {v['id']: k for k, v in enumerate(data['verses'])}
+    ev_ = {e['id']: e for e in E['eventi']}
     targets = {l['id']: l for l in coll['links'] + dz['citations']}
     testo = {}                                  # the plain text of each source, as the graph has it
     for X, po in G.per.items():
@@ -1617,7 +1629,25 @@ def checks_eventi(G, E, data, coll, dz):
                 e['id'], val.get('bj:annoInizio'), val.get('bj:annoFine'), e['inizio'], e['fine']))
         if val.get('bj:posizioneLinea') != [i(e['n'])]:
             err.append('%s: position %s, %d in eventi.json' % (e['id'], val.get('bj:posizioneLinea'), e['n']))
-        if e['fonte'] not in FONTI_TESTO:
+        # the other fields, one by one: [the graph's values] == [eventi.json's]
+        testo_ = e['fonte'] in FONTI_TESTO
+        datato = testo_ or e['fonte'] in ('cronologia', 'datazione') and e.get('data_da') == 'testo' or \
+            e['fonte'] == 'cronologia' and e.get('data_da') == 'tavola'
+        attesi_ = {'bj:circa': [b(e['circa'])], 'bj:precisione': [s(e['precisione'])], 'bj:regolaEra': [s(e['era_da'])],
+                   'bj:datataDa': [s(e['data_da'])] if e.get('data_da') else None,
+                   'bj:limite': [s(e['limite'])] if e['limite'] else None, 'bj:incerto': [b(True)] if e['incerto'] else None,
+                   'bj:annoAlternativo': [i(e['alternativa'])] if e.get('alternativa') is not None else None,
+                   'bj:nelPeriodo': [iri('cronologia', 'sezione/%d' % e['periodo'])] if e['periodo'] else None,
+                   'bj:stessoEvento': sorted(risorsa_evento(ev_[y]) for y in e.get('stesso_evento', [])) or None}
+        if datato:
+            attesi_['bj:datazione'] = [s(e['data'])]
+        if testo_:
+            attesi_.update({'rdfs:label': [it(e['etichetta'])], 'bj:testo': [it(e['frase'])]})
+        for p, v in attesi_.items():
+            got = sorted(val[p]) if p == 'bj:stessoEvento' and p in val else val.get(p)
+            if got != v:
+                err.append('%s: %s %s in the graph, %s in eventi.json' % (e['id'], p, got, v))
+        if not testo_:
             continue
         src = val['oa:hasSource'][0]
         t = testo.get(src, '')
