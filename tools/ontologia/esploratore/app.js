@@ -1948,7 +1948,7 @@ function mostraCronologia(arg, par = {}) {
   }).join('');
   const prec = s > 1 ? s - 1 : null, succ = s < C.sez.length ? s + 1 : null;
   pagina(`<div class="pagina cronologia larga"><div class="sopratitolo"><a href="#cronologia">Tavola cronologica</a> · ${span(s)} · <a href="#tempo?p=${s}">nella linea del tempo</a></div>
-    <h1>${esc(C.sez[s - 1][1])}</h1>${nav}
+    <h1>${esc(C.sez[s - 1][1])}</h1>${C.sez[s - 1][2] ? `<p class="cron-larga">${C.sez[s - 1][2]}${rigaLargaTempo(s)}</p>` : ''}${nav}
     <div class="cron-testata" style="--n:${cols.length}"><div></div>${cols.map(c => `<div>${esc(C.col[c][1])}</div>`).join('')}</div>
     <div class="cron-tavola">${corpo}</div>
     <div class="fine">${prec ? `<a href="#cronologia/${prec}">‹ ${esc(C.sez[prec - 1][1].split('.')[0])}</a>` : '<span></span>'}${succ ? `<a href="#cronologia/${succ}">${esc(C.sez[succ - 1][1].split('.')[0])} ›</a>` : '<a href="#cronologia/dinastie">Dinastie ›</a>'}</div></div>`);
@@ -1958,6 +1958,11 @@ function mostraCronologia(arg, par = {}) {
     const p = $('#cv' + (sel + 1));
     if (p) { const alto = $('.barra').getBoundingClientRect().bottom; window.scrollTo(0, p.getBoundingClientRect().top + window.scrollY - alto - 60); }
   }
+}
+function rigaLargaTempo(s) {
+  // the link from the line under the title of period s to its date on the time line
+  const k = T.ev.findIndex(e => fonteT(e) === 'sezione' && e[2] === s);
+  return k < 0 ? '' : ` <a class="tm-link" href="#tempo?e=${esc(T.ev[k][0])}">nella linea del tempo</a>`;
 }
 function mostraDinastie() {
   const P = new Map(A.din.map(x => [x[0], x]));
@@ -1996,7 +2001,7 @@ function mostraDinastie() {
 let T;
 // [button, title of the button, label of the source in a row]
 const FONTI_T = {
-  cronologia: ['Tavola', 'le voci della tavola cronologica', 'Tavola cronologica'],
+  cronologia: ['Tavola', 'le voci della tavola cronologica e la riga stampata sotto il titolo di un periodo', 'Tavola cronologica'],
   dinastie: ['Dinastie', 'le persone datate delle dinastie Asmonea e Erodiana', 'Dinastie'],
   datazione: ['Libri', 'le datazioni dei libri (composizione, ministero, evento narrato) secondo la tavola', 'Datazione'],
   carta: ['Carte', 'le carte con il loro periodo', 'Carte'],
@@ -2004,7 +2009,11 @@ const FONTI_T = {
   introduzione: ['Introduzioni', 'le date scritte nelle introduzioni ai libri', 'Introduzione'],
   testo: ['Introduzione generale', 'le date della presentazione e delle prefazioni', 'Introduzione generale'],
   dizionario: ['Dizionario', 'le date scritte nel Dizionario di Teologia Biblica', 'Dizionario'],
+  sezione: ['', '', 'Tavola cronologica'],
 };
+// a source without its own button, filtered with another: the line printed under the title of a period of the
+// table («I diadochi … (319–287)») goes with the entries of the table
+const GRUPPO_T = { sezione: 'cronologia' };
 const DATA_DA_T = ['data della tavola', 'data letta nel testo della voce', 'collocata dalla sua riga: l’anno a margine',
   'collocata dalla sua riga: le date delle altre voci', 'collocata dalla sua riga: tra le voci datate della sua colonna',
   'collocata tra le righe vicine', 'collocata dal suo periodo', 'intestazione della colonna, all’anno della prima voce sotto'];
@@ -2022,8 +2031,10 @@ function indiciTempo() {
   T.dat = new Map();                                            // 'entry:book' -> the event of that dating
   T.ev.forEach((e, k) => { if (T.fonti[e[1]] === 'datazione') for (const b of e[2][1]) T.dat.set(e[2][0] + ':' + b, k); });
   T.max = Math.max(...T.ev.map(e => e[3]));
+  T.filtri = T.fonti.filter(f => !GRUPPO_T[f]);               // the sources with a button
 }
 const fonteT = e => T.fonti[e[1]];
+const filtroT = e => GRUPPO_T[fonteT(e)] || fonteT(e);         // the button of an event's source
 const annoT = a => { const n = Math.abs(a); return n >= 10000 ? num(n) : String(n); };
 function secoloT(a) { return a < 0 ? Math.ceil(-a / 100) : Math.ceil(a / 100); }
 function anniT(e) {
@@ -2056,6 +2067,7 @@ function fonteEvento(e, breve = false) {
   if (f === 'nota') { const x = D.note[d]; return [hashVerso(x[0]), `Nota a ${etichettaNota(x)}`, ` data-nota="${d}" data-r="${x[0]}-${x[0]}"`]; }
   if (f === 'introduzione') { const x = D.intro[d[0]]; return [`#intro/${x[0]}.${d[1]}`, `${breve ? '' : 'Introduzione: '}${x[1]}, § ${d[1]}`, '']; }
   if (f === 'testo') { const x = A.testi[d[0]]; return [`#introduzione-generale/${x[0]}.${d[1]}`, `${x[1]}, § ${d[1]}`, '']; }
+  if (f === 'sezione') return [`#cronologia/${d}`, breve ? 'riga della tavola' : `Tavola cronologica, ${A.cron.sez[d - 1][1].split('.')[0]}, sotto il titolo`, ''];
   return [hashVoce(d[0], d[1]), `${breve ? '' : 'Dizionario: '}${nomeVoce(d[0])}, § ${d[1]}`, ''];
 }
 function htmlEvento(e) {
@@ -2098,13 +2110,13 @@ function testoPianoEvento(k) {
 // table, v=1 only the events citing verses, q words; a a year to scroll to and r the row at the top of the screen
 // (memoTempo), e an event to scroll to and highlight, p a period
 function statoTempo(par) {
-  const fonti = 'f' in par ? new Set(par.f.split(',').filter(x => T.fonti.includes(x))) : new Set(T.fonti);
+  const fonti = 'f' in par ? new Set(par.f.split(',').filter(x => T.filtri.includes(x))) : new Set(T.filtri);
   const col = A.cron.col.findIndex(c => c[0] === par.c);
   return { fonti, col, vv: par.v === '1', q: par.q || '' };
 }
 function hashTempo(st, extra = '') {
   const p = [];
-  if (st.fonti.size !== T.fonti.length) p.push('f=' + T.fonti.filter(f => st.fonti.has(f)).join(','));
+  if (st.fonti.size !== T.filtri.length) p.push('f=' + T.filtri.filter(f => st.fonti.has(f)).join(','));
   if (st.col >= 0) p.push('c=' + A.cron.col[st.col][0]);
   if (st.vv) p.push('v=1');
   if (st.q) p.push('q=' + encodeURIComponent(st.q));
@@ -2114,7 +2126,7 @@ function hashTempo(st, extra = '') {
 function passaTempo(st, ts, k, salta = null) {
   // whether event k passes the filters (salta: one filter left out, for the counts of its buttons)
   const e = T.ev[k];
-  if (salta !== 'fonti' && !st.fonti.has(fonteT(e))) return false;
+  if (salta !== 'fonti' && !st.fonti.has(filtroT(e))) return false;
   if (salta !== 'col' && st.col >= 0 && e[13] !== st.col) return false;
   if (st.vv && !e[10].length) return false;
   if (ts.length) { const s = testoPianoEvento(k); if (!ts.every(t => t.alt.some(x => s.includes(x)) && (t.g.lastIndex = 0, t.g.test(s)))) return false; }
@@ -2124,7 +2136,7 @@ function mostraTempo(par) {
   const st = statoTempo(par);
   const qui = S.vista === 'tempo' && $('#vista .tempo');
   if (!qui) {
-    const fonti = T.fonti.map(f => `<button type="button" data-tf="${f}" title="${esc(FONTI_T[f][1])}">${FONTI_T[f][0]} <span class="n"></span></button>`).join('');
+    const fonti = T.filtri.map(f => `<button type="button" data-tf="${f}" title="${esc(FONTI_T[f][1])}">${FONTI_T[f][0]} <span class="n"></span></button>`).join('');
     const cols = A.cron.col.map((c, j) => `<option value="${esc(c[0])}" data-j="${j}">${esc(c[1])}</option>`).join('');
     pagina(`<div class="pagina larga tempo"><div class="sopratitolo"><a href="#appendici">Appendici</a> · tavola cronologica, note, introduzioni, Dizionario</div>
       <h1>Linea del tempo</h1>
@@ -2166,14 +2178,14 @@ function disegnaTempo(st, chiave) {
   const ts = termini(st.q);
   const vis = T.ord.filter(k => passaTempo(st, ts, k));
   // the counts of each filter with the others applied
-  const perFonte = new Map(T.fonti.map(f => [f, 0])), perCol = new Int32Array(A.cron.col.length);
+  const perFonte = new Map(T.filtri.map(f => [f, 0])), perCol = new Int32Array(A.cron.col.length);
   T.ord.forEach(k => {
-    if (passaTempo(st, ts, k, 'fonti')) perFonte.set(fonteT(T.ev[k]), perFonte.get(fonteT(T.ev[k])) + 1);
+    if (passaTempo(st, ts, k, 'fonti')) perFonte.set(filtroT(T.ev[k]), perFonte.get(filtroT(T.ev[k])) + 1);
     if (T.ev[k][13] >= 0 && passaTempo(st, ts, k, 'col')) perCol[T.ev[k][13]]++;
   });
   $$('[data-tf]').forEach(b => { b.querySelector('.n').textContent = num(perFonte.get(b.dataset.tf)); });
   $$('#tm-col option[data-j]').forEach(o => { o.textContent = `${A.cron.col[+o.dataset.j][1]} (${num(perCol[+o.dataset.j])})`; });
-  const filtrato = st.fonti.size !== T.fonti.length || st.col >= 0 || st.vv || ts.length;
+  const filtrato = st.fonti.size !== T.filtri.length || st.col >= 0 || st.vv || ts.length;
   $('#tm-esito').innerHTML = `${conta(vis.length, 'evento', 'eventi')}${filtrato ? ` di ${num(T.ev.length)} · <a href="#tempo">mostra tutti</a>` : ''}`;
   // periods, then the groups of one span of years
   let h = '', per = null, gruppo = null;

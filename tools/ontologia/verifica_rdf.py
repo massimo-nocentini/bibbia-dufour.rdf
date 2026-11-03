@@ -282,7 +282,7 @@ def integrita_eventi():
         ('carta', 'bj:Carta'))]
     out += [('time line: dates read in a text, %s' % k, conta('bj:EventoDatato', '; bj:parte "%s" ; bj:posizioneLinea ?p '
                                                               % k), per[k])
-            for k in ('nota', 'introduzione', 'preliminari', 'dizionario')]
+            for k in ('nota', 'introduzione', 'preliminari', 'dizionario', 'tavola')]
     out += [
         ('time line: every object has a start and an end, start <= end',
          'SELECT (COUNT(?x) AS ?n) WHERE { ?x bj:posizioneLinea ?p FILTER NOT EXISTS { ?x bj:annoInizio ?a ;'
@@ -314,7 +314,8 @@ def integrita_eventi():
          'SELECT (COUNT(?x) AS ?n) WHERE { { ?x bj:parte "nota" ; oa:hasSource/a bj:Nota } UNION'
          ' { ?x bj:parte "introduzione" ; oa:hasSource/dcterms:isPartOf/a bj:Introduzione } UNION'
          ' { ?x bj:parte "preliminari" ; oa:hasSource/dcterms:isPartOf/a bj:TestoPreliminare } UNION'
-         ' { ?x bj:parte "dizionario" ; oa:hasSource/a bj:ParagrafoVoce } ?x a bj:EventoDatato }', len(testo)),
+         ' { ?x bj:parte "dizionario" ; oa:hasSource/a bj:ParagrafoVoce } UNION'
+         ' { ?x bj:parte "tavola" ; oa:hasSource/a bj:SezioneCronologia } ?x a bj:EventoDatato }', len(testo)),
         ('dated text: the date as printed at its offset in the text of its source',
          'SELECT (COUNT(?x) AS ?n) WHERE { ?x a bj:EventoDatato ; oa:hasSource ?r ; bj:datazione ?d ; bj:posizioneTesto ?o'
          ' FILTER NOT EXISTS { %s FILTER (SUBSTR(STR(?t), ?o + 1, STRLEN(?d)) = ?d) } }' % TESTO_DI, 0),

@@ -495,7 +495,9 @@ bjf:SezioneCronologia a sh:NodeShape ;
     sh:targetClass bj:SezioneCronologia ;
     sh:property [ sh:path dcterms:title ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype rdf:langString ] ,
                 [ sh:path dcterms:isPartOf ; sh:minCount 1 ; sh:maxCount 1 ; sh:class bj:TavolaCronologica ] ,
-                [ sh:path bj:ordine ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ] .
+                [ sh:path bj:ordine ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ] ,
+                [ sh:path bj:testo ; sh:maxCount 1 ; sh:datatype rdf:langString ; sh:minLength 1 ] ,
+                [ sh:path bj:testoHtml ; sh:maxCount 1 ; sh:datatype xsd:string ] .
 
 bjf:EventoCronologia a sh:NodeShape ;
     sh:targetClass bj:EventoCronologia ;
@@ -717,9 +719,11 @@ bjf:LineaDelTempo a sh:NodeShape ;
 bjf:EventoDatato a sh:NodeShape ;
     sh:targetClass bj:EventoDatato ;
     sh:property [ sh:path rdfs:label ; sh:minCount 1 ; sh:maxCount 1 ; sh:languageIn ( "it" ) ] ,
-                [ sh:path bj:parte ; sh:minCount 1 ; sh:maxCount 1 ; sh:in ( "nota" "introduzione" "preliminari" "dizionario" ) ] ,
+                [ sh:path bj:parte ; sh:minCount 1 ; sh:maxCount 1 ;
+                  sh:in ( "nota" "introduzione" "preliminari" "dizionario" "tavola" ) ] ,
                 [ sh:path oa:hasSource ; sh:minCount 1 ; sh:maxCount 1 ;
-                  sh:or ( [ sh:class bj:Nota ] [ sh:class bj:Paragrafo ] [ sh:class bj:ParagrafoVoce ] ) ] ,
+                  sh:or ( [ sh:class bj:Nota ] [ sh:class bj:Paragrafo ] [ sh:class bj:ParagrafoVoce ]
+                          [ sh:class bj:SezioneCronologia ] ) ] ,
                 [ sh:path bj:datazione ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:minLength 1 ] ,
                 [ sh:path bj:posizioneTesto ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:integer ; sh:minInclusive 0 ] ,
                 [ sh:path bj:testo ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype rdf:langString ; sh:minLength 1 ] ,
@@ -730,10 +734,12 @@ bjf:EventoDatato a sh:NodeShape ;
                 [ sh:path bj:citaVersetto ; sh:class bj:Versetto ] ,
                 [ sh:path bj:versettoAncora ; sh:maxCount 1 ; sh:class bj:Versetto ] ;
     # the part says the kind of the source: a note (with its anchor verse), a paragraph of an introduction or of
-    # the front matter, a paragraph of the Dizionario
+    # the front matter, a paragraph of the Dizionario, a period of the chronological table (its line across the table)
     sh:xone ( [ sh:property [ sh:path bj:parte ; sh:in ( "nota" ) ] , [ sh:path bj:versettoAncora ; sh:minCount 1 ] ,
                             [ sh:path oa:hasSource ; sh:class bj:Nota ] ]
               [ sh:property [ sh:path bj:parte ; sh:in ( "introduzione" "preliminari" ) ] ,
                             [ sh:path bj:versettoAncora ; sh:maxCount 0 ] , [ sh:path oa:hasSource ; sh:class bj:Paragrafo ] ]
               [ sh:property [ sh:path bj:parte ; sh:in ( "dizionario" ) ] ,
-                            [ sh:path bj:versettoAncora ; sh:maxCount 0 ] , [ sh:path oa:hasSource ; sh:class bj:ParagrafoVoce ] ] ) .
+                            [ sh:path bj:versettoAncora ; sh:maxCount 0 ] , [ sh:path oa:hasSource ; sh:class bj:ParagrafoVoce ] ]
+              [ sh:property [ sh:path bj:parte ; sh:in ( "tavola" ) ] ,
+                            [ sh:path bj:versettoAncora ; sh:maxCount 0 ] , [ sh:path oa:hasSource ; sh:class bj:SezioneCronologia ] ] ) .

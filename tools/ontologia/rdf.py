@@ -1373,6 +1373,10 @@ def cronologia(G, P, pg):
         G.add(X, 'dcterms:title', it(x['title']))
         G.add(X, 'bj:ordine', i(x['n']))
         G.add(X, 'dcterms:isPartOf', T)
+        if x.get('text'):
+            # the line printed across the table under the title («I diadochi … (319–287)»), a date of the time line
+            G.add(X, 'bj:testo', it(x['text']))
+            html(G, X, x['text'], x['html'])
     for v in cr['voci']:
         X = iri('cronologia', 'voce/%d' % v['n'])
         G.add(X, 'rdf:type', 'bj:EventoCronologia')
@@ -1510,6 +1514,7 @@ FONTI_TESTO = {
     'introduzione': ('introduzione', 'bibbia', lambda x: paragrafo(x.rsplit('.', 1)[0], int(x.rsplit('.', 1)[1]))),
     'testo': ('preliminari', 'paratesto', lambda x: iri('paragrafo', x)),
     'dizionario': ('dizionario', 'dizionario', paragrafo_voce),
+    'sezione': ('tavola', 'paratesto', lambda x: iri('cronologia', 'sezione/%s' % x.rsplit('.', 1)[1])),
 }
 # the resources already in the graph, and their part
 FONTI_RISORSE = {

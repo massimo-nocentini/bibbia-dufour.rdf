@@ -1173,8 +1173,8 @@ bj:TavolaCronologica a owl:Class ;
 
 bj:SezioneCronologia a owl:Class ;
     rdfs:label "Sezione della tavola cronologica"@it , "Chronology section"@en ;
-    rdfs:comment "Un periodo della tavola come stampato («III. MOSÈ E GIOSUÈ (Es; Nm; Dt; Gs)»)."@it ,
-                 "A period of the table as printed («III. MOSÈ E GIOSUÈ (Es; Nm; Dt; Gs)»)."@en .
+    rdfs:comment "Un periodo della tavola come stampato («III. MOSÈ E GIOSUÈ (Es; Nm; Dt; Gs)»); bj:testo e bj:testoHtml, la riga stampata a tutta larghezza sotto il titolo (solo VIII: «I diadochi si contendono l'impero di Alessandro (319–287).», una data della linea del tempo)."@it ,
+                 "A period of the table as printed («III. MOSÈ E GIOSUÈ (Es; Nm; Dt; Gs)»); bj:testo and bj:testoHtml, the line printed across the table under the title (only VIII: «I diadochi si contendono l'impero di Alessandro (319–287).», a date of the time line)."@en .
 
 bj:EventoCronologia a owl:Class ;
     rdfs:subClassOf schema:Event ;
@@ -2236,8 +2236,8 @@ bj:Discorso a owl:Class ;
 bj:parte a owl:DatatypeProperty , owl:FunctionalProperty ;
     rdfs:domain [ a owl:Class ; owl:unionOf ( bj:Discorso bj:EventoDatato ) ] ; rdfs:range xsd:string ;
     rdfs:label "parte del volume"@it , "part of the volume"@en ;
-    rdfs:comment "Dove è il discorso: testo (dei libri), nota, introduzione, preliminari (le pagine iniziali), appendici. Dove è letta una data (bj:EventoDatato): nota, introduzione, preliminari, dizionario (un paragrafo del Dizionario di Teologia Biblica)."@it ,
-                 "Where the quotation is: testo (the text of the books), nota (a note), introduzione, preliminari (the front matter), appendici (the appendices). Where a date is read (bj:EventoDatato): nota, introduzione, preliminari, dizionario (a paragraph of the Dizionario di Teologia Biblica)."@en .
+    rdfs:comment "Dove è il discorso: testo (dei libri), nota, introduzione, preliminari (le pagine iniziali), appendici. Dove è letta una data (bj:EventoDatato): nota, introduzione, preliminari, dizionario (un paragrafo del Dizionario di Teologia Biblica), tavola (la riga stampata a tutta larghezza sotto il titolo di un periodo della tavola cronologica)."@it ,
+                 "Where the quotation is: testo (the text of the books), nota (a note), introduzione, preliminari (the front matter), appendici (the appendices). Where a date is read (bj:EventoDatato): nota, introduzione, preliminari, dizionario (a paragraph of the Dizionario di Teologia Biblica), tavola (the line printed across the chronological table under the title of a period)."@en .
 
 bj:iniziaIn a owl:ObjectProperty , owl:FunctionalProperty ;
     rdfs:domain bj:Discorso ;
@@ -2294,8 +2294,8 @@ bj:sbilanciato a owl:DatatypeProperty , owl:FunctionalProperty ;
 bj:EventoDatato a owl:Class ;
     rdfs:subClassOf schema:Event , oa:SpecificResource ;
     rdfs:label "Evento datato nel testo"@it , "Event dated in the text"@en ;
-    rdfs:comment "Una data letta in una nota, in un paragrafo di un'introduzione o di un testo delle pagine iniziali, in un paragrafo del Dizionario di Teologia Biblica (tools/ontologia/eventi.py): l'evento che la sua frase data. È una oa:SpecificResource della risorsa in cui è letta (oa:hasSource, bj:parte), con la data come stampata (bj:datazione) e dove comincia (bj:posizioneTesto), gli anni (bj:annoInizio, bj:annoFine), la precisione, la regola dell'èra, la frase (bj:testo, bj:testoHtml), le citazioni della frase (bj:citazioneNellaFrase) e i loro versetti (bj:citaVersetto), per una nota il versetto da cui è richiamata (bj:versettoAncora)."@it ,
-                 "A date read in a note, in a paragraph of an introduction or of a front-matter text, in a paragraph of the Dizionario di Teologia Biblica (tools/ontologia/eventi.py): the event its sentence dates. An oa:SpecificResource of the resource it is read in (oa:hasSource, bj:parte), with the date as printed (bj:datazione) and where it starts (bj:posizioneTesto), the years (bj:annoInizio, bj:annoFine), the precision, the rule of the era, the sentence (bj:testo, bj:testoHtml), the citations of the sentence (bj:citazioneNellaFrase) and their verses (bj:citaVersetto), for a note the verse it is called from (bj:versettoAncora)."@en .
+    rdfs:comment "Una data letta in una nota, in un paragrafo di un'introduzione o di un testo delle pagine iniziali, in un paragrafo del Dizionario di Teologia Biblica, nella riga stampata sotto il titolo di un periodo della tavola cronologica (tools/ontologia/eventi.py): l'evento che la sua frase data. È una oa:SpecificResource della risorsa in cui è letta (oa:hasSource, bj:parte), con la data come stampata (bj:datazione) e dove comincia (bj:posizioneTesto), gli anni (bj:annoInizio, bj:annoFine), la precisione, la regola dell'èra, la frase (bj:testo, bj:testoHtml), le citazioni della frase (bj:citazioneNellaFrase) e i loro versetti (bj:citaVersetto), per una nota il versetto da cui è richiamata (bj:versettoAncora)."@it ,
+                 "A date read in a note, in a paragraph of an introduction or of a front-matter text, in a paragraph of the Dizionario di Teologia Biblica, in the line printed under the title of a period of the chronological table (tools/ontologia/eventi.py): the event its sentence dates. An oa:SpecificResource of the resource it is read in (oa:hasSource, bj:parte), with the date as printed (bj:datazione) and where it starts (bj:posizioneTesto), the years (bj:annoInizio, bj:annoFine), the precision, the rule of the era, the sentence (bj:testo, bj:testoHtml), the citations of the sentence (bj:citazioneNellaFrase) and their verses (bj:citaVersetto), for a note the verse it is called from (bj:versettoAncora)."@en .
 
 bj:posizioneLinea a owl:DatatypeProperty , owl:FunctionalProperty ;
     rdfs:domain [ a owl:Class ; owl:unionOf ( bj:EventoCronologia bj:EventoDatato bj:PersonaStorica bj:Datazione bj:Carta ) ] ;

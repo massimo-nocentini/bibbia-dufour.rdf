@@ -532,8 +532,14 @@ def test_cronologia():
 def test_conteggi():
     E = dati()
     c = Counter(e['fonte'] for e in E['eventi'])
-    atteso = dict(cronologia=585, dinastie=6, datazione=40, carta=8, nota=546, introduzione=267, testo=26, dizionario=68)
+    atteso = dict(cronologia=585, dinastie=6, datazione=40, carta=8, nota=546, introduzione=267, testo=26, dizionario=68,
+                  sezione=1)
     assert dict(c) == atteso, dict(c)
+    # the line printed across the table under the title of VIII: its own event, in VIII, read as the table reads
+    d = [e for e in E['eventi'] if e['fonte'] == 'sezione']
+    assert [(e['id'], e['inizio'], e['fine'], e['periodo'], e['precisione'], e['era'], e['apri']) for e in d] == \
+        [('ev:cronologia.sezione.8@49', -319, -287, 8, 'intervallo', 'a.C.', '#cronologia/8')], d
+    assert d[0]['frase'] == 'I diadochi si contendono l’impero di Alessandro (319–287).'
     s = E['meta']['summary']
     assert s['fonti'] == dict(c) and s['eventi'] == len(E['eventi']) and s['non_datati'] == len(E['non_datati'])
     assert Counter(e['precisione'] for e in E['eventi']) == Counter(s['precisione'])

@@ -54,7 +54,7 @@ from estrai import dump  # noqa: E402
 BUILD = os.path.join(C, 'ontologia', 'build')
 OUT = os.path.join(BUILD, 'eventi.json')
 CORREZIONI = os.path.join(HERE, 'eventi-correzioni.tsv')
-FONTI = ('cronologia', 'dinastie', 'datazione', 'carta', 'nota', 'introduzione', 'testo', 'dizionario')
+FONTI = ('cronologia', 'dinastie', 'datazione', 'carta', 'nota', 'introduzione', 'testo', 'dizionario', 'sezione')
 PRECISIONI = ('anno', 'intervallo', 'circa', 'secolo', 'millennio', 'riga', 'periodo')
 FINE_TAVOLA = 135          # the last year of the chronological table (IX: 63 a.C. - 135 d.C.)
 
@@ -1323,6 +1323,12 @@ def raccogli(data, coll, dz, P, I):
         for p in x['paragraphs']:
             sid = '%s.%d' % (x['id'], p['n'])
             T.testo('testo', sid, p['text'], p['html'], pl[sid], 'moderno', (6, k, p['n']), '#introduzione-generale/' + sid)
+    # the lines printed across the table under the title of a period («I diadochi … (319–287)»): free text of
+    # the table, B.C. as its entries up to the turn of IX; first among the table's events of the same years
+    for x in P['cronologia']['sections']:
+        if x.get('text'):
+            T.testo('sezione', 'cronologia.sezione.%d' % x['n'], x['text'], x['html'], [],
+                    'aC' if x['roman'] != 'IX' else None, (0, 0), '#cronologia/%d' % x['n'])
     dl = defaultdict(list)
     for c in dz['citations']:
         if c.get('where') == 'paragraph' and c.get('offset') is not None:
@@ -1409,6 +1415,9 @@ def testi_sorgente(data, dz, P):
             t[p['id']] = p['text']
     for v in P['cronologia']['voci']:
         t['cronologia.%d' % v['n']] = v['text']
+    for x in P['cronologia']['sections']:
+        if x.get('text'):
+            t['cronologia.sezione.%d' % x['n']] = x['text']
     return t
 
 
@@ -1433,7 +1442,7 @@ def main(a):
              stesso_evento=nl)
     out = dict(meta=dict(generated_by='tools/ontologia/eventi.py', summary=s,
                          precisioni=list(PRECISIONI), fonti=list(FONTI),
-                         ordine='inizio, fine, poi la fonte (cronologia, dinastie, datazioni, carte, note, '
+                         ordine='inizio, fine, poi la fonte (righe dei periodi e voci della tavola, dinastie, datazioni, carte, note, '
                                 'introduzioni, testi, dizionario) e la posizione nella fonte'),
                periodi=per, eventi=T.eventi, non_datati=T.non_datati)
     dump(out, OUT)
@@ -1454,7 +1463,7 @@ def rivedi(T, path):
     with open(path, 'w', encoding='utf-8') as f:
         f.write('esito\tfonte\tsorgente\tdata\tinizio\tfine\tprecisione\tera_da\tfrase\n')
         for e in T.eventi:
-            if e['fonte'] in ('nota', 'introduzione', 'testo', 'dizionario') or e.get('data_da') == 'testo':
+            if e['fonte'] in ('nota', 'introduzione', 'testo', 'dizionario', 'sezione') or e.get('data_da') == 'testo':
                 f.write('\t'.join(str(x) for x in ('evento', e['fonte'], e['sorgente'], e['data'], e['inizio'], e['fine'],
                                                    e['precisione'], e['era_da'], e['etichetta'])) + '\n')
         for x in T.non_datati:

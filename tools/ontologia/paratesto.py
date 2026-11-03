@@ -48,7 +48,7 @@ import json
 import os
 import re
 import sys
-from collections import Counter
+from collections import Counter, defaultdict
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 C = os.path.dirname(os.path.dirname(HERE))
@@ -686,6 +686,21 @@ def cronologia(tsv, B, errors, warnings):
         got = ' | '.join(x['raw'] for x in links if x['source'] == 'cronologia.%d' % n)
         if got != r['riferimenti']:
             errors.append('chronology %d: references %r, the table %r' % (n, got, r['riferimenti']))
+    # the lines printed across the table under the title of a period (\testolargo): the text of that section
+    larghe = defaultdict(list)
+    for m in re.finditer(r'\\sezione(?:\[[^\]]*\])?\{([^{}]*)\}|\\testolargo\{((?:[^{}]|\{[^{}]*\})*)\}', src):
+        if m.group(1) is not None:
+            romano = m.group(1).split('.')[0]
+        else:
+            larghe[romano].append(m.group(2))
+    for x in sezioni:
+        righe = larghe.pop(x['roman'], [])
+        if righe:
+            x.update(text='\n\n'.join(a_testo(t, False) for t in righe), html='\n\n'.join(a_testo(t, True) for t in righe))
+            if R.scan_prose(x['text'], CTX):
+                errors.append('chronology section %s: references in a line across the table are not read' % x['roman'])
+    if larghe:
+        errors.append('chronology: lines across the table in no section: %s' % sorted(larghe))
     return dict(intro=intro, sections=sezioni, columns=[dict(id=a, it=b, en=c) for a, b, c in COLONNE],
                 turn=svolta, voci=voci), links
 
@@ -788,6 +803,7 @@ def main(a):
         codices=sum(1 for x in P['abbreviazioni'] if 'gregory' in x), woodcuts=len(xilo),
         chronology_entries=len(crono['voci']), chronology_dated=sum(1 for v in crono['voci'] if v['start'] is not None),
         chronology_dates_printed=sum(1 for v in crono['voci'] if v['date']),
+        chronology_lines=sum(1 for x in crono['sections'] if x.get('text')),
         persons=len(P['dinastie']), links={'%s %s' % k: n for k, n in sorted(st.items())},
         corrections=sum(1 for x in ilinks if x.get('correction')))
     for ix in indici:

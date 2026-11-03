@@ -644,6 +644,19 @@ try {
     cit: A.cron.cit.filter(c => A.cron.voci[c[0]][0] === 6 && c[1].length).length, sez: document.querySelector('.cron-nav [aria-current]').textContent }));
   verifica('#cronologia/6: colonne, voci, riferimenti come collegamenti', cr.col.length >= 2 && cr.voci === cr.attese && cr.link === cr.cit && cr.sez === 'VI', JSON.stringify(cr));
   await foto(p, '45-cronologia');
+  // the line printed across the table under the title of VIII, with its place on the time line
+  await p.evaluate(() => { location.hash = '#cronologia/8'; });
+  await p.waitForSelector('.cron-larga');
+  const larga = await p.evaluate(() => ({ testo: document.querySelector('.cron-larga').firstChild.textContent.trim(), href: document.querySelector('.cron-larga .tm-link')?.getAttribute('href') }));
+  verifica('#cronologia/8: la riga sotto il titolo, con il suo posto nella linea del tempo', larga.testo === 'I diadochi si contendono l’impero di Alessandro (319–287).' && larga.href === '#tempo?e=cronologia.sezione.8@49', JSON.stringify(larga));
+  await p.evaluate(() => { document.querySelector('.cron-larga .tm-link').click(); });
+  await p.waitForFunction(() => document.querySelector('#tm-lista .tm-ev.sel'));
+  const rl = await p.evaluate(() => { const r = document.querySelector('#tm-lista .tm-ev.sel'); const e = T.ev[+r.dataset.k]; return { id: e[0], fonte: r.querySelector('.tm-fonte').textContent, href: r.querySelector('.tm-fonte').getAttribute('href'), anni: r.closest('.tm-gruppo').querySelector('.tm-anni').textContent.replace(/\s+/g, ' ').trim(), per: r.closest('.tm-periodo').querySelector('h2').textContent.split('.')[0], data: r.querySelector('mark.tm-data')?.textContent }; });
+  verifica('tempo: la riga dei diadochi in VIII, 319–287 a.C., dalla tavola', rl.id === 'cronologia.sezione.8@49' && rl.per === 'VIII' && rl.anni === '319–287 a.C.' && rl.href === '#cronologia/8' && rl.fonte === 'Tavola cronologica, VIII, sotto il titolo' && rl.data === '319–287', JSON.stringify(rl));
+  // with only the table's button pressed, the line is still there
+  await p.evaluate(() => { location.hash = '#tempo?f=cronologia&e=cronologia.sezione.8@49'; });
+  await p.waitForFunction(() => document.querySelector('#tm-esito')?.textContent.startsWith('586'));
+  verifica('tempo: il filtro «Tavola» tiene le voci e la riga sotto il titolo', await p.evaluate(() => !!document.querySelector('#tm-lista .tm-ev.sel') && document.querySelectorAll('[data-tf]').length === 8), await p.evaluate(() => document.querySelector('#tm-esito').textContent));
   await p.evaluate(() => { location.hash = '#cronologia/dinastie'; });
   await p.waitForSelector('.dinastie');
   const din = await p.evaluate(() => ({ n: document.querySelectorAll('.dinastie .persona').length, erode: [...document.querySelectorAll('#din-P15 > ul > li .madre')].map(x => x.textContent) }));
@@ -1017,7 +1030,9 @@ try {
   verifica('tempo: tutti gli eventi di eventi.json, nell’ordine (periodo, poi la linea), anni crescenti in ogni periodo',
     tm.ids.length === EV.eventi.length && tm.ids.every((x, j) => x === attesi[j]) && tm.anni && tm.periodi.join(' ') === 'I II III IV V VI VII VIII IX Dopo la tavola: dal 135 d',
     `${tm.ids.length} eventi, ${tm.gruppi} gruppi di anni, periodi ${tm.periodi.length}`);
-  verifica('tempo: i conteggi per fonte sono quelli di eventi.json', JSON.stringify(tm.fonti) === JSON.stringify(Object.fromEntries(EV.meta.fonti.map(f => [f, perFonte[f]]))) && tm.esito.startsWith(String(EV.eventi.length)), JSON.stringify(tm.fonti));
+  // the line under the title of a period (source «sezione») has no button: it counts with the table's entries
+  const perBottone = Object.fromEntries(EV.meta.fonti.filter(f => f !== 'sezione').map(f => [f, perFonte[f] + (f === 'cronologia' ? perFonte.sezione || 0 : 0)]));
+  verifica('tempo: i conteggi per fonte sono quelli di eventi.json', JSON.stringify(tm.fonti) === JSON.stringify(perBottone) && tm.esito.startsWith(String(EV.eventi.length)), JSON.stringify(tm.fonti));
   verifica('tempo: prima resa di tutti gli eventi sotto 300 ms', tm.resa < 300, `${tm.resa} ms (vista ${metriche.tempo_ms} ms)`);
   verifica('tempo: i riferimenti sono collegamenti con l’anteprima, la scheda «Tempo» attiva', tm.link > 800 && !tm.morti && tm.tab === 'tempo', `${tm.link} riferimenti, ${tm.morti} senza destinazione`);
   // the gutter: years as printed (a.C./d.C., c., ranges)

@@ -550,7 +550,8 @@ def tempo(E, P, data, pt, dz, ig, vix, errors):
     rule of the era, part of a century, millennium or decade ('inizio', 'prima metà', 'metà', 'seconda metà', 'fine',
     '')]. Where: cronologia the entry (from 1); dinastie the person; datazione [entry, books,
     kind]; carta its row of int.carte; nota the note; introduzione [introduction, paragraph n]; testo [text,
-    paragraph n]; dizionario [entry, paragraph n]."""
+    paragraph n]; dizionario [entry, paragraph n]; sezione the period of the table (from 1), whose line across
+    the table (par.cron.sez[n-1][2]) holds the date."""
     from eventi import taglia_html
     from riferimenti import html_offsets
     fonti = E['meta']['fonti']
@@ -569,6 +570,9 @@ def tempo(E, P, data, pt, dz, ig, vix, errors):
     for k, v in enumerate(dz['voci']):
         for p, q in zip(v.get('paragraphs', []), P['diz']['voci'][k][9]):
             sorgenti[p['id']] = ([k, p['n']], p['text'], q[3])
+    for x, q in zip(pt['cronologia']['sections'], P['par']['cron']['sez']):
+        if x.get('text'):
+            sorgenti['cronologia.sezione.%d' % x['n']] = (x['n'], x['text'], q[2])
     carte = {c['id']: k for k, c in enumerate(ig['carte'])}
     pos = {e['id']: k for k, e in enumerate(E['eventi'])}
     stesso = [set() for _ in E['eventi']]
@@ -660,8 +664,9 @@ def paratesto(P, data, vix, errors):
     Gregory number]; xilo: [book, name, raw, runs]; indici: {note|temi: [[n, headword HTML, plain,
     style, page, sub [[k, label, name]], items [[kind, sub, raw, page, cf, trailer, runs, status,
     reason, notes, note match, correction [raw, runs, notes, why] or 0, cross-references or
-    introductions]]]]}; cron: intro, sections, columns, entries [[section, row, margin, page,
-    column, order, HTML with <a class="ci" data-t=k>, date, start, end, circa, plain]], cit
+    introductions]]]]}; cron: intro, sections [[n, title, HTML of the line across the table or '']],
+    columns, entries [[section, row, margin, page, column, order, HTML with <a class="ci" data-t=k>, date,
+    start, end, circa, plain]], cit
     [entry, runs, status, reason, raw]; din: [id, number, name, italic, date, father, mother,
     spouses, note]."""
     bix = {b['osis']: k for k, b in enumerate(data['books'])}
@@ -728,7 +733,7 @@ def paratesto(P, data, vix, errors):
         h = corsivo1(avvolgi(v['html'], cspans.get(v['n'], []), 'data-t', errors, 'cronologia.%d' % v['n']))
         cvoci.append([v['section'], v['row'], v['margin'] or '', v['page'], col.index(v['column']), v['order'], h,
                       v['date'] or '', v['start'], v['end'], 1 if v['circa'] else 0, v['text']])
-    cron = dict(intro=[p['html'] for p in cr['intro']], sez=[[x['n'], x['title']] for x in cr['sections']],
+    cron = dict(intro=[p['html'] for p in cr['intro']], sez=[[x['n'], x['title'], x.get('html', '')] for x in cr['sections']],
                 col=[[c['id'], c['it']] for c in cr['columns']], voci=cvoci, cit=cron_cit)
     din = [[x['id'], x['number'] or '', x['name'], 1 if x['italic'] else 0, x['date'] or '', x['father'] or '',
             x['mother'] or '', x['spouses'], x['note'] or ''] for x in P['dinastie']]

@@ -165,6 +165,10 @@ def test_cronologia():
             bad.append('%s %s: %r' % (src, raw, cit.get((src, raw), {}).get('targets')))
     if (len(V), len(cit)) != (585, 174):
         bad.append('chronology: %d entries, %d citations' % (len(V), len(cit)))
+    # the one line printed across the table (\testolargo), under the title of VIII
+    larghe = [(x['roman'], x['text']) for x in P['cronologia']['sections'] if x.get('text')]
+    if larghe != [('VIII', 'I diadochi si contendono l’impero di Alessandro (319–287).')]:
+        bad.append('lines across the table: %r' % larghe)
     assert not bad, '\n'.join(bad)
 
 

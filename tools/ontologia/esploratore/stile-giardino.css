@@ -793,6 +793,7 @@ a.vl::before { content: "*"; color: var(--r-diz); font: 400 .8em var(--ui); marg
 .sez.ix .frase.chips, .sez.ix .frase { display: block; }
 .xilo-nota { font-size: .82rem; color: var(--secondo); margin: .4rem 0 0; }
 .cron-intro { max-width: 46rem; font: 1rem/1.65 var(--serif); color: var(--secondo); }
+.cron-larga { max-width: 46rem; margin: .4rem 0 1rem; font: 1.05rem/1.55 var(--serif); }
 .cron-nav { display: flex; flex-wrap: wrap; gap: .2rem 1rem; margin: 1rem 0 1.4rem; }
 .cron-nav a { font: 400 .88rem var(--ui); padding: .3rem 0; border: 0; border-radius: 0; background: none; color: var(--secondo); font-variant-numeric: tabular-nums; }
 .cron-nav a[aria-current="page"] { color: var(--rubrica); box-shadow: inset 0 -1px 0 var(--rubrica); }
