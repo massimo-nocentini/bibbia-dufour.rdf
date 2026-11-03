@@ -7,7 +7,7 @@
 #                         `make ontologia`, see tools/ontologia/README.md, stage 4)
 #
 # The ontology is built from the LaTeX transcription, a repository of its own: the folder `corpus` next to
-# this one (overleaf/corpus beside overleaf/bj-ontology), or BJ_CORPUS=<its folder>; the Dizionario di
+# this one (overleaf/corpus beside overleaf/bibbia-dufour.rdf), or BJ_CORPUS=<its folder>; the Dizionario di
 # Teologia Biblica is ../dufour/corpus. Both are only read.
 
 PYTHON ?= vendor/venv/bin/python

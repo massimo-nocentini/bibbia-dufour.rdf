@@ -1,7 +1,7 @@
 """Where the two repositories are: this one (the ontology, C) and the LaTeX transcription it reads (TEX).
 
 TEX is $BJ_CORPUS, else the folder `corpus` next to this repository (overleaf/corpus beside
-overleaf/bj-ontology). Read only: the proofread volumes progetti/<volume>/*.tex, data/manifest.json,
+overleaf/bibbia-dufour.rdf). Read only: the proofread volumes progetti/<volume>/*.tex, data/manifest.json,
 tools/progetti/progetti.py and verifica.py (the sections of each volume), progetti/appendici/tsv.py (the
 tables of the appendices) and the images of the maps. The Dizionario di Teologia Biblica is ../dufour/corpus
 next to both (dufour.py).

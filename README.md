@@ -1,4 +1,4 @@
-# bj-ontology
+# bibbia-dufour.rdf
 
 The verse ontology of «La Bibbia di Gerusalemme» (EDB: CEI 2008 text with the notes and marginal
 cross-references of the Bible de Jérusalem): an RDF graph centred on the verse, its vocabulary and SHACL
@@ -17,13 +17,13 @@ The build only reads them:
 
 - the LaTeX transcription (`progetti/<volume>/*.tex`, `data/manifest.json`, `tools/progetti/`,
   `progetti/appendici/tsv.py`, the images of the maps): the folder `corpus` next to this repository
-  (`overleaf/corpus` beside `overleaf/bj-ontology`), or `BJ_CORPUS=<its folder>`
+  (`overleaf/corpus` beside `overleaf/bibbia-dufour.rdf`), or `BJ_CORPUS=<its folder>`
   (`tools/ontologia/percorsi.py`);
 - the *Dizionario di Teologia Biblica*: `../dufour/corpus` (`tools/ontologia/dufour.py`).
 
 The transcription's Tufte edition reads this repository in turn (its parsers `estrai.py`, `riferimenti.py`,
 `virgolette.py`, `paratesto.py`, `canone.py`, and `ontologia/build/bibbia.json`, `collegamenti.json`): it
-looks for it next to itself, as `../bj-ontology`, or at `BJ_ONTOLOGY=<its folder>`.
+looks for it next to itself, as `../bibbia-dufour.rdf`, or at `BJ_ONTOLOGY=<its folder>`.
 
 ## Build
 
