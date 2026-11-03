@@ -496,6 +496,24 @@ try {
   metriche.grafo_p2 = await p.$eval('#ginfo', x => x.textContent);
   verifica('apri un livello', parseInt(metriche.grafo_p2) > parseInt(g1), metriche.grafo_p2);
   await foto(p, '08-grafo-2');
+  // a saved exploration comes back as it was, from another tree; it can be deleted
+  const statoAlb = () => p.evaluate(() => ({ carte: document.querySelectorAll('.carta').length, ridotte: document.querySelectorAll('.carta.ridotta').length,
+    note: S.noteAperte.size, z: +S.av.z.toFixed(3), x: Math.round(S.av.x), y: Math.round(S.av.y) }));
+  await p.evaluate(() => document.querySelectorAll('.carta:not(.radice) .minimizza')[2].click());
+  await p.evaluate(() => zoomAlbero(0.83));
+  const salvato = await statoAlb();
+  await p.fill('#espl-nome', 'prova di Gv 3,16');
+  await p.click('#salva-espl button');
+  await p.evaluate(() => { location.hash = '#grafo/Gen.1.1'; });
+  await p.waitForFunction(() => /Gen 1,1/.test(document.querySelector('.grafo-titolo b')?.textContent || ''));
+  const elenco = await p.$$eval('#esplorazioni .espl-apri', xs => xs.map(x => x.textContent));
+  await p.click('#esplorazioni .espl-apri');
+  await p.waitForFunction(() => /^#grafo\/John\.3\.16/.test(location.hash) && document.querySelector('.carta.ridotta'));
+  const ripreso = await statoAlb();
+  verifica('albero: un’esplorazione salvata si riprende com’era', elenco[0] === 'prova di Gv 3,16' && JSON.stringify(ripreso) === JSON.stringify(salvato), JSON.stringify({ salvato, ripreso, elenco }));
+  await foto(p, '08b-grafo-ripreso');
+  await p.click('#esplorazioni .espl-via');
+  verifica('albero: un’esplorazione salvata si elimina', (await p.$$('#esplorazioni .espl-apri')).length === 0 && (await p.evaluate(() => JSON.parse(localStorage.getItem('esplora.esplorazioni')).length)) === 0);
   // the reference of a card makes it the root
   const prima = await hash(p);
   await p.evaluate(() => document.querySelector('.carta:not(.radice) .carta-rif').click());

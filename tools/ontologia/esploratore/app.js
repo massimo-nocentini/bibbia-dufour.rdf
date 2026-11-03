@@ -3075,6 +3075,9 @@ function mostraGrafo(id, par) {
       <div class="segmenti" role="group"><button type="button" data-esplora="piu">Apri un livello</button><button type="button" data-esplora="chiudi">Chiudi tutto</button></div>
       <h3>Esporta</h3>
       <div class="grafo-info"><button type="button" class="bottone" data-pdf title="L’albero intero com’è ora, su una pagina sola: nella finestra di stampa scegli «Salva come PDF»">Esporta in PDF</button></div>
+      <h3>Esplorazioni salvate</h3>
+      <form class="salva-espl" id="salva-espl" autocomplete="off"><input type="text" id="espl-nome" maxlength="80" placeholder="Nome (facoltativo)" aria-label="Nome dell’esplorazione"><button type="submit" class="bottone" title="Ricorda l’albero com’è ora (schede aperte e ridotte, note, relazioni, vista) in questo browser">Salva</button></form>
+      <ul class="esplorazioni" id="esplorazioni"></ul>
       <h3>Relazioni (rami)</h3>
       ${ORDINE_REL.map(r => `<label class="leg"><input type="checkbox" data-rel="${r}"${S.filtro.has(r) ? ' checked' : ''}>${linea(r)}<span>${REL[r].seg} ${REL[r].nome}</span><span class="n">${conta[r] || 0}</span></label>`).join('')}
       <h3>Schede</h3>
@@ -3112,6 +3115,25 @@ function mostraGrafo(id, par) {
   });
   interazioni();
   $('[data-pdf]').addEventListener('click', stampaAlbero);
+  $('#salva-espl').addEventListener('submit', e => {
+    e.preventDefault();
+    const nome = salvaEsplorazione($('#espl-nome').value);
+    $('#espl-nome').value = '';
+    elencoEsplorazioni();
+    annuncia(`Esplorazione «${nome}» salvata`);
+  });
+  $('#esplorazioni').addEventListener('click', e => {
+    const b = e.target.closest('button[data-k]');
+    if (!b) return;
+    if (b.classList.contains('espl-apri')) riprendiEsplorazione(+b.dataset.k);
+    else {
+      const xs = esplorazioni(), [via] = xs.splice(+b.dataset.k, 1);
+      scriviEsplorazioni(xs);
+      elencoEsplorazioni();
+      if (via) annuncia(`Esplorazione «${via.nome}» eliminata`);
+    }
+  });
+  elencoEsplorazioni();
   $('[data-lato]')?.addEventListener('click', e => {
     // on the phone the controls are a sheet under the canvas, closed at first (R3 E9)
     const l = $('.grafo-lato'), ap = !l.classList.contains('aperto');
@@ -3122,6 +3144,17 @@ function mostraGrafo(id, par) {
 }
 function nuovoAlbero(i, prof) {
   S.albero = nuovaCarta(i, i, null);
+  const e = S.ripresa;
+  S.ripresa = null;
+  if (e && e.radice === V.id[i]) {
+    // a saved exploration: its tree, its notes opened whole, its view
+    S.noteAperte = new Set((e.note || []).filter(k => D.note[k]));
+    ricostruisci(S.albero, e.forma || {});
+    if (!S.albero.aperta) apri(S.albero);
+    disegnaAlbero(null, !e.vista);
+    if (e.vista) { S.av = { x: +e.vista.x || 0, y: +e.vista.y || 0, z: Math.max(0.3, Math.min(2.2, +e.vista.z || 1)) }; applica(); }
+    return;
+  }
   apri(S.albero);
   if (prof > 1) for (const g of S.albero.figli) for (const c of g.figli) { collegamenti(c); if (c.nvoci) apri(c); }
   disegnaAlbero(null, true);
@@ -3244,6 +3277,66 @@ function zoomAlbero(f, cx, cy) {
   applica();
 }
 
+// ---- saved explorations: the shape of the tree (the open and the reduced cards, how many of each
+// group are shown), the notes opened whole, the relations shown and the view, by name, in this
+// browser's storage (localStorage: it stays on this device and in this browser only)
+function esplorazioni() {
+  try { const x = JSON.parse(memo.get('esplorazioni') || '[]'); return Array.isArray(x) ? x.filter(e => e && e.radice) : []; } catch (e) { return []; }
+}
+const scriviEsplorazioni = xs => memo.set('esplorazioni', JSON.stringify(xs));
+const chiaveGruppo = g => g.rel + (g.dir > 0 ? '>' : g.dir < 0 ? '<' : '');
+function formaCarta(c) {
+  // a card's state: r reduced, g its open groups as [key, cards shown, {card key: state}]; null
+  // for a card closed and whole
+  const s = {};
+  if (c.ridotta) s.r = 1;
+  if (c.aperta) s.g = c.figli.map(g => {
+    const f = {};
+    for (const x of g.figli) { const y = formaCarta(x); if (y) f[x.k] = y; }
+    return [chiaveGruppo(g), g.figli.length, f];
+  });
+  return s.r || s.g ? s : null;
+}
+function ricostruisci(c, s) {
+  // the inverse of formaCarta; a group or a card no longer there (other data) is skipped
+  if (s.r) c.ridotta = true;
+  if (!Array.isArray(s.g)) return;
+  apri(c);
+  const per = new Map(c.figli.map(g => [chiaveGruppo(g), g]));
+  for (const [k, n, f] of s.g) {
+    const g = per.get(k);
+    if (!g) continue;
+    if (g.figli.length < n) altri(g, n - g.figli.length); else g.figli.length = Math.max(0, n);
+    for (const x of g.figli) if (f && f[x.k]) ricostruisci(x, f[x.k]);
+  }
+}
+function salvaEsplorazione(nome) {
+  // saved first in the list; a name already there is replaced
+  const r = S.albero, quando = Date.now();
+  nome = (nome || '').trim().slice(0, 80) || `${rif(r.a)} · ${new Date(quando).toLocaleString('it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}`;
+  const e = { nome, quando, radice: V.id[r.a], f: [...S.filtro], forma: formaCarta(r) || {}, note: [...S.noteAperte],
+    vista: { x: Math.round(S.av.x), y: Math.round(S.av.y), z: +S.av.z.toFixed(3) }, carte: S.albNodi.filter(n => n.tipo === 'carta').length };
+  scriviEsplorazioni([e, ...esplorazioni().filter(x => x.nome !== nome)]);
+  return nome;
+}
+function riprendiEsplorazione(k) {
+  const e = esplorazioni()[k];
+  if (!e || !S.vix.has(e.radice)) { annuncia('Questa esplorazione non si può riprendere: il suo versetto non c’è'); return; }
+  const f = (e.f || []).filter(r => ORDINE_REL.includes(r));
+  S.ripresa = e;
+  vai(`#grafo/${e.radice}${f.length < ORDINE_REL.length ? '?f=' + f.join(',') : ''}`);
+}
+function elencoEsplorazioni() {
+  const ul = $('#esplorazioni');
+  if (!ul) return;
+  const xs = esplorazioni();
+  ul.innerHTML = xs.length ? xs.map((e, k) => {
+    const i = S.vix.get(e.radice), quando = new Date(e.quando).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' });
+    return `<li><button type="button" class="espl-apri" data-k="${k}" title="Riprendi questa esplorazione">${esc(e.nome)}</button>` +
+      `<small>${i === undefined ? esc(e.radice) : esc(rif(i))} · ${num(e.carte || 0)} ${pl(e.carte || 0, 'scheda', 'schede')} · ${esc(quando)}</small>` +
+      `<button type="button" class="espl-via" data-k="${k}" title="Elimina «${esc(e.nome)}»" aria-label="Elimina «${esc(e.nome)}»">×</button></li>`;
+  }).join('') : '<li class="vuoto">Nessuna ancora: salva l’albero che hai davanti per ritrovarlo qui, in questo browser.</li>';
+}
 function stampaAlbero() {
   // the tree as it is now (its open, reduced and filtered cards, in the current style and theme),
   // whole, on one page of its own size; the print dialog's «Salva come PDF» makes it a PDF with
