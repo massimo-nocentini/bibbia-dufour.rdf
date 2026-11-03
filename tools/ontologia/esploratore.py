@@ -47,9 +47,10 @@ from collections import Counter
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 C = os.path.dirname(os.path.dirname(HERE))
-sys.path.insert(0, os.path.join(C, 'tools', 'progetti'))
-from progetti import PROGETTI  # noqa: E402
 sys.path.insert(0, HERE)
+from percorsi import TEX  # noqa: E402  (the LaTeX transcription)
+sys.path.insert(0, os.path.join(TEX, 'tools', 'progetti'))
+from progetti import PROGETTI  # noqa: E402
 import virgolette  # noqa: E402
 
 BUILD = os.path.join(C, 'ontologia', 'build')
@@ -502,7 +503,9 @@ def integrazione(I, data, dz, pt, vix, posto, errors):
     mis = [[x['id'], x['tipo'], x['nome'], x['originale'] or '', x['lingua'] or '', x['valore'] or '', x['unita'] or '',
             x['rapporto'] or '', x['base'] or '', x['equivale'] or '', x['pagina'], refs(x['links']), x['nota'] or '',
             runs(vix[t] for t in sv.get(x['id'], []))] for x in I['misure']]
-    carte = [[x['id'], x['titolo'], x['sottotitolo'] or '', x['parte'], x['pdf'], x['immagine'], x['periodo'] or '',
+    # the image of a map is in the LaTeX transcription: its address from the page (../../corpus/progetti/…)
+    carte = [[x['id'], x['titolo'], x['sottotitolo'] or '', x['parte'], x['pdf'],
+              os.path.relpath(os.path.join(TEX, x['immagine']), os.path.dirname(OUT)).replace(os.sep, '/'), x['periodo'] or '',
               [bix[b] for b in x['libri']], refs(x['links'])] for x in I['carte']]
     corr = {'ml': {}, 'nc': {}, 'ic': {}}
     for x in I['interventi']:

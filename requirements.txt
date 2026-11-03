@@ -1,0 +1,4 @@
+# make venv (Python 3.12): the graph, its checks and the fonts of the explorer
+rdflib==7.6.0
+pyshacl==0.40.2
+fonttools==4.66.1

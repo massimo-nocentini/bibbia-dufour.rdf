@@ -45,7 +45,8 @@ from collections import Counter, defaultdict
 HERE = os.path.dirname(os.path.abspath(__file__))
 C = os.path.dirname(os.path.dirname(HERE))
 sys.path.insert(0, HERE)
-sys.path.insert(0, os.path.join(C, 'progetti', 'appendici'))
+from percorsi import TEX  # noqa: E402  (the LaTeX transcription)
+sys.path.insert(0, os.path.join(TEX, 'progetti', 'appendici'))
 import riferimenti as R  # noqa: E402
 import paratesto as PT  # noqa: E402
 import tsv as TSV  # noqa: E402
@@ -390,7 +391,7 @@ def carte(B, data, errors):
         src = 'carta.%s' % r['id']
         ls = leggi_rif(r['passi'], B, src) if r['passi'] else []
         links += ls
-        if not os.path.exists(os.path.join(C, r['immagine'])) or any(b not in books for b in r['libri'].split()):
+        if not os.path.exists(os.path.join(TEX, r['immagine'])) or any(b not in books for b in r['libri'].split()):
             errors.append('carte.tsv:%d: %r' % (k, r))
         out.append(dict(id=r['id'], titolo=r['titolo'], sottotitolo=r['sottotitolo'] or None, parte=r['parte'],
                         pdf=int(r['pdf']), immagine=r['immagine'], periodo=r['periodo'] or None,

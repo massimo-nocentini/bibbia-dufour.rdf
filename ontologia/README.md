@@ -2,7 +2,8 @@
 
 A verse-centred RDF graph of «La Bibbia di Gerusalemme» (EDB: CEI 2008 Italian text with
 the notes and marginal cross-references of the Bible de Jérusalem), built from the 14
-proofread LaTeX volumes in `progetti/`. Every verse is linked to the notes called from
+proofread LaTeX volumes in `progetti/` of the LaTeX transcription (a repository of its own, next to this
+one: see the README of this repository). Every verse is linked to the notes called from
 it, the notes commenting on it, the references printed in its margin, and every citation
 of it in a note or an introduction. The entries of X. Léon-Dufour's *Dizionario di
 Teologia Biblica* (1976) are in the same graph: every verse is also linked to the entries
@@ -44,11 +45,10 @@ there; they are names, not links to follow.
 | `build/query.md` | rows and timings of the example queries at the last build (copied into the table below by `statistiche.py`) | `interroga.py` |
 | `esplora.html` | the offline explorer: one page, data embedded (the Bible and the dictionary), opens from disk | `tools/ontologia/esploratore.py` |
 
-`build/` (about 92 MB) is listed in `.gitignore`, like `bj-dati.nt` unpacked for a triple
+`build/` (about 106 MB) is listed in `.gitignore`, like `bj-dati.nt` unpacked for a triple
 store (about 750 MB): `make ontologia` rebuilds them. With the dictionary `bj-dati.nt.gz`
 is 28.9 MB (28.6 MB before the time line, 27.1 MB before the quotations, 25.6 MB before the front matter and appendices, 17.6 MB before the dictionary), over the 20 MB above which a regenerable file is not kept in
-git, so it is listed in `.gitignore` too (an earlier commit tracks it: `git rm --cached
-ontologia/bj-dati.nt.gz` stops that; `bj-dati.ttl.gz`, 15.7 MB, holds the same triples).
+git, so it is listed in `.gitignore` too (`bj-dati.ttl.gz`, 15.7 MB, holds the same triples).
 The other generated files are at most about 9 MB (the page 9.1 MB). The dumps and the page now also hold the
 dictionary's text, which its own corpus calls private: see *Licence* before committing
 them.

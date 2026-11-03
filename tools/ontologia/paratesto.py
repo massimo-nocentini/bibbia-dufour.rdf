@@ -55,12 +55,13 @@ C = os.path.dirname(os.path.dirname(HERE))
 sys.path.insert(0, HERE)
 import riferimenti as R  # noqa: E402
 from estrai import dump, inline  # noqa: E402
+from percorsi import TEX  # noqa: E402  (the LaTeX transcription)
 
 BUILD = os.path.join(C, 'ontologia', 'build')
 IN = os.path.join(BUILD, 'bibbia.json')
 OUT = os.path.join(BUILD, 'paratesto.json')
-IG = os.path.join(C, 'progetti', 'introduzione-generale')
-AP = os.path.join(C, 'progetti', 'appendici')
+IG = os.path.join(TEX, 'progetti', 'introduzione-generale')
+AP = os.path.join(TEX, 'progetti', 'appendici')
 PDF_PRELIMINARI = 5          # p. v = PDF page 10
 PDF_APPENDICI = 3001         # p. 3 of the appendices = PDF page 3004
 CTX = dict(book=None, chapter=None, margin=False)
@@ -413,7 +414,7 @@ def confronta(nome, errors, warnings):
     a, b = os.path.join(AP, nome), os.path.join(BUILD, nome)
     if open(a, encoding='utf-8').read() != open(b, encoding='utf-8').read():
         warnings.append('%s differs from the one made now (the volume\'s file is stale: run '
-                        'progetti/appendici/tsv.py)' % os.path.relpath(a, C))
+                        'progetti/appendici/tsv.py)' % os.path.relpath(a, TEX))
 
 
 # misprints of the indices whose correction the checklist (progetti/appendici/checklist-ocr.md)

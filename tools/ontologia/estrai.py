@@ -33,7 +33,8 @@ from collections import Counter, defaultdict
 HERE = os.path.dirname(os.path.abspath(__file__))
 C = os.path.dirname(os.path.dirname(HERE))
 sys.path.insert(0, HERE)
-sys.path.insert(0, os.path.join(C, 'tools', 'progetti'))
+from percorsi import TEX  # noqa: E402  (the LaTeX transcription)
+sys.path.insert(0, os.path.join(TEX, 'tools', 'progetti'))
 from canone import OSIS, ORDINE, SIGLA, PROLOGO, numeric_order, testamento, verse_id  # noqa: E402
 from progetti import PROGETTI, file_of  # noqa: E402
 import verifica  # noqa: E402
@@ -809,7 +810,7 @@ def ocr_counts():
     out = {}
     for name in ('notes.tsv', 'xrefs.tsv'):
         n = Counter()
-        with open(os.path.join(C, 'data', name), encoding='utf-8') as f:
+        with open(os.path.join(TEX, 'data', name), encoding='utf-8') as f:
             next(f)
             for ln in f:
                 n[ln.split('\t', 1)[0]] += 1
@@ -839,7 +840,7 @@ def dump(data, path):
 def main(a):
     out = a[a.index('-o') + 1] if '-o' in a else OUT
     quiet = '-q' in a
-    manifest = {s['id']: s for s in json.load(open(os.path.join(C, 'data', 'manifest.json'), encoding='utf-8'))}
+    manifest = {s['id']: s for s in json.load(open(os.path.join(TEX, 'data', 'manifest.json'), encoding='utf-8'))}
     books, verses, notes, mrefs, divs, peris, intros = [], [], [], [], [], [], []
     errors, stats = [], []
     grep = Counter()
@@ -848,8 +849,8 @@ def main(a):
             continue
         secs = p['sections']
         for x, sid in enumerate(secs):
-            path = os.path.join(C, 'progetti', p['nome'], file_of(sid, p) + '.tex')
-            rel = os.path.relpath(path, C)
+            path = os.path.join(TEX, 'progetti', p['nome'], file_of(sid, p) + '.tex')
+            rel = os.path.relpath(path, TEX)
             if sid.startswith('intro-'):
                 follow = []
                 for s in secs[x + 1:]:

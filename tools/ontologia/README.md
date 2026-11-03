@@ -1,7 +1,10 @@
 # Ontologia dei versetti
 
-A verse-centred semantic-web base built from the 14 proofread volumes in `progetti/`
-(CEI 2008 text, Bible de Jérusalem notes and marginal cross-references). The verse is
+A verse-centred semantic-web base built from the 14 proofread volumes in `progetti/` of the LaTeX
+transcription (CEI 2008 text, Bible de Jérusalem notes and marginal cross-references). The transcription is a
+repository of its own: the folder `corpus` next to this one, or `BJ_CORPUS` (`percorsi.py`, which every stage
+uses for the paths it reads there: `progetti/`, `data/manifest.json`, `tools/progetti/`,
+`progetti/appendici/tsv.py`, the images of the maps); the paths `progetti/…` below are in it. The verse is
 the central node: each one is linked to the notes called from it, the notes that
 comment on it, and the verses its margin references point to. Code lives here,
 generated files in `ontologia/` (intermediate files in `ontologia/build/`); the design of
@@ -12,6 +15,8 @@ Rebuild everything:
 ```sh
 make ontologia          # the same: vendor/venv/bin/python -I tools/ontologia/costruisci.py
 ```
+
+(`make venv` first makes `vendor/venv` from `requirements.txt`.)
 
 | Module | Role |
 |---|---|
@@ -42,6 +47,7 @@ make ontologia          # the same: vendor/venv/bin/python -I tools/ontologia/co
 | `esploratore/` | the page: `modello.html`, `font.css`, the two styles `stile-tufte.css` and `stile-giardino.css`, `app.js` (inlined by `esploratore.py`) |
 | `prova_esploratore.mjs` | stage 4 test: the page in headless Chromium (not run by `costruisci.py`) |
 | `costruisci.py` | runs every stage in order, stops at the first failed check |
+| `percorsi.py` | where the LaTeX transcription is (`TEX`: `BJ_CORPUS`, else `../corpus`) |
 
 ## Stage 1: `estrai.py`
 
